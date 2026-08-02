@@ -8,7 +8,8 @@ import {
   Activity, Briefcase, Heart, MessageSquare, Calendar, Star, 
   Bell, Users, TrendingUp, Settings, User, HardHat, Wrench, 
   ShieldCheck, MapPin, Award, Clock, ArrowRight, X, ChevronRight, LogOut,
-  Video, UserCheck, FileText, CheckCircle2, ExternalLink, Image as ImageIcon, ClipboardCheck
+  Video, UserCheck, FileText, CheckCircle2, ExternalLink, Image as ImageIcon, ClipboardCheck,
+  Mail, CalendarCheck, BadgeCheck
 } from 'lucide-react';
 import { 
   WorkerProfile, JobProfile, CompanyProfile, Match, Message, Interview, UserType 
@@ -39,7 +40,18 @@ import {
   createReviewInDb,
   reportReviewInDb,
   moderateReviewInDb,
-  isValidUploadUrl
+  isValidUploadUrl,
+  fetchAdminUser,
+  fetchAdminDashboardStats,
+  AdminUser,
+  AdminDashboardStats,
+  AdminManagedUser,
+  AdminManagedUserType,
+  AdminAccountStatus,
+  AdminVerificationStatus,
+  fetchAdminManagedUsers,
+  updateAdminAccountStatus,
+  updateAdminVerificationStatus
 } from './lib/supabase';
 
 import DashboardView from './components/DashboardView';
@@ -54,6 +66,7 @@ import SettingsView from './components/SettingsView';
 import ProfileView from './components/ProfileView';
 import AuthView from './components/AuthView';
 import VideoInterviewRoom from './components/VideoInterviewRoom';
+import AdminDashboard from './components/AdminDashboard';
 
 export default function App() {
   // Core User Session State
@@ -61,6 +74,14 @@ export default function App() {
 
   // Core Persona State
   const [userType, setUserType] = useState<UserType>('worker');
+
+  // Dedicated Admin Portal state
+  const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null);
+  const [adminStats, setAdminStats] = useState<AdminDashboardStats | null>(null);
+  const [adminUsers, setAdminUsers] = useState<AdminManagedUser[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminActionLoadingId, setAdminActionLoadingId] = useState<string | null>(null);
+  const [adminError, setAdminError] = useState<string | null>(null);
 
   // Current view route
   const [currentView, setCurrentView] = useState('dashboard');
@@ -140,51 +161,141 @@ export default function App() {
     }
   };
 
-  // Auth Listener to persist session
-  useEffect(() => {
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && session.user) {
-        // Look up profile to determine user role
-        supabase.from('worker_profiles').select('id').eq('id', session.user.id).maybeSingle().then(({ data: isWorker }) => {
-          const type: UserType = isWorker ? 'worker' : 'employer';
-          setCurrentUser({
-            id: session.user.id,
-            email: session.user.email!,
-            userType: type
-          });
-          setUserType(type);
-        });
-      } else {
-        setCurrentUser(null);
-      }
-    });
+  const loadAdminDashboard = async () => {
+    setAdminLoading(true);
+    setAdminError(null);
 
-    // Monitor auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session && session.user) {
-        const { data: isWorker } = await supabase.from('worker_profiles').select('id').eq('id', session.user.id).maybeSingle();
-        const type: UserType = isWorker ? 'worker' : 'employer';
+    try {
+      const [stats, managedUsers] = await Promise.all([
+        fetchAdminDashboardStats(),
+        fetchAdminManagedUsers(),
+      ]);
+
+      setAdminStats(stats);
+      setAdminUsers(managedUsers);
+    } catch (error: any) {
+      console.error('Could not load admin dashboard:', error.message);
+      setAdminError(error.message || String(error));
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
+  const handleAdminAccountStatus = async (
+    userId: string,
+    managedUserType: AdminManagedUserType,
+    status: AdminAccountStatus
+  ) => {
+    setAdminActionLoadingId(userId);
+    setAdminError(null);
+
+    try {
+      await updateAdminAccountStatus(userId, managedUserType, status);
+      await loadAdminDashboard();
+    } catch (error: any) {
+      console.error('Could not update account status:', error.message);
+      setAdminError(error.message || String(error));
+    } finally {
+      setAdminActionLoadingId(null);
+    }
+  };
+
+  const handleAdminVerificationStatus = async (
+    userId: string,
+    managedUserType: AdminManagedUserType,
+    status: AdminVerificationStatus
+  ) => {
+    setAdminActionLoadingId(userId);
+    setAdminError(null);
+
+    try {
+      await updateAdminVerificationStatus(userId, managedUserType, status);
+      await loadAdminDashboard();
+    } catch (error: any) {
+      console.error('Could not update verification status:', error.message);
+      setAdminError(error.message || String(error));
+    } finally {
+      setAdminActionLoadingId(null);
+    }
+  };
+
+  const resolveAuthenticatedSession = async (session: any) => {
+    if (!session?.user) {
+      setCurrentUser(null);
+      setCurrentAdmin(null);
+      setAdminStats(null);
+      setAdminUsers([]);
+      return;
+    }
+
+    try {
+      const admin = await fetchAdminUser(session.user.id);
+
+      if (admin) {
+        setCurrentAdmin(admin);
         setCurrentUser({
           id: session.user.id,
-          email: session.user.email!,
-          userType: type
+          email: session.user.email || '',
+          // UserType does not include admin yet; this value is never used for
+          // rendering because the admin branch is handled first.
+          userType: 'employer',
         });
-        setUserType(type);
-      } else {
-        setCurrentUser(null);
+        setUserType('employer');
+        setCurrentView('admin');
+        return;
       }
+
+      setCurrentAdmin(null);
+
+      const { data: isWorker } = await supabase
+        .from('worker_profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      const type: UserType = isWorker ? 'worker' : 'employer';
+
+      setCurrentUser({
+        id: session.user.id,
+        email: session.user.email || '',
+        userType: type,
+      });
+      setUserType(type);
+      setCurrentView('dashboard');
+    } catch (error: any) {
+      console.error('Could not resolve authenticated account:', error.message);
+      setDbSyncError(error.message || String(error));
+      setCurrentUser(null);
+      setCurrentAdmin(null);
+    }
+  };
+
+  // Auth Listener to persist session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      resolveAuthenticatedSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      resolveAuthenticatedSession(session);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch Supabase data whenever currentUser logs in
+  // Fetch the correct data set whenever an account logs in
   useEffect(() => {
-    if (currentUser) {
-      loadAllDataFromSupabase();
+    if (!currentUser) return;
+
+    if (currentAdmin) {
+      loadAdminDashboard();
+      return;
     }
-  }, [currentUser]);
+
+    loadAllDataFromSupabase();
+  }, [currentUser?.id, currentAdmin?.userId]);
 
   // Load chats dynamically when selectedMatchId changes
   useEffect(() => {
@@ -202,7 +313,7 @@ export default function App() {
 
   // Setup Supabase Realtime Subscriptions for live messaging and notifications
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || currentAdmin) return;
 
     console.log("Setting up Supabase Realtime channel for user:", currentUser.id);
 
@@ -352,14 +463,202 @@ export default function App() {
       )
       .subscribe();
 
+    // 5. Keep interview status changes live across both accounts
+    const interviewUpdateChannel = supabase
+      .channel(`live-interview-updates-${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'interviews',
+        },
+        async () => {
+          try {
+            const updatedInterviews = await fetchInterviews();
+            setInterviews(updatedInterviews || []);
+          } catch (error: any) {
+            console.error('Realtime interview refresh failed:', error.message);
+          }
+        }
+      )
+      .subscribe();
+
+    // 6. Keep jobs live when contractors create, edit, or remove vacancies
+    const jobsChannel = supabase
+      .channel(`live-jobs-${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'jobs',
+        },
+        async () => {
+          try {
+            const updatedJobs = await fetchJobs();
+            setJobs(updatedJobs || []);
+          } catch (error: any) {
+            console.error('Realtime jobs refresh failed:', error.message);
+          }
+        }
+      )
+      .subscribe();
+
+    // 7. Keep reviews, ratings, and profile reputation live
+    const reviewsChannel = supabase
+      .channel(`live-reviews-${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'reviews',
+        },
+        async () => {
+          try {
+            const [updatedReviews, updatedWorkers, updatedCompanies] =
+              await Promise.all([
+                fetchReviewsFromDb(),
+                fetchWorkers(),
+                fetchCompanies(),
+              ]);
+
+            setReviews(updatedReviews || []);
+            setWorkers(updatedWorkers || []);
+            setCompanies(updatedCompanies || []);
+          } catch (error: any) {
+            console.error('Realtime reviews refresh failed:', error.message);
+          }
+        }
+      )
+      .subscribe();
+
+    // 8. Keep worker profile edits live across discovery, search, and dashboards
+    const workerProfilesChannel = supabase
+      .channel(`live-worker-profiles-${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'worker_profiles',
+        },
+        async () => {
+          try {
+            const updatedWorkers = await fetchWorkers();
+            setWorkers(updatedWorkers || []);
+          } catch (error: any) {
+            console.error('Realtime worker profile refresh failed:', error.message);
+          }
+        }
+      )
+      .subscribe();
+
+    // 9. Keep contractor profile edits live across company pages and vacancies
+    const contractorProfilesChannel = supabase
+      .channel(`live-contractor-profiles-${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'contractor_profiles',
+        },
+        async () => {
+          try {
+            const updatedCompanies = await fetchCompanies();
+            setCompanies(updatedCompanies || []);
+          } catch (error: any) {
+            console.error('Realtime contractor profile refresh failed:', error.message);
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       console.log("Cleaning up Supabase Realtime channels");
       supabase.removeChannel(messageChannel);
       supabase.removeChannel(matchChannel);
       supabase.removeChannel(interviewChannel);
       supabase.removeChannel(notificationChannel);
+      supabase.removeChannel(interviewUpdateChannel);
+      supabase.removeChannel(jobsChannel);
+      supabase.removeChannel(reviewsChannel);
+      supabase.removeChannel(workerProfilesChannel);
+      supabase.removeChannel(contractorProfilesChannel);
     };
-  }, [currentUser, userType]);
+  }, [currentUser, userType, currentAdmin]);
+
+  const getRelativeTime = (createdAt: string) => {
+    const created = new Date(createdAt).getTime();
+    const now = Date.now();
+    const differenceSeconds = Math.max(0, Math.floor((now - created) / 1000));
+
+    if (differenceSeconds < 60) return 'Just now';
+
+    const minutes = Math.floor(differenceSeconds / 60);
+    if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
+
+    return new Date(createdAt).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const getNotificationCategory = (notification: AppNotification) => {
+    const combinedText = `${notification.title} ${notification.message}`.toLowerCase();
+
+    if (combinedText.includes('message')) return 'message';
+    if (combinedText.includes('match')) return 'match';
+
+    if (
+      combinedText.includes('interview') ||
+      combinedText.includes('walkthrough') ||
+      combinedText.includes('induction')
+    ) {
+      return 'interview';
+    }
+
+    if (combinedText.includes('review') || combinedText.includes('rating')) {
+      return 'review';
+    }
+
+    return 'general';
+  };
+
+  const getNotificationTargetView = (notification: AppNotification) => {
+    const category = getNotificationCategory(notification);
+
+    if (category === 'message') return 'messages';
+    if (category === 'match') return 'matches';
+    if (category === 'interview') return 'interviews';
+    if (category === 'review') return 'profile';
+
+    return 'dashboard';
+  };
+
+  const getNotificationIcon = (notification: AppNotification) => {
+    const category = getNotificationCategory(notification);
+
+    if (category === 'message') return <Mail className="w-4 h-4" />;
+    if (category === 'match') return <Heart className="w-4 h-4 fill-current" />;
+    if (category === 'interview') return <CalendarCheck className="w-4 h-4" />;
+    if (category === 'review') return <Star className="w-4 h-4 fill-current" />;
+
+    return <BadgeCheck className="w-4 h-4" />;
+  };
+
+  const unreadMessageCount = messages.filter(
+    message => !message.isRead && message.sender !== userType
+  ).length;
 
   const unreadNotificationCount = notifications.filter(
     notification => !notification.isRead
@@ -379,6 +678,9 @@ export default function App() {
         console.error('Could not mark notification as read:', error.message);
       }
     }
+
+    setCurrentView(getNotificationTargetView(notification));
+    setShowNotifications(false);
   };
 
   const handleMarkAllNotificationsRead = async () => {
@@ -772,7 +1074,22 @@ export default function App() {
   };
 
   // Action: Handle registration or login
-  const handleAuthSuccess = (session: { id: string; email: string; userType: UserType }) => {
+  const handleAuthSuccess = async (session: { id: string; email: string; userType: UserType }) => {
+    try {
+      const admin = await fetchAdminUser(session.id);
+
+      if (admin) {
+        setCurrentAdmin(admin);
+        setCurrentUser(session);
+        setUserType('employer');
+        setCurrentView('admin');
+        return;
+      }
+    } catch (error: any) {
+      console.error('Could not check admin access after login:', error.message);
+    }
+
+    setCurrentAdmin(null);
     setCurrentUser(session);
     setUserType(session.userType);
     setCurrentView('dashboard');
@@ -786,6 +1103,10 @@ export default function App() {
       console.error("Supabase sign out error:", err);
     }
     setCurrentUser(null);
+    setCurrentAdmin(null);
+    setAdminStats(null);
+    setAdminUsers([]);
+    setAdminError(null);
     setCurrentView('dashboard');
   };
 
@@ -807,6 +1128,23 @@ export default function App() {
         onAddWorker={handleAddWorker}
         onAddCompany={handleAddCompany}
         onAddJob={handleAddJob}
+      />
+    );
+  }
+
+  if (currentAdmin) {
+    return (
+      <AdminDashboard
+        admin={currentAdmin}
+        stats={adminStats}
+        users={adminUsers}
+        loading={adminLoading}
+        actionLoadingId={adminActionLoadingId}
+        error={adminError}
+        onRefresh={loadAdminDashboard}
+        onSignOut={handleSignOut}
+        onUpdateAccountStatus={handleAdminAccountStatus}
+        onUpdateVerificationStatus={handleAdminVerificationStatus}
       />
     );
   }
@@ -869,7 +1207,16 @@ export default function App() {
                   className={`w-full px-3 py-2.5 rounded-lg text-xs font-mono font-bold flex items-center gap-3 transition-all cursor-pointer ${isActive ? 'bg-[#34D399] text-white shadow-md shadow-[#34D399]/15' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50'}`}
                 >
                   {link.icon}
-                  <span className="uppercase tracking-wide">{link.label}</span>
+                  <span className="uppercase tracking-wide flex-grow text-left">{link.label}</span>
+                  {link.id === 'messages' && unreadMessageCount > 0 && (
+                    <span className={`min-w-5 h-5 px-1 rounded-full text-[9px] flex items-center justify-center ${
+                      isActive
+                        ? 'bg-white text-[#10B981]'
+                        : 'bg-red-500 text-white'
+                    }`}>
+                      {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -990,27 +1337,38 @@ export default function App() {
                         >
                           <div className="flex gap-3 items-start">
                             <span
-                              className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${
-                                notification.isRead ? 'bg-zinc-200' : 'bg-[#10B981]'
+                              className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                                notification.isRead
+                                  ? 'bg-zinc-100 text-zinc-400'
+                                  : 'bg-emerald-100 text-[#10B981]'
                               }`}
-                            />
+                            >
+                              {getNotificationIcon(notification)}
+                            </span>
 
                             <div className="min-w-0 flex-grow">
                               <div className="flex items-start justify-between gap-3">
                                 <p className="text-xs font-black text-zinc-900">
                                   {notification.title}
                                 </p>
-                                <span className="text-[9px] font-mono text-zinc-400 whitespace-nowrap">
-                                  {new Date(notification.createdAt).toLocaleDateString('en-GB', {
-                                    day: '2-digit',
-                                    month: 'short'
-                                  })}
-                                </span>
+
+                                {!notification.isRead && (
+                                  <span className="mt-1 w-2 h-2 bg-[#10B981] rounded-full flex-shrink-0" />
+                                )}
                               </div>
 
                               <p className="text-[11px] text-zinc-600 mt-1 leading-relaxed">
                                 {notification.message}
                               </p>
+
+                              <div className="flex items-center justify-between mt-2">
+                                <span className="text-[9px] font-mono font-bold text-zinc-400">
+                                  {getRelativeTime(notification.createdAt)}
+                                </span>
+                                <span className="text-[9px] font-mono font-black text-[#10B981] uppercase">
+                                  Open
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </button>
@@ -1221,17 +1579,27 @@ export default function App() {
                 key={tab.id}
                 onClick={() => {
                   setCurrentView(tab.id);
+                  setShowNotifications(false);
                   setSelectedMatchId(null);
                 }}
                 className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg transition-all cursor-pointer ${isActive ? 'text-[#34D399]' : 'text-zinc-400 hover:text-zinc-900'}`}
               >
-                {isActive ? (
-                  <div className="p-1 bg-[#34D399]/10 rounded-full text-[#34D399]">
-                    {tab.icon}
-                  </div>
-                ) : (
-                  tab.icon
-                )}
+                <div className="relative">
+                  {isActive ? (
+                    <div className="p-1 bg-[#34D399]/10 rounded-full text-[#34D399]">
+                      {tab.icon}
+                    </div>
+                  ) : (
+                    tab.icon
+                  )}
+
+                  {tab.id === 'messages' && unreadMessageCount > 0 && (
+                    <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 bg-red-500 text-white rounded-full text-[8px] font-mono font-black flex items-center justify-center">
+                      {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
+                    </span>
+                  )}
+                </div>
+
                 <span className="text-[9px] font-mono font-bold uppercase tracking-wider">{tab.label}</span>
               </button>
             );

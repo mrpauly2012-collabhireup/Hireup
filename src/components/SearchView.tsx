@@ -5,8 +5,8 @@
 
 import React, { useState } from 'react';
 import { 
-  Search, SlidersHorizontal, MapPin, Award, Wrench, Briefcase, 
-  Map, Star, ShieldCheck, Clock, Check, ChevronRight, X, Heart
+  Search, SlidersHorizontal, MapPin, Award, Wrench, Briefcase,
+  Star, ShieldCheck, Clock, Check, ChevronRight, X, Heart, ArrowUpDown
 } from 'lucide-react';
 import { WorkerProfile, JobProfile, UserType } from '../types';
 import SearchableDropdown from './SearchableDropdown';
@@ -32,11 +32,14 @@ export default function SearchView({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [maxDistance, setMaxDistance] = useState<number>(25);
   const [cscsTier, setCscsTier] = useState<string | null>(null);
-  const [selectedRateRange, setSelectedRateRange] = useState<number>(300);
+  const [minimumRate, setMinimumRate] = useState<number>(0);
+  const [maximumRate, setMaximumRate] = useState<number>(500);
   const [requireVerified, setRequireVerified] = useState(false);
-  const [activeMapPin, setActiveMapPin] = useState<string | null>(null);
+  const [selectedAvailability, setSelectedAvailability] = useState<string>('');
+  const [sortOrder, setSortOrder] = useState<
+    'relevance' | 'rate-high' | 'rate-low' | 'rating-high' | 'name'
+  >('relevance');
 
   // New Search & Filter States using the master datasets
   const [selectedQualifications, setSelectedQualifications] = useState<string[]>([]);
@@ -48,128 +51,300 @@ export default function SearchView({
   // Use TRADES_CATEGORIES as the master list
   const trades = TRADES_CATEGORIES;
 
-  const recentSearches = [
-    'Gold Card Electrician Battersea',
-    'CIS Price Bricklayer Croydon',
-    'Approved Plumber Gas Safe',
-    'First Fix Carpenter Manchester'
-  ];
+  const extractRate = (payRate: string): number => {
+    const values = payRate.match(/\d+(?:\.\d+)?/g);
+    if (!values || values.length === 0) return 0;
+    return Math.max(...values.map(value => Number(value)));
+  };
 
-  // Map pins corresponding to mock construction projects
-  const mapPins = [
-    { id: 'pin1', label: 'Battersea Site Office', x: '55%', y: '65%', count: 3, trade: 'Electrician' },
-    { id: 'pin2', label: 'Croydon Residential Build', x: '58%', y: '78%', count: 2, trade: 'Bricklayer' },
-    { id: 'pin3', label: 'Chelsea High-End Refurb', x: '45%', y: '58%', count: 1, trade: 'Carpenter' },
-    { id: 'pin4', label: 'London City Centre M&E', x: '52%', y: '48%', count: 4, trade: 'Plumber' },
-  ];
+  const normalise = (value: string | undefined | null) =>
+    (value || '').trim().toLowerCase();
 
-  // Filter logic
+  const includesQuery = (fields: Array<string | undefined | null>) => {
+    const query = normalise(searchQuery);
+    if (!query) return true;
+    return fields.some(field => normalise(field).includes(query));
+  };
+
+  // Live filter logic
   const filteredWorkers = workers.filter(worker => {
-    if (searchQuery && !worker.name.toLowerCase().includes(searchQuery.toLowerCase()) && !worker.about.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (
+      !includesQuery([
+        worker.name,
+        worker.trade,
+        worker.subcategory,
+        worker.location,
+        worker.about,
+        worker.experience,
+        ...(worker.qualifications || []),
+        ...(worker.licences || []),
+        ...(worker.verifiedBadges || []),
+        ...(worker.toolsAndTransport || [])
+      ])
+    ) {
       return false;
     }
-    if (selectedTrade && worker.trade !== selectedTrade) {
+
+    if (selectedTrade && normalise(worker.trade) !== normalise(selectedTrade)) {
       return false;
     }
-    if (selectedSubcategory && worker.subcategory !== selectedSubcategory) {
+
+    if (
+      selectedSubcategory &&
+      normalise(worker.subcategory) !== normalise(selectedSubcategory)
+    ) {
       return false;
     }
-    if (cscsTier && !worker.qualifications.some(q => q.toLowerCase().includes(cscsTier.toLowerCase()))) {
+
+    if (
+      cscsTier &&
+      !(worker.qualifications || []).some(qualification =>
+        normalise(qualification).includes(normalise(cscsTier))
+      )
+    ) {
       return false;
     }
+
     if (requireVerified && !worker.verified) {
       return false;
     }
-    // Extract rate number
-    const rateNum = parseInt(worker.payRate.replace(/[^0-9]/g, ''), 10) || 0;
-    if (rateNum > selectedRateRange) {
+
+    const rate = extractRate(worker.payRate);
+    if (rate < minimumRate || rate > maximumRate) {
       return false;
     }
-    // Hometown Filter
-    if (selectedHometown && !worker.location.toLowerCase().includes(selectedHometown.toLowerCase())) {
+
+    if (
+      selectedHometown &&
+      !normalise(worker.location).includes(normalise(selectedHometown))
+    ) {
       return false;
     }
-    // Qualifications Filter (search/match grades)
+
+    if (
+      selectedAvailability &&
+      !normalise(worker.availability).includes(normalise(selectedAvailability))
+    ) {
+      return false;
+    }
+
     if (selectedQualifications.length > 0) {
-      const hasMatch = worker.qualifications.some(q => 
-        selectedQualifications.some(sq => q.toLowerCase().includes(sq.toLowerCase()) || sq.toLowerCase().includes(q.toLowerCase()))
+      const workerQualifications = worker.qualifications || [];
+      const hasEveryQualification = selectedQualifications.every(selected =>
+        workerQualifications.some(qualification =>
+          normalise(qualification).includes(normalise(selected)) ||
+          normalise(selected).includes(normalise(qualification))
+        )
       );
-      if (!hasMatch) return false;
+
+      if (!hasEveryQualification) return false;
     }
-    // Licences Filter (search/match licences)
+
     if (selectedLicences.length > 0) {
-      const wLics = worker.licences || [];
-      const wBadges = worker.verifiedBadges || [];
-      const allLicsAndBadges = [...wLics, ...wBadges, ...worker.qualifications];
-      const hasMatch = allLicsAndBadges.some(l => 
-        selectedLicences.some(sl => l.toLowerCase().includes(sl.toLowerCase()) || sl.toLowerCase().includes(l.toLowerCase()))
+      const credentials = [
+        ...(worker.licences || []),
+        ...(worker.verifiedBadges || []),
+        ...(worker.qualifications || [])
+      ];
+
+      const hasEveryLicence = selectedLicences.every(selected =>
+        credentials.some(credential =>
+          normalise(credential).includes(normalise(selected)) ||
+          normalise(selected).includes(normalise(credential))
+        )
       );
-      if (!hasMatch) return false;
+
+      if (!hasEveryLicence) return false;
     }
-    // Position Length Filter
+
     if (selectedPositionLengths.length > 0) {
-      const wPositionLengths = worker.positionLengths || [];
-      const hasMatch = wPositionLengths.some(pl => selectedPositionLengths.includes(pl)) || 
-                       selectedPositionLengths.some(sl => worker.availability.toLowerCase().includes(sl.toLowerCase()));
-      if (!hasMatch) return false;
+      const preferences = worker.positionLengths || [];
+      const hasPreference = selectedPositionLengths.some(selected =>
+        preferences.some(preference =>
+          normalise(preference).includes(normalise(selected)) ||
+          normalise(selected).includes(normalise(preference))
+        )
+      );
+
+      if (!hasPreference) return false;
     }
+
+    if (selectedRequirements.length > 0) {
+      const workerCapabilities = [
+        ...(worker.qualifications || []),
+        ...(worker.licences || []),
+        ...(worker.toolsAndTransport || []),
+        ...(worker.verifiedBadges || [])
+      ];
+
+      const meetsEveryRequirement = selectedRequirements.every(selected =>
+        workerCapabilities.some(capability =>
+          normalise(capability).includes(normalise(selected)) ||
+          normalise(selected).includes(normalise(capability))
+        )
+      );
+
+      if (!meetsEveryRequirement) return false;
+    }
+
     return true;
   });
 
   const filteredJobs = jobs.filter(job => {
-    if (searchQuery && !job.title.toLowerCase().includes(searchQuery.toLowerCase()) && !job.companyName.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (
+      !includesQuery([
+        job.title,
+        job.companyName,
+        job.trade,
+        job.subcategory,
+        job.location,
+        job.description,
+        job.duration,
+        job.employmentType,
+        ...(job.qualifications || []),
+        ...(job.requirements || []),
+        ...(job.benefits || [])
+      ])
+    ) {
       return false;
     }
-    if (selectedTrade && job.trade !== selectedTrade) {
+
+    if (selectedTrade && normalise(job.trade) !== normalise(selectedTrade)) {
       return false;
     }
-    if (selectedSubcategory && job.subcategory !== selectedSubcategory) {
+
+    if (
+      selectedSubcategory &&
+      normalise(job.subcategory) !== normalise(selectedSubcategory)
+    ) {
       return false;
     }
-    if (cscsTier && !job.qualifications.some(q => q.toLowerCase().includes(cscsTier.toLowerCase()))) {
+
+    if (
+      cscsTier &&
+      !(job.qualifications || []).some(qualification =>
+        normalise(qualification).includes(normalise(cscsTier))
+      )
+    ) {
       return false;
     }
+
     if (requireVerified && !job.verified) {
       return false;
     }
-    const rateNum = parseInt(job.payRate.replace(/[^0-9]/g, ''), 10) || 0;
-    if (rateNum > selectedRateRange) {
+
+    const rate = extractRate(job.payRate);
+    if (rate < minimumRate || rate > maximumRate) {
       return false;
     }
-    // Hometown Filter
-    if (selectedHometown && !job.location.toLowerCase().includes(selectedHometown.toLowerCase())) {
+
+    if (
+      selectedHometown &&
+      !normalise(job.location).includes(normalise(selectedHometown))
+    ) {
       return false;
     }
-    // Qualifications Filter
+
     if (selectedQualifications.length > 0) {
-      const hasMatch = job.qualifications.some(q => 
-        selectedQualifications.some(sq => q.toLowerCase().includes(sq.toLowerCase()) || sq.toLowerCase().includes(q.toLowerCase()))
+      const jobQualifications = job.qualifications || [];
+      const hasEveryQualification = selectedQualifications.every(selected =>
+        jobQualifications.some(qualification =>
+          normalise(qualification).includes(normalise(selected)) ||
+          normalise(selected).includes(normalise(qualification))
+        )
       );
-      if (!hasMatch) return false;
+
+      if (!hasEveryQualification) return false;
     }
-    // Position Length / Employment Type Filter
+
+    if (selectedLicences.length > 0) {
+      const requiredCredentials = [
+        ...(job.qualifications || []),
+        ...(job.requirements || [])
+      ];
+
+      const hasEveryLicence = selectedLicences.every(selected =>
+        requiredCredentials.some(credential =>
+          normalise(credential).includes(normalise(selected)) ||
+          normalise(selected).includes(normalise(credential))
+        )
+      );
+
+      if (!hasEveryLicence) return false;
+    }
+
     if (selectedPositionLengths.length > 0) {
-      const hasMatch = selectedPositionLengths.some(sl => 
-        job.employmentType.toLowerCase().includes(sl.toLowerCase()) || job.duration.toLowerCase().includes(sl.toLowerCase())
+      const hasPositionMatch = selectedPositionLengths.some(selected =>
+        normalise(job.employmentType).includes(normalise(selected)) ||
+        normalise(job.duration).includes(normalise(selected))
       );
-      if (!hasMatch) return false;
+
+      if (!hasPositionMatch) return false;
     }
-    // Hiring Requirements Filter
-    if (selectedRequirements.length > 0 && job.requirements) {
-      const hasMatch = job.requirements.some(r => 
-        selectedRequirements.some(sr => r.toLowerCase().includes(sr.toLowerCase()) || sr.toLowerCase().includes(r.toLowerCase()))
-      );
-      if (!hasMatch) return false;
-    }
+
     return true;
   });
+
+  const sortWorkers = (items: WorkerProfile[]) => {
+    const sorted = [...items];
+
+    if (sortOrder === 'rate-high') {
+      return sorted.sort((a, b) => extractRate(b.payRate) - extractRate(a.payRate));
+    }
+
+    if (sortOrder === 'rate-low') {
+      return sorted.sort((a, b) => extractRate(a.payRate) - extractRate(b.payRate));
+    }
+
+    if (sortOrder === 'rating-high') {
+      return sorted.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
+    }
+
+    if (sortOrder === 'name') {
+      return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return sorted;
+  };
+
+  const sortJobs = (items: JobProfile[]) => {
+    const sorted = [...items];
+
+    if (sortOrder === 'rate-high') {
+      return sorted.sort((a, b) => extractRate(b.payRate) - extractRate(a.payRate));
+    }
+
+    if (sortOrder === 'rate-low') {
+      return sorted.sort((a, b) => extractRate(a.payRate) - extractRate(b.payRate));
+    }
+
+    if (sortOrder === 'rating-high') {
+      return sorted.sort(
+        (a, b) =>
+          Number(b.companyStats?.rating || 0) -
+          Number(a.companyStats?.rating || 0)
+      );
+    }
+
+    if (sortOrder === 'name') {
+      return sorted.sort((a, b) => a.title.localeCompare(b.title));
+    }
+
+    return sorted;
+  };
+
+  const sortedWorkers = sortWorkers(filteredWorkers);
+  const sortedJobs = sortJobs(filteredJobs);
 
   const clearFilters = () => {
     setSelectedTrade(null);
     setSelectedSubcategory(null);
     setCscsTier(null);
-    setSelectedRateRange(300);
+    setMinimumRate(0);
+    setMaximumRate(500);
     setRequireVerified(false);
+    setSelectedAvailability('');
+    setSortOrder('relevance');
     setSearchQuery('');
     setSelectedQualifications([]);
     setSelectedLicences([]);
@@ -272,41 +447,66 @@ export default function SearchView({
           </div>
         )}
 
-        {/* Sliding Filters Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-          {/* Day Rate Expectation */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center text-xs font-mono font-bold text-zinc-400 uppercase">
-              <span>MAX DAY RATE expectation</span>
-              <span className="text-[#10B981] font-bold">£{selectedRateRange}/day</span>
-            </div>
-            <input 
-              type="range" 
-              min="150" 
-              max="400" 
+        {/* Pay and Availability Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          <label className="space-y-2">
+            <span className="text-xs font-mono font-bold text-zinc-400 uppercase">
+              Minimum Rate
+            </span>
+            <input
+              type="number"
+              min="0"
               step="10"
-              value={selectedRateRange}
-              onChange={(e) => setSelectedRateRange(parseInt(e.target.value, 10))}
-              className="w-full accent-[#34D399] bg-zinc-100 h-1.5 rounded-lg appearance-none cursor-pointer"
+              value={minimumRate}
+              onChange={event => setMinimumRate(Math.max(0, Number(event.target.value)))}
+              className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:border-[#34D399]"
             />
-          </div>
+          </label>
 
-          {/* Travel Distance Radius */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center text-xs font-mono font-bold text-zinc-400 uppercase">
-              <span>Travel Distance Radius</span>
-              <span className="text-zinc-700 font-bold">{maxDistance} Miles</span>
-            </div>
-            <input 
-              type="range" 
-              min="5" 
-              max="100" 
-              step="5"
-              value={maxDistance}
-              onChange={(e) => setMaxDistance(parseInt(e.target.value, 10))}
-              className="w-full accent-[#34D399] bg-zinc-100 h-1.5 rounded-lg appearance-none cursor-pointer"
+          <label className="space-y-2">
+            <span className="text-xs font-mono font-bold text-zinc-400 uppercase">
+              Maximum Rate
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="10"
+              value={maximumRate}
+              onChange={event => setMaximumRate(Math.max(0, Number(event.target.value)))}
+              className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:border-[#34D399]"
             />
-          </div>
+          </label>
+
+          {userType === 'employer' ? (
+            <label className="space-y-2">
+              <span className="text-xs font-mono font-bold text-zinc-400 uppercase">
+                Availability
+              </span>
+              <select
+                value={selectedAvailability}
+                onChange={event => setSelectedAvailability(event.target.value)}
+                className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:border-[#34D399]"
+              >
+                <option value="">Any availability</option>
+                <option value="Immediate">Immediate</option>
+                <option value="1 Week">Within 1 Week</option>
+                <option value="2 Weeks">Within 2 Weeks</option>
+                <option value="Unavailable">Unavailable</option>
+              </select>
+            </label>
+          ) : (
+            <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+              <p className="text-[10px] font-mono font-black text-[#10B981] uppercase">
+                Pay range
+              </p>
+              <p className="text-sm font-black text-zinc-900 mt-1">
+                £{minimumRate} – £{maximumRate}
+              </p>
+              <p className="text-[9px] text-zinc-500 mt-1">
+                Matches the numeric value shown in each vacancy.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* CSCS Tiers & Verifications Grid */}
@@ -400,12 +600,12 @@ export default function SearchView({
               />
             </div>
 
-            {/* Employer Only: Hiring Requirements */}
+            {/* Employer Only: Worker capability requirements */}
             {userType === 'employer' && (
               <div className="space-y-1">
                 <SearchableDropdown
                   id="search-requirements"
-                  label="Contractor Hiring Requirements"
+                  label="Worker Capabilities & Requirements"
                   options={REQUIREMENTS}
                   selected={selectedRequirements}
                   onChange={setSelectedRequirements}
@@ -418,114 +618,129 @@ export default function SearchView({
         </div>
       </div>
 
-      {/* Map Search Widget */}
-      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
-        <div className="p-4 border-b border-zinc-100 bg-zinc-50 flex justify-between items-center">
+      {/* Active Filter Summary */}
+      <div className="bg-white border border-zinc-200 rounded-xl p-4 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h4 className="text-xs font-mono font-bold text-zinc-700 uppercase">Interactive Map search</h4>
-            <p className="text-[10px] text-zinc-500 font-sans">Tap project pins in your Greater London zone to view local subcontracts</p>
+            <h4 className="text-xs font-mono font-black text-zinc-800 uppercase tracking-wider">
+              Active Search Criteria
+            </h4>
+            <p className="text-[10px] text-zinc-500 mt-0.5">
+              Results update immediately from live HireUp profiles and vacancies.
+            </p>
           </div>
-          <span className="px-2 py-0.5 bg-zinc-200 border border-zinc-300 rounded text-[9px] font-mono font-black text-zinc-700 flex items-center gap-1">
-            <Map className="w-3 h-3 text-zinc-600" /> ACTIVE ZONE: GREATER LONDON
-          </span>
+
+          <label className="flex items-center gap-2">
+            <ArrowUpDown className="w-4 h-4 text-zinc-400" />
+            <select
+              value={sortOrder}
+              onChange={event =>
+                setSortOrder(
+                  event.target.value as
+                    | 'relevance'
+                    | 'rate-high'
+                    | 'rate-low'
+                    | 'rating-high'
+                    | 'name'
+                )
+              }
+              className="p-2 bg-zinc-50 border border-zinc-200 rounded-lg text-[10px] font-mono font-black uppercase focus:outline-none focus:border-[#34D399]"
+            >
+              <option value="relevance">Most Relevant</option>
+              <option value="rate-high">Highest Rate</option>
+              <option value="rate-low">Lowest Rate</option>
+              <option value="rating-high">Highest Rating</option>
+              <option value="name">Alphabetical</option>
+            </select>
+          </label>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
-          {/* Custom SVG Map Drawing */}
-          <div className="md:col-span-2 bg-zinc-900 h-64 relative overflow-hidden flex items-center justify-center">
-            {/* Ambient grid markings */}
-            <div className="absolute inset-0 opacity-15 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #27272a 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
-            
-            {/* SVG London outline block */}
-            <svg viewBox="0 0 400 200" className="w-full h-full max-w-sm opacity-25 text-zinc-700 fill-current">
-              <path d="M 50,50 Q 80,40 110,60 T 170,80 T 230,70 T 300,50 T 350,90 Q 320,130 280,120 T 200,140 T 120,110 T 50,90 Z" />
-              {/* Radial boundaries */}
-              <circle cx="200" cy="100" r="80" stroke="#444" strokeWidth="1" strokeDasharray="3,3" fill="none" />
-              <circle cx="200" cy="100" r="40" stroke="#34D399" strokeWidth="1" strokeDasharray="3,3" fill="none" opacity="0.3" />
-            </svg>
+        <div className="flex flex-wrap gap-2">
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-full text-[10px] font-mono font-bold flex items-center gap-1"
+            >
+              Search: {searchQuery} <X className="w-3 h-3" />
+            </button>
+          )}
 
-            {/* Radius distance circle */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-center">
-              <div className="text-[9px] font-mono text-[#34D399]/40 font-bold">RADIAL SEARCH: {maxDistance} MILES</div>
-            </div>
+          {selectedTrade && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedTrade(null);
+                setSelectedSubcategory(null);
+              }}
+              className="px-2.5 py-1 bg-emerald-50 text-[#10B981] border border-emerald-100 rounded-full text-[10px] font-mono font-bold flex items-center gap-1"
+            >
+              {selectedTrade} <X className="w-3 h-3" />
+            </button>
+          )}
 
-            {/* Interactive Map Pins */}
-            {mapPins.map((pin) => (
-              <button
-                key={pin.id}
-                onClick={() => setActiveMapPin(activeMapPin === pin.id ? null : pin.id)}
-                style={{ left: pin.x, top: pin.y }}
-                className={`absolute -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all ${activeMapPin === pin.id ? 'bg-[#34D399] text-white scale-110 ring-4 ring-[#34D399]/20 z-20' : 'bg-zinc-800 border border-zinc-700 text-[#34D399] hover:bg-zinc-700 z-10'}`}
-              >
-                <MapPin className="w-4 h-4 fill-current" />
-                {/* Badge count */}
-                <span className="absolute -top-1 -right-1 bg-zinc-950 text-white border border-zinc-700 rounded-full text-[8px] font-mono h-4 w-4 flex items-center justify-center font-bold">
-                  {pin.count}
-                </span>
-              </button>
-            ))}
-          </div>
+          {selectedSubcategory && (
+            <button
+              type="button"
+              onClick={() => setSelectedSubcategory(null)}
+              className="px-2.5 py-1 bg-emerald-50 text-[#10B981] border border-emerald-100 rounded-full text-[10px] font-mono font-bold flex items-center gap-1"
+            >
+              {selectedSubcategory} <X className="w-3 h-3" />
+            </button>
+          )}
 
-          {/* Map Pin Detail List */}
-          <div className="p-4 bg-zinc-50 border-t md:border-t-0 md:border-l border-zinc-200 flex flex-col justify-between h-64 overflow-y-auto">
-            {activeMapPin ? (
-              (() => {
-                const pin = mapPins.find(p => p.id === activeMapPin);
-                if (!pin) return <p className="text-xs text-zinc-500 font-mono">No site selected</p>;
-                return (
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-mono font-bold bg-[#34D399]/10 border border-[#34D399]/20 text-[#10B981] px-1.5 py-0.5 rounded">
-                        CONSTRUCTION SITE
-                      </span>
-                      <button onClick={() => setActiveMapPin(null)} className="text-zinc-400 hover:text-zinc-600">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-bold text-zinc-900 font-sans">{pin.label}</h5>
-                      <p className="text-[10px] text-zinc-500 font-mono">Radial distance: 8.5 miles from base</p>
-                    </div>
-                    <div className="border-t border-zinc-200 pt-2 space-y-2">
-                      <p className="text-xs text-zinc-600 font-sans">
-                        Sourced <b>{pin.count} openings</b> matching <b>{pin.trade}</b> scopes in this grid sector.
-                      </p>
-                      <button
-                        onClick={() => {
-                          setSelectedTrade(pin.trade);
-                        }}
-                        className="w-full py-1.5 bg-zinc-900 hover:bg-[#34D399] text-white text-xs font-mono font-bold rounded-lg transition-all cursor-pointer"
-                      >
-                        FILTER FOR THIS SITE
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()
-            ) : (
-              <div className="space-y-3 text-center my-auto">
-                <Map className="w-8 h-8 text-zinc-400 mx-auto stroke-[1.5]" />
-                <p className="text-xs text-zinc-600 font-sans">
-                  Tap active pins on the grid to filter bids, view contractors, or see site boundaries.
-                </p>
-              </div>
+          {selectedHometown && (
+            <button
+              type="button"
+              onClick={() => setSelectedHometown('')}
+              className="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-full text-[10px] font-mono font-bold flex items-center gap-1"
+            >
+              {selectedHometown} <X className="w-3 h-3" />
+            </button>
+          )}
+
+          {requireVerified && (
+            <button
+              type="button"
+              onClick={() => setRequireVerified(false)}
+              className="px-2.5 py-1 bg-emerald-50 text-[#10B981] border border-emerald-100 rounded-full text-[10px] font-mono font-bold flex items-center gap-1"
+            >
+              Verified only <X className="w-3 h-3" />
+            </button>
+          )}
+
+          {selectedAvailability && (
+            <button
+              type="button"
+              onClick={() => setSelectedAvailability('')}
+              className="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-full text-[10px] font-mono font-bold flex items-center gap-1"
+            >
+              {selectedAvailability} <X className="w-3 h-3" />
+            </button>
+          )}
+
+          {!searchQuery &&
+            !selectedTrade &&
+            !selectedSubcategory &&
+            !selectedHometown &&
+            !requireVerified &&
+            !selectedAvailability &&
+            selectedQualifications.length === 0 &&
+            selectedLicences.length === 0 &&
+            selectedPositionLengths.length === 0 &&
+            selectedRequirements.length === 0 &&
+            !cscsTier && (
+              <span className="text-[10px] text-zinc-400 italic">
+                No additional filters applied.
+              </span>
             )}
-
-            {/* Base Coordinate Pin */}
-            <div className="border-t border-zinc-200 pt-2">
-              <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-                <MapPin className="w-3.5 h-3.5 text-[#34D399]" />
-                <span className="font-mono">Wimbledon Station (SW19)</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
       {/* Filtered Search Results Count */}
       <div className="flex justify-between items-center">
         <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-zinc-500">
-          Sourced Results ({userType === 'employer' ? filteredWorkers.length : filteredJobs.length})
+          Sourced Results ({userType === 'employer' ? sortedWorkers.length : sortedJobs.length})
         </h3>
         {selectedTrade && (
           <span className="text-xs font-mono font-bold bg-[#34D399]/10 border border-[#34D399]/20 text-[#10B981] px-2 py-0.5 rounded">
@@ -536,9 +751,9 @@ export default function SearchView({
 
       {/* Results Listings */}
       {userType === 'employer' ? (
-        filteredWorkers.length > 0 ? (
+        sortedWorkers.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredWorkers.map((worker) => (
+            {sortedWorkers.map((worker) => (
               <div 
                 key={worker.id}
                 className="bg-white border border-zinc-200 rounded-xl p-4 shadow-xs hover:border-[#34D399]/30 transition-all flex flex-col justify-between"
@@ -604,9 +819,9 @@ export default function SearchView({
           </div>
         )
       ) : (
-        filteredJobs.length > 0 ? (
+        sortedJobs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredJobs.map((job) => (
+            {sortedJobs.map((job) => (
               <div 
                 key={job.id}
                 className="bg-white border border-zinc-200 rounded-xl p-4 shadow-xs hover:border-[#34D399]/30 transition-all flex flex-col justify-between"
