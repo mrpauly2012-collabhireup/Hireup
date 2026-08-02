@@ -1,0 +1,477 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-brand: #34d399;
+  --color-brand-hover: #10b981;
+}
+
+/* Global theme */
+body {
+  margin: 0;
+  background-color: #f8fafc !important;
+  color: #18181b !important;
+  font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#hireup_app_root {
+  background-color: #f8fafc !important;
+  color: #18181b !important;
+}
+
+/* Main layout */
+aside {
+  background-color: #ffffff !important;
+  border-right: 1px solid #e5e7eb !important;
+}
+
+aside button {
+  font-family: "Inter", sans-serif !important;
+}
+
+header {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+
+header span,
+header p,
+header h1,
+header h2,
+header h3 {
+  color: #18181b !important;
+}
+
+/* White cards and panels */
+.bg-white,
+[class~="bg-white"] {
+  background-color: #ffffff !important;
+  color: #18181b !important;
+  border-radius: 0.75rem !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.03),
+    0 2px 4px -1px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* Modal backgrounds */
+.fixed.inset-0.bg-black\/80,
+.fixed.inset-0.bg-black\/75 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.fixed.inset-0.bg-black\/80 > div,
+.fixed.inset-0.bg-black\/75 > form,
+.fixed.inset-0.bg-black\/80 > form {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  color: #18181b !important;
+  border-radius: 1rem !important;
+  box-shadow:
+    0 20px 25px -5px rgba(52, 211, 153, 0.08),
+    0 10px 10px -5px rgba(52, 211, 153, 0.04) !important;
+}
+
+/* Light panel backgrounds */
+.bg-zinc-50,
+.bg-slate-50,
+.bg-gray-50,
+.bg-zinc-100\/50,
+.bg-zinc-50\/55,
+.bg-zinc-50\/50 {
+  background-color: #f8fafc !important;
+}
+
+.bg-zinc-100,
+.bg-slate-100,
+.bg-gray-100 {
+  background-color: #f1f5f9 !important;
+}
+
+.bg-zinc-900,
+.bg-zinc-950,
+.bg-slate-900,
+.bg-slate-950 {
+  background-color: #ffffff !important;
+  color: #18181b !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+/* Borders */
+.border-zinc-200,
+.border-zinc-100,
+.border-zinc-300,
+.border-slate-200,
+.border-gray-200,
+.border-zinc-200\/60,
+.border-zinc-800,
+.border-zinc-700 {
+  border-color: #e5e7eb !important;
+}
+
+/* Typography */
+.text-zinc-900,
+.text-zinc-800,
+.text-zinc-750,
+.text-slate-900,
+.text-slate-800 {
+  color: #09090b !important;
+}
+
+.text-zinc-700,
+.text-slate-700,
+.text-zinc-600,
+.text-zinc-500,
+.text-slate-600,
+.text-slate-500 {
+  color: #27272a !important;
+}
+
+.text-zinc-400,
+.text-slate-400 {
+  color: #52525b !important;
+}
+
+.text-white {
+  color: #ffffff !important;
+}
+
+/* Form elements */
+input,
+select,
+textarea {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  color: #18181b !important;
+  border-radius: 0.5rem !important;
+  padding: 0.625rem 0.875rem !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #34d399 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2) !important;
+}
+
+/* Mint brand replacements */
+.bg-\[\#ff5a00\],
+.bg-\[\#FF6B00\],
+.bg-orange-500 {
+  background-color: #34d399 !important;
+  color: #ffffff !important;
+}
+
+.bg-\[\#ff5a00\]:hover,
+.bg-\[\#FF6B00\]:hover,
+.bg-orange-600:hover,
+.hover\:bg-\[\#e04f00\]:hover,
+.hover\:bg-\[\#E05E00\]:hover,
+.hover\:bg-brand-hover:hover {
+  background-color: #10b981 !important;
+}
+
+.text-\[\#ff5a00\],
+.text-\[\#FF6B00\],
+.text-orange-500,
+.text-orange-600,
+.text-brand {
+  color: #10b981 !important;
+}
+
+.border-\[\#ff5a00\],
+.border-\[\#FF6B00\],
+.border-orange-500 {
+  border-color: #34d399 !important;
+}
+
+.accent-\[\#ff5a00\],
+.accent-\[\#FF6B00\] {
+  accent-color: #34d399 !important;
+}
+
+.focus\:ring-\[\#ff5a00\]:focus,
+.focus\:ring-\[\#FF6B00\]:focus {
+  --tw-ring-color: #34d399 !important;
+}
+
+/* =========================================================
+   GLOBAL BUTTON FIXES
+   ========================================================= */
+
+button {
+  font-family: "Inter", sans-serif !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* All text and icons inside buttons inherit the button colour */
+button span,
+button strong,
+button p,
+button div,
+button svg {
+  color: inherit !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* White and light buttons always use black text */
+button.bg-white,
+button.bg-gray-50,
+button.bg-slate-50,
+button.bg-zinc-50,
+button.bg-gray-100,
+button.bg-slate-100,
+button.bg-zinc-100,
+button[class~="bg-white"] {
+  color: #111111 !important;
+  -webkit-text-fill-color: #111111 !important;
+}
+
+/* Icons on white and light buttons */
+button.bg-white svg,
+button.bg-gray-50 svg,
+button.bg-slate-50 svg,
+button.bg-zinc-50 svg,
+button.bg-gray-100 svg,
+button.bg-slate-100 svg,
+button.bg-zinc-100 svg,
+button[class~="bg-white"] svg {
+  color: #111111 !important;
+  stroke: #111111 !important;
+}
+
+/* Mint and green buttons always use white text */
+button.bg-\[\#ff5a00\],
+button.bg-\[\#FF6B00\],
+button.bg-orange-500,
+button.bg-emerald-400,
+button.bg-emerald-500,
+button.bg-green-400,
+button.bg-green-500,
+button.bg-brand {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Icons on mint and green buttons */
+button.bg-\[\#ff5a00\] svg,
+button.bg-\[\#FF6B00\] svg,
+button.bg-orange-500 svg,
+button.bg-emerald-400 svg,
+button.bg-emerald-500 svg,
+button.bg-green-400 svg,
+button.bg-green-500 svg,
+button.bg-brand svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Never hide text while clicking or focusing */
+button:hover,
+button:active,
+button:focus,
+button:focus-visible {
+  opacity: 1 !important;
+  visibility: visible !important;
+  text-indent: 0 !important;
+  font-size: inherit;
+}
+
+button:hover span,
+button:active span,
+button:focus span,
+button:focus-visible span,
+button:hover div,
+button:active div,
+button:focus div,
+button:focus-visible div {
+  opacity: 1 !important;
+  visibility: visible !important;
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+/* Preserve readable text for selected white view buttons */
+button[aria-pressed="true"].bg-white,
+button[aria-selected="true"].bg-white,
+button[data-state="active"].bg-white {
+  color: #111111 !important;
+  -webkit-text-fill-color: #111111 !important;
+}
+
+/* Disabled buttons remain readable */
+button:disabled {
+  opacity: 0.65 !important;
+  cursor: not-allowed;
+}
+
+button:disabled span,
+button:disabled div {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Secondary buttons */
+.border-zinc-200.text-zinc-700.bg-white:hover {
+  border-color: #34d399 !important;
+  color: #111111 !important;
+  background-color: #f0fdf4 !important;
+}
+
+/* Shadows */
+.shadow-orange-500\/10,
+.shadow-orange-500\/15,
+.shadow-orange-500\/25,
+.shadow-\[\#ff5a00\]\/20,
+.shadow-\[\#FF6B00\]\/10,
+.shadow-\[\#FF6B00\]\/20 {
+  box-shadow:
+    0 10px 15px -3px rgba(52, 211, 153, 0.1),
+    0 4px 6px -4px rgba(52, 211, 153, 0.05) !important;
+}
+
+/* Card hover states */
+.hover\:border-\[\#ff5a00\]\/20:hover,
+.hover\:border-\[\#ff5a00\]\/30:hover,
+.hover\:border-\[\#ff5a00\]\/40:hover,
+.hover\:border-\[\#FF6B00\]\/20:hover,
+.hover\:border-\[\#FF6B00\]\/30:hover,
+.hover\:border-\[\#FF6B00\]\/40:hover {
+  border-color: rgba(52, 211, 153, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(52, 211, 153, 0.06) !important;
+}
+
+/* Mint badges */
+.bg-orange-50 {
+  background-color: #e6fbf3 !important;
+}
+
+.border-orange-100 {
+  border-color: #d1fae5 !important;
+}
+
+/* Sidebar and mobile navigation */
+aside nav button.bg-\[\#ff5a00\],
+aside nav button.bg-\[\#FF6B00\] {
+  background-color: #34d399 !important;
+  color: #ffffff !important;
+}
+
+nav.bg-zinc-950 {
+  background-color: #ffffff !important;
+  border-top: 1px solid #e5e7eb !important;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+tr {
+  transition: background-color 150ms ease;
+}
+
+tr:nth-child(even) {
+  background-color: #f8fafc !important;
+}
+
+tr:nth-child(odd) {
+  background-color: #ffffff !important;
+}
+
+tr:hover {
+  background-color: #e6fbf3 !important;
+}
+
+th {
+  background-color: #f1f5f9 !important;
+  color: #4b5563 !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid #e5e7eb !important;
+}
+
+/* Chart styling */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #e5e7eb !important;
+}
+
+.recharts-text {
+  fill: #4b5563 !important;
+  font-family: "Inter", sans-serif !important;
+}
+
+.recharts-legend-item-text {
+  color: #374151 !important;
+}
+
+/* Transitions */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #34d399;
+}
+/* Fix buttons changed from dark backgrounds to white */
+button.bg-zinc-950,
+button.bg-zinc-900,
+button.bg-slate-950,
+button.bg-slate-900 {
+  background-color: #ffffff !important;
+  color: #111111 !important;
+  -webkit-text-fill-color: #111111 !important;
+}
+
+button.bg-zinc-950 *,
+button.bg-zinc-900 *,
+button.bg-slate-950 *,
+button.bg-slate-900 * {
+  color: #111111 !important;
+  -webkit-text-fill-color: #111111 !important;
+}
+
+button.bg-zinc-950 svg,
+button.bg-zinc-900 svg,
+button.bg-slate-950 svg,
+button.bg-slate-900 svg {
+  color: #111111 !important;
+  stroke: #111111 !important;
+}
+
+/* Keep labels visible when selected, clicked or focused */
+button:active *,
+button:focus *,
+button:focus-visible * {
+  opacity: 1 !important;
+  visibility: visible !important;
+}

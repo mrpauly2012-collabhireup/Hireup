@@ -1,0 +1,6 @@
+{
+  "name": "HireUp",
+  "description": "A premium swipe-based recruitment platform designed exclusively for the UK trades and construction industry.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
