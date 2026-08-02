@@ -527,7 +527,7 @@ export default function CompaniesView({
 
           {/* SPLIT VIEW: EXACTLY TWO GRID CHILDREN */}
           {workerDisplayMode === 'split' && (
-            <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,3fr)_minmax(420px,2fr)] gap-4 items-start">
+            <div className="grid grid-cols-1 2xl:grid-cols-[520px_minmax(0,1fr)] gap-4 items-start">
               {/* LEFT: MAP */}
               <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden 2xl:sticky 2xl:top-4">
                 <div className="px-4 py-3 border-b border-zinc-200">
@@ -559,7 +559,7 @@ export default function CompaniesView({
                   </div>
                 </div>
 
-                <div className="hireup-worker-map h-[680px] w-full relative z-0">
+                <div className="hireup-worker-map h-[520px] w-full relative z-0">
                   <MapContainer
                     center={[52.5, -1.5]}
                     zoom={6}
@@ -678,7 +678,7 @@ export default function CompaniesView({
                   </span>
                 </div>
 
-                <div className="h-[620px] overflow-y-auto space-y-3 pr-1">
+                <div className="h-[460px] overflow-y-auto space-y-2 pr-1">
                   {filteredWorkers.length === 0 ? (
                     <div className="bg-white border border-zinc-200 border-dashed rounded-xl p-8 text-center">
                       <Users className="w-7 h-7 text-zinc-300 mx-auto" />
@@ -692,38 +692,38 @@ export default function CompaniesView({
                       return (
                         <article
                           key={`split-card-${worker.id}`}
-                          className="bg-white border border-zinc-200 rounded-xl p-3 hover:border-[#34D399] transition-all"
+                          className="bg-white border border-zinc-200 rounded-xl p-2.5 hover:border-[#34D399] transition-all"
                         >
                           <div className="flex items-start gap-3">
                             <img
                               src={worker.profilePhotoUrl || worker.avatar}
                               alt={worker.name}
-                              className="w-14 h-14 rounded-xl object-cover border border-zinc-200 flex-shrink-0"
+                              className="w-12 h-12 rounded-xl object-cover border border-zinc-200 flex-shrink-0"
                               referrerPolicy="no-referrer"
                             />
 
                             <div className="min-w-0 flex-1">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
-                                  <h3 className="text-sm font-black truncate">
+                                  <h3 className="text-[13px] font-black truncate">
                                     {worker.name}
                                   </h3>
-                                  <p className="text-[11px] font-bold text-[#10B981] truncate">
+                                  <p className="text-[10px] font-bold text-[#10B981] truncate">
                                     {worker.trade}
                                   </p>
                                 </div>
 
-                                <div className="bg-zinc-950 text-white rounded-lg px-2 py-1.5 text-center flex-shrink-0">
+                                <div className="bg-zinc-950 text-white rounded-lg px-2 py-1 text-center flex-shrink-0">
                                   <p className="text-[7px] font-mono text-[#34D399] uppercase">
                                     Match
                                   </p>
-                                  <p className="text-base font-black leading-none mt-0.5">
+                                  <p className="text-sm font-black leading-none mt-0.5">
                                     {match.score}%
                                   </p>
                                 </div>
                               </div>
 
-                              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-zinc-500 mt-2">
+                              <div className="flex flex-wrap gap-x-2 gap-y-1 text-[9px] text-zinc-500 mt-1.5">
                                 <span className="flex items-center gap-1">
                                   <MapPin className="w-3 h-3" />
                                   {worker.location}
@@ -737,7 +737,7 @@ export default function CompaniesView({
                                 </span>
                               </div>
 
-                              <div className="flex flex-wrap gap-1 mt-2">
+                              <div className="flex flex-wrap gap-1 mt-1.5">
                                 {(worker.qualifications || []).slice(0, 2).map(item => (
                                   <span
                                     key={item}
@@ -750,7 +750,7 @@ export default function CompaniesView({
                             </div>
                           </div>
 
-                          <div className="mt-3 pt-3 border-t border-zinc-100 flex items-center justify-between gap-2">
+                          <div className="mt-2.5 pt-2.5 border-t border-zinc-100 flex items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5">
                               <span
                                 className={`w-2 h-2 rounded-full ${
