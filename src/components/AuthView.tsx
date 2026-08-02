@@ -7,13 +7,13 @@ import React, { useState } from 'react';
 import { 
   Wrench, HardHat, ShieldCheck, Mail, Phone, Lock, ArrowRight, 
   Sparkles, Check, ChevronRight, MapPin, Award, Truck, Clock, 
-  Users, Building, FileText, CheckCircle2, AlertCircle, PlayCircle, Eye, EyeOff, Clipboard, CheckSquare,
+  Users, Building, FileText, CheckCircle2, AlertCircle, PlayCircle, Eye, EyeOff, CheckSquare,
   Sliders, LayoutGrid, Layers, Image as ImageIcon
 } from 'lucide-react';
 import { WorkerProfile, CompanyProfile, JobProfile, UserType } from '../types';
 import SearchableDropdown from './SearchableDropdown';
 import { HOMETOWNS, LICENCES, POSITION_LENGTHS, GRADES, REQUIREMENTS, TRADES_CATEGORIES, TRADE_SUBCATEGORIES_MAP } from '../data/datasets';
-import { signInUser, registerWorker, registerContractor, SQL_MIGRATION_SCRIPT, uploadFileToStorage, supabase } from '../lib/supabase';
+import { signInUser, registerWorker, registerContractor, uploadFileToStorage, supabase } from '../lib/supabase';
 
 
 interface AuthViewProps {
@@ -40,8 +40,6 @@ export default function AuthView({
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [registeredType, setRegisteredType] = useState<UserType | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [showSql, setShowSql] = useState(false);
-  const [copiedSql, setCopiedSql] = useState(false);
 
   // Concept switcher states
   const [activeConcept, setActiveConcept] = useState<'bento' | 'split' | 'panoramic'>('split');
@@ -55,74 +53,6 @@ export default function AuthView({
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
-
-  const copySqlToClipboard = () => {
-    navigator.clipboard.writeText(SQL_MIGRATION_SCRIPT);
-    setCopiedSql(true);
-    setTimeout(() => setCopiedSql(false), 2000);
-  };
-
-  const renderDatabaseHelper = () => {
-    return (
-      <div className="bg-zinc-50 border border-zinc-200/85 rounded-2xl p-5 space-y-4 text-left">
-        <div className="flex items-center justify-between border-b border-zinc-200/40 pb-2.5">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#10B981]" />
-            <h4 className="text-xs font-mono font-black text-zinc-700 uppercase tracking-wider">Supabase Live Database</h4>
-          </div>
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-mono font-bold uppercase rounded-md border border-emerald-100">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-            CONNECTED
-          </span>
-        </div>
-
-        <p className="text-[11px] text-zinc-500 font-sans leading-relaxed font-medium">
-          HireUp is connected to your real live database at <code className="bg-zinc-150 px-1 py-0.5 rounded text-zinc-800 text-[10px]">ewtikkoghisdpumiigwg.supabase.co</code>. All logins, profile details, swipes, matches, and messaging now persist in real-time.
-        </p>
-
-        <div className="space-y-2">
-          <button
-            type="button"
-            onClick={() => setShowSql(!showSql)}
-            className="w-full py-2.5 px-3 bg-white border border-zinc-200 hover:border-[#34D399] hover:bg-zinc-50 rounded-xl flex items-center justify-between text-xs font-semibold text-zinc-700 transition-all cursor-pointer"
-          >
-            <span>🛠️ SQL Database Migration Helper</span>
-            <span className="text-[10px] text-zinc-400 font-mono">{showSql ? 'HIDE' : 'SHOW'}</span>
-          </button>
-
-          {showSql && (
-            <div className="space-y-2.5 pt-1.5 animate-fade-in">
-              <p className="text-[10px] text-zinc-400 font-sans leading-normal">
-                If you haven't run the table schemas yet, open your <strong>Supabase Dashboard → SQL Editor</strong>, paste this script, and press <strong>Run</strong>:
-              </p>
-              <div className="relative">
-                <textarea
-                  readOnly
-                  value={SQL_MIGRATION_SCRIPT}
-                  className="w-full h-32 p-3 bg-zinc-900 text-zinc-300 font-mono text-[9px] rounded-xl focus:outline-none select-all font-mono"
-                />
-                <button
-                  type="button"
-                  onClick={copySqlToClipboard}
-                  className="absolute top-2 right-2 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-[9px] font-mono font-bold rounded flex items-center gap-1 cursor-pointer transition-all border border-zinc-700"
-                >
-                  {copiedSql ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" /> COPIED!
-                    </>
-                  ) : (
-                    <>
-                      <Clipboard className="w-3.5 h-3.5" /> COPY SQL
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   // Common input states
   const [email, setEmail] = useState('');
@@ -253,7 +183,7 @@ export default function AuthView({
     } catch (err: any) {
       console.error("Sign in error:", err);
       if (err.message?.includes('relation') || err.message?.includes('does not exist')) {
-        setErrorMsg('Database connected, but tables do not exist in your Supabase project. Please scroll down and use the "SQL Migration Helper" to provision them.');
+        setErrorMsg('Database tables are missing from your Supabase project. Please contact support.');
       } else {
         setErrorMsg(err.message || 'Failed to sign in. Please check your credentials.');
       }
@@ -843,19 +773,6 @@ export default function AuthView({
                 <span className="block text-[9px] font-mono text-zinc-400 font-black uppercase tracking-wider">UK WIDE COVERAGE</span>
                 <span className="text-xs font-bold text-zinc-900 font-mono uppercase">Direct Match</span>
               </div>
-            </div>
-
-            {/* COMPACT INTEGRATED SQL DATABASE HELPER PANEL AT BOTTOM */}
-            <div className="max-w-4xl mx-auto w-full">
-              <details className="group bg-zinc-50 border border-zinc-200 rounded-2xl overflow-hidden">
-                <summary className="flex justify-between items-center px-5 py-3 text-xs font-mono font-black text-zinc-500 uppercase cursor-pointer list-none select-none hover:bg-zinc-100/55">
-                  <span>🔧 Developer Terminal & Database Schema Helper</span>
-                  <span className="text-[10px] text-zinc-400 group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div className="px-5 pb-5 pt-3 border-t border-zinc-200/60 bg-white">
-                  {renderDatabaseHelper()}
-                </div>
-              </details>
             </div>
 
             {/* 1. SECURE SIGN IN MODAL */}
