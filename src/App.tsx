@@ -9,7 +9,7 @@ import {
   Bell, Users, TrendingUp, Settings, User, HardHat, Wrench, 
   ShieldCheck, MapPin, Award, Clock, ArrowRight, X, ChevronRight, LogOut,
   Video, UserCheck, FileText, CheckCircle2, ExternalLink, Image as ImageIcon, ClipboardCheck,
-  Mail, CalendarCheck, BadgeCheck
+  Mail, CalendarCheck, BadgeCheck, Menu, Crown, CircleHelp, Home
 } from 'lucide-react';
 import { 
   WorkerProfile, JobProfile, CompanyProfile, Match, Message, Interview, UserType 
@@ -111,6 +111,7 @@ export default function App() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   // Database Loading & Sync States
   const [dbLoading, setDbLoading] = useState(false);
@@ -1033,7 +1034,7 @@ export default function App() {
     { id: 'matches', label: 'Matches', icon: <Heart className="w-4 h-4" /> },
     { id: 'messages', label: 'Messages', icon: <MessageSquare className="w-4 h-4" /> },
     { id: 'interviews', label: 'Interviews', icon: <Calendar className="w-4 h-4" /> },
-    { id: 'companies', label: userType === 'employer' ? 'Verified Workers' : 'Verified Businesses', icon: <Users className="w-4 h-4" /> },
+    { id: 'companies', label: userType === 'employer' ? 'Verified Workers' : 'Featured Jobs', icon: userType === 'employer' ? <Users className="w-4 h-4" /> : <Star className="w-4 h-4" /> },
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="w-4 h-4" /> },
     { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
     { id: 'profile', label: 'My Profile', icon: <User className="w-4 h-4" /> },
@@ -1041,16 +1042,132 @@ export default function App() {
 
   // Mobile Bottom Tab Links
   const mobileTabs = [
-    { id: 'dashboard', label: 'Home', icon: <Activity className="w-5 h-5" /> },
-    { id: 'messages', label: 'Messages', icon: <MessageSquare className="w-5 h-5" /> },
-    { 
-      id: 'swipe', 
-      label: userType === 'employer' ? 'Find Lads' : 'Job Search', 
-      icon: userType === 'employer' ? <Wrench className="w-5 h-5" /> : <Briefcase className="w-5 h-5" /> 
+    {
+      id: 'dashboard',
+      label: 'Home',
+      icon: <Home className="w-5 h-5" />,
     },
-    { id: 'matches', label: 'Matches', icon: <Heart className="w-5 h-5" /> },
-    { id: 'profile', label: 'Profile', icon: <User className="w-5 h-5" /> },
+    {
+      id: 'swipe',
+      label: userType === 'employer' ? 'Find Workers' : 'Find Jobs',
+      icon:
+        userType === 'employer' ? (
+          <Wrench className="w-5 h-5" />
+        ) : (
+          <Briefcase className="w-5 h-5" />
+        ),
+    },
+    {
+      id: 'messages',
+      label: 'Messages',
+      icon: <MessageSquare className="w-5 h-5" />,
+    },
+    {
+      id: 'matches',
+      label: 'Matches',
+      icon: <Heart className="w-5 h-5" />,
+    },
   ];
+
+  const mobileDrawerLinks =
+    userType === 'worker'
+      ? [
+          {
+            id: 'dashboard',
+            label: 'Home',
+            icon: <Home className="w-5 h-5" />,
+          },
+          {
+            id: 'swipe',
+            label: 'Find Jobs',
+            icon: <Briefcase className="w-5 h-5" />,
+          },
+          {
+            id: 'matches',
+            label: 'Matches',
+            icon: <Heart className="w-5 h-5" />,
+          },
+          {
+            id: 'messages',
+            label: 'Messages',
+            icon: <MessageSquare className="w-5 h-5" />,
+          },
+          {
+            id: 'interviews',
+            label: 'Interviews',
+            icon: <Calendar className="w-5 h-5" />,
+          },
+          {
+            id: 'companies',
+            label: 'Featured Jobs',
+            icon: <Star className="w-5 h-5" />,
+            badge: 'NEW',
+          },
+          {
+            id: 'analytics',
+            label: 'Analytics',
+            icon: <TrendingUp className="w-5 h-5" />,
+          },
+          {
+            id: 'profile',
+            label: 'My Profile',
+            icon: <User className="w-5 h-5" />,
+            dividerBefore: true,
+          },
+          {
+            id: 'settings',
+            label: 'Settings',
+            icon: <Settings className="w-5 h-5" />,
+          },
+        ]
+      : [
+          {
+            id: 'dashboard',
+            label: 'Home',
+            icon: <Home className="w-5 h-5" />,
+          },
+          {
+            id: 'swipe',
+            label: 'Find Workers',
+            icon: <Wrench className="w-5 h-5" />,
+          },
+          {
+            id: 'matches',
+            label: 'Matches',
+            icon: <Heart className="w-5 h-5" />,
+          },
+          {
+            id: 'messages',
+            label: 'Messages',
+            icon: <MessageSquare className="w-5 h-5" />,
+          },
+          {
+            id: 'interviews',
+            label: 'Interviews',
+            icon: <Calendar className="w-5 h-5" />,
+          },
+          {
+            id: 'companies',
+            label: 'Verified Workers',
+            icon: <Users className="w-5 h-5" />,
+          },
+          {
+            id: 'analytics',
+            label: 'Analytics',
+            icon: <TrendingUp className="w-5 h-5" />,
+          },
+          {
+            id: 'profile',
+            label: 'Company Profile',
+            icon: <User className="w-5 h-5" />,
+            dividerBefore: true,
+          },
+          {
+            id: 'settings',
+            label: 'Settings',
+            icon: <Settings className="w-5 h-5" />,
+          },
+        ];
 
   // Action: Add custom worker
   const handleAddWorker = (w: WorkerProfile) => {
@@ -1252,17 +1369,216 @@ export default function App() {
         </div>
       </aside>
 
+      {/* Mobile Slide-Out Navigation */}
+      {showMobileMenu && (
+        <div className="fixed inset-0 z-[100] md:hidden">
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            onClick={() => setShowMobileMenu(false)}
+            className="absolute inset-0 bg-black/45"
+          />
+
+          <aside className="absolute left-0 top-0 h-full w-[88%] max-w-[340px] bg-white shadow-2xl flex flex-col animate-fade-in">
+            <div className="p-5 border-b border-zinc-200 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-xl bg-[#34D399] flex items-center justify-center text-white font-mono font-black text-base shadow-sm">
+                  HU
+                </div>
+
+                <div className="min-w-0">
+                  <h2 className="text-lg font-black uppercase tracking-wider text-zinc-950">
+                    Hire<span className="text-[#10B981]">Up</span>
+                  </h2>
+                  <p className="text-[10px] font-mono font-black uppercase tracking-wider text-[#10B981]">
+                    {userType === 'worker' ? 'Worker account' : 'Contractor account'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowMobileMenu(false)}
+                className="w-10 h-10 rounded-xl bg-zinc-100 text-zinc-900 flex items-center justify-center"
+                aria-label="Close navigation menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              <nav className="space-y-1">
+                {mobileDrawerLinks.map(link => {
+                  const isActive =
+                    currentView === link.id ||
+                    (link.id === 'swipe' && currentView === 'search');
+
+                  return (
+                    <React.Fragment key={link.id}>
+                      {link.dividerBefore && (
+                        <div className="border-t border-zinc-200 my-4" />
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCurrentView(link.id);
+                          setShowMobileMenu(false);
+                          setShowNotifications(false);
+                          setSelectedMatchId(null);
+                        }}
+                        className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl transition-all ${
+                          isActive
+                            ? 'bg-[#34D399] text-zinc-950 shadow-sm'
+                            : 'text-zinc-950 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <span className="flex items-center gap-4 min-w-0">
+                          <span
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                              isActive
+                                ? 'bg-white/40'
+                                : 'bg-zinc-100 text-zinc-700'
+                            }`}
+                          >
+                            {link.icon}
+                          </span>
+
+                          <span className="text-sm font-bold text-left">
+                            {link.label}
+                          </span>
+                        </span>
+
+                        <span className="flex items-center gap-2">
+                          {link.id === 'messages' &&
+                            unreadMessageCount > 0 && (
+                              <span className="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[9px] font-mono font-black flex items-center justify-center">
+                                {unreadMessageCount > 9
+                                  ? '9+'
+                                  : unreadMessageCount}
+                              </span>
+                            )}
+
+                          {'badge' in link && link.badge && (
+                            <span className="px-2 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[8px] font-mono font-black uppercase">
+                              {link.badge}
+                            </span>
+                          )}
+
+                          <ChevronRight className="w-4 h-4 opacity-50" />
+                        </span>
+                      </button>
+                    </React.Fragment>
+                  );
+                })}
+
+                <div className="border-t border-zinc-200 my-4" />
+
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl text-zinc-950 hover:bg-zinc-100"
+                >
+                  <span className="flex items-center gap-4">
+                    <span className="w-8 h-8 rounded-lg bg-zinc-100 text-zinc-700 flex items-center justify-center">
+                      <CircleHelp className="w-5 h-5" />
+                    </span>
+                    <span className="text-sm font-bold">Help & Support</span>
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-zinc-400" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    handleSignOut();
+                  }}
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl text-red-600 hover:bg-red-50"
+                >
+                  <span className="flex items-center gap-4">
+                    <span className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
+                      <LogOut className="w-5 h-5" />
+                    </span>
+                    <span className="text-sm font-bold">Log Out</span>
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-red-300" />
+                </button>
+              </nav>
+            </div>
+
+            <div className="p-4 border-t border-zinc-200 bg-white">
+              <div className="rounded-2xl bg-gradient-to-r from-emerald-50 to-white border border-emerald-200 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-[#34D399] text-white flex items-center justify-center flex-shrink-0">
+                    <Crown className="w-5 h-5" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-black text-zinc-950">
+                      HireUp Pro
+                    </h4>
+                    <p className="text-[10px] text-zinc-700 mt-0.5">
+                      Premium tools and profile boosts are coming soon.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 mt-3 px-1">
+                <div className="w-9 h-9 rounded-lg overflow-hidden border border-zinc-200 bg-white p-0.5 flex-shrink-0">
+                  <img
+                    src={
+                      userType === 'worker'
+                        ? loggedInWorker!.avatar
+                        : loggedInCompany!.logo
+                    }
+                    alt="Account"
+                    className="w-full h-full object-cover rounded"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-zinc-950 truncate">
+                    {userType === 'worker'
+                      ? loggedInWorker!.name
+                      : loggedInCompany!.name}
+                  </p>
+                  <p className="text-[9px] font-mono uppercase text-zinc-600 truncate">
+                    {userType === 'worker'
+                      ? loggedInWorker!.trade
+                      : 'Contractor'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
       {/* Main Container wrapper */}
       <div className="flex-grow flex flex-col min-w-0 min-h-screen">
         
         {/* Top Branding and Persona Header */}
         <header className="bg-white border-b border-zinc-200 sticky top-0 z-30 px-4 py-3 flex items-center justify-between shadow-xs">
-          {/* Mobile Logo Brand */}
+          {/* Mobile Menu and Logo Brand */}
           <div className="flex items-center gap-2 md:hidden">
+            <button
+              type="button"
+              onClick={() => setShowMobileMenu(true)}
+              className="w-9 h-9 rounded-lg border border-zinc-200 bg-white flex items-center justify-center text-zinc-900"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
             <div className="w-8 h-8 rounded-lg bg-[#34D399] flex items-center justify-center text-white font-mono font-black text-sm">
               HU
             </div>
-            <span className="text-sm font-black uppercase tracking-wider text-zinc-900">Hire<span className="text-[#10B981]">Up</span></span>
+
+            <span className="text-sm font-black uppercase tracking-wider text-zinc-900">
+              Hire<span className="text-[#10B981]">Up</span>
+            </span>
           </div>
 
           {/* Authenticated account role */}
@@ -1582,39 +1898,73 @@ export default function App() {
         </main>
 
         {/* Mobile Bottom Navigation Bar Panel */}
-        <nav className="bg-white text-zinc-800 border-t border-zinc-200 md:hidden flex justify-around py-2 sticky bottom-0 z-20 select-none">
-          {mobileTabs.map((tab) => {
-            const isActive = currentView === tab.id || (tab.id === 'swipe' && currentView === 'search');
+        <nav className="bg-white text-zinc-800 border-t border-zinc-200 md:hidden grid grid-cols-5 py-2 sticky bottom-0 z-40 select-none">
+          {mobileTabs.map(tab => {
+            const isActive =
+              currentView === tab.id ||
+              (tab.id === 'swipe' && currentView === 'search');
+
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => {
                   setCurrentView(tab.id);
                   setShowNotifications(false);
                   setSelectedMatchId(null);
                 }}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg transition-all cursor-pointer ${isActive ? 'text-[#34D399]' : 'text-zinc-400 hover:text-zinc-900'}`}
+                className={`flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-lg transition-all ${
+                  isActive
+                    ? 'text-[#10B981]'
+                    : 'text-zinc-500 hover:text-zinc-950'
+                }`}
               >
                 <div className="relative">
-                  {isActive ? (
-                    <div className="p-1 bg-[#34D399]/10 rounded-full text-[#34D399]">
-                      {tab.icon}
-                    </div>
-                  ) : (
-                    tab.icon
-                  )}
+                  <span
+                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      isActive ? 'bg-emerald-50' : ''
+                    }`}
+                  >
+                    {tab.icon}
+                  </span>
 
-                  {tab.id === 'messages' && unreadMessageCount > 0 && (
-                    <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 bg-red-500 text-white rounded-full text-[8px] font-mono font-black flex items-center justify-center">
-                      {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
-                    </span>
-                  )}
+                  {tab.id === 'messages' &&
+                    unreadMessageCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-red-500 text-white rounded-full text-[8px] font-mono font-black flex items-center justify-center">
+                        {unreadMessageCount > 9
+                          ? '9+'
+                          : unreadMessageCount}
+                      </span>
+                    )}
                 </div>
 
-                <span className="text-[9px] font-mono font-bold uppercase tracking-wider">{tab.label}</span>
+                <span className="text-[9px] font-mono font-black uppercase truncate max-w-full">
+                  {tab.label}
+                </span>
               </button>
             );
           })}
+
+          <button
+            type="button"
+            onClick={() => setShowMobileMenu(true)}
+            className={`flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-lg transition-all ${
+              showMobileMenu
+                ? 'text-[#10B981]'
+                : 'text-zinc-500 hover:text-zinc-950'
+            }`}
+          >
+            <span
+              className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                showMobileMenu ? 'bg-emerald-50' : ''
+              }`}
+            >
+              <Menu className="w-5 h-5" />
+            </span>
+            <span className="text-[9px] font-mono font-black uppercase">
+              Menu
+            </span>
+          </button>
         </nav>
       </div>
 
