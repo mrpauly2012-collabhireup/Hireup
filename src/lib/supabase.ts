@@ -1,16 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
 import { WorkerProfile, CompanyProfile, JobProfile, Match, Message, Interview, UserType } from '../types';
+import { supabase } from './client';
+import { fetchAdminUser } from './admin';
 
-// Supabase Connection details
-export const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL || 'https://ewtikkoghisdpumiigwg.supabase.co';
-export const SUPABASE_ANON_KEY = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_a72uPSgjCKudGCBXCuZonA_wJahJYRN';
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  }
-});
+export { supabase } from './client';
+export * from './admin';
 
 
 // SQL schema for user reference
@@ -298,12 +291,12 @@ export function mapWorkerFromDb(w: any): WorkerProfile {
     rating: w.rating !== undefined && w.rating !== null ? Number(w.rating) : null,
     reviewsCount: w.reviews_count !== undefined && w.reviews_count !== null ? Number(w.reviews_count) : 0,
     verified:
+      w.verified === true ||
       w.verified_status === true ||
       w.verified_status === 'verified' ||
       w.verified_status === 'approved' ||
       w.verification_status === 'verified' ||
-      w.verification_status === 'approved' ||
-      w.verified === true,
+      w.verification_status === 'approved',
     verifiedBadges: w.verified_badges || ['HireUp Certified', 'Right to Work Verified', 'CSCS Checked'],
     portfolio: w.gallery_images || w.portfolio || [
       'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&auto=format&fit=crop&q=80',
@@ -346,12 +339,12 @@ export function mapCompanyFromDb(c: any): CompanyProfile {
     openVacanciesCount: Number(c.open_vacancies_count || 0),
     benefits: c.benefits || [],
     verified:
+      c.verified === true ||
       c.verified_status === true ||
       c.verified_status === 'verified' ||
       c.verified_status === 'approved' ||
       c.verification_status === 'verified' ||
-      c.verification_status === 'approved' ||
-      c.verified === true,
+      c.verification_status === 'approved',
     location: c.location || '',
     stats: c.stats || { projects: 0, workers: 0, rating: null },
     reviews: c.reviews || [],
@@ -615,6 +608,18 @@ export async function signInUser(email: string, password: string) {
 
   const userId = authData.user.id;
 
+  // Dedicated admin accounts do not require a worker or contractor profile.
+  const adminUser = await fetchAdminUser(userId);
+  if (adminUser) {
+    return {
+      id: userId,
+      email: authData.user.email!,
+      userType: 'employer' as UserType,
+      isAdmin: true,
+      adminRole: adminUser.role,
+    };
+  }
+
   // Check if profile exists in worker_profiles (using id or user_id)
   const { data: workerData } = await supabase
     .from('worker_profiles')
@@ -776,7 +781,7 @@ export async function createJobInDb(job: Omit<JobProfile, 'id'>): Promise<JobPro
     hourly_rate: job.payRate?.includes('hour') ? job.payRate : null,
     location: job.location,
     postcode: 'BN1 1AA',
-    start_date: job.startDate,
+    start_date: job.startDate?.trim() ? job.startDate : null,
     duration: job.duration,
     employment_type: job.employmentType,
     qualifications: job.qualifications,
@@ -988,6 +993,30 @@ export async function fetchNotifications(userId: string): Promise<AppNotificatio
     console.warn("fetchNotifications error:", err.message);
     return [];
   }
+}
+
+export async function markNotificationAsRead(notificationId: string): Promise<void> {
+  const { error } = await supabase
+    .from('notifications')
+    .update({
+      read: true,
+      is_read: true
+    })
+    .eq('id', notificationId);
+
+  if (error) throw error;
+}
+
+export async function markAllNotificationsAsRead(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('notifications')
+    .update({
+      read: true,
+      is_read: true
+    })
+    .eq('user_id', userId);
+
+  if (error) throw error;
 }
 
 export async function createNotificationInDb(userId: string, title: string, message: string): Promise<AppNotification | null> {
