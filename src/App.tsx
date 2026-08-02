@@ -1033,7 +1033,7 @@ export default function App() {
     { id: 'matches', label: 'Matches', icon: <Heart className="w-4 h-4" /> },
     { id: 'messages', label: 'Messages', icon: <MessageSquare className="w-4 h-4" /> },
     { id: 'interviews', label: 'Interviews', icon: <Calendar className="w-4 h-4" /> },
-    { id: 'companies', label: 'Companies', icon: <Users className="w-4 h-4" /> },
+    { id: 'companies', label: userType === 'employer' ? 'Verified Workers' : 'Verified Businesses', icon: <Users className="w-4 h-4" /> },
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="w-4 h-4" /> },
     { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
     { id: 'profile', label: 'My Profile', icon: <User className="w-4 h-4" /> },
@@ -1513,9 +1513,13 @@ export default function App() {
               case 'companies':
                 return (
                   <CompaniesView 
+                    userType={userType}
+                    currentUserId={currentUser?.id}
                     companies={companies}
+                    workers={workers}
                     jobs={jobs}
                     onSelectJob={(j) => setSelectedJob(j)}
+                    onSelectWorker={(w) => setSelectedWorker(w)}
                   />
                 );
               case 'analytics':
