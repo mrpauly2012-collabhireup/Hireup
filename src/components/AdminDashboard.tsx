@@ -45,6 +45,15 @@ import {
   ChevronsRight,
   CheckSquare,
   Square,
+  Download,
+  Radio,
+  TrendingUp,
+  SlidersHorizontal,
+  Clock3,
+  Activity,
+  FileText,
+  Building,
+  Flag,
 } from 'lucide-react';
 import {
   AdminAccountStatus,
@@ -69,6 +78,7 @@ import {
   updateAdminJob,
   updateAdminReport,
   updateAdminReview,
+  supabase,
 } from '../lib/supabase';
 
 interface AdminDashboardProps {
@@ -116,6 +126,31 @@ type PaginationState = {
   page: number;
   pageSize: number;
 };
+
+
+type AnalyticsMetric =
+  | 'users'
+  | 'jobs'
+  | 'matches'
+  | 'messages'
+  | 'interviews'
+  | 'reviews';
+
+
+type DetailTarget =
+  | { type: 'job'; item: AdminJob }
+  | { type: 'review'; item: AdminReview }
+  | { type: 'report'; item: AdminReport }
+  | { type: 'audit'; item: AdminAuditLog }
+  | null;
+
+type ConfirmState = {
+  title: string;
+  message: string;
+  tone: 'default' | 'warning' | 'danger';
+  confirmLabel: string;
+  action: () => Promise<void> | void;
+} | null;
 
 const sectionLabels: Record<AdminSection, string> = {
   overview: 'Overview',
@@ -341,6 +376,40 @@ function PaginationControls({
   );
 }
 
+
+function escapeCsvValue(value: unknown): string {
+  if (value === null || value === undefined) return '';
+
+  const textValue =
+    typeof value === 'object' ? JSON.stringify(value) : String(value);
+
+  return `"${textValue.replace(/"/g, '""')}"`;
+}
+
+function downloadCsv(
+  filename: string,
+  headers: string[],
+  rows: unknown[][]
+): void {
+  const csv = [
+    headers.map(escapeCsvValue).join(','),
+    ...rows.map(row => row.map(escapeCsvValue).join(',')),
+  ].join('\n');
+
+  const blob = new Blob([`\uFEFF${csv}`], {
+    type: 'text/csv;charset=utf-8;',
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export default function AdminDashboard({
   admin,
   stats,
@@ -394,6 +463,22 @@ export default function AdminDashboard({
   const [sectionLoading, setSectionLoading] = useState(false);
   const [sectionError, setSectionError] = useState<string | null>(null);
   const [localActionId, setLocalActionId] = useState<string | null>(null);
+  const [analyticsMetric, setAnalyticsMetric] =
+    useState<AnalyticsMetric>('users');
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const [lastRealtimeUpdate, setLastRealtimeUpdate] = useState<string | null>(null);
+  const [detailTarget, setDetailTarget] = useState<DetailTarget>(null);
+  const [confirmState, setConfirmState] = useState<ConfirmState>(null);
+
+  const [jobStatusFilter, setJobStatusFilter] =
+    useState<'all' | AdminJobStatus>('all');
+  const [jobFeaturedFilter, setJobFeaturedFilter] =
+    useState<'all' | 'featured' | 'not_featured'>('all');
+  const [reviewFilter, setReviewFilter] =
+    useState<'all' | 'reported' | 'hidden' | 'visible'>('all');
+  const [reportStatusFilter, setReportStatusFilter] =
+    useState<'all' | AdminReportStatus>('all');
+  const [auditTypeFilter, setAuditTypeFilter] = useState('all');
 
   const loadManagementData = async () => {
     setSectionLoading(true);
@@ -447,6 +532,57 @@ export default function AdminDashboard({
     await Promise.all([Promise.resolve(onRefresh()), loadManagementData()]);
   };
 
+  useEffect(() => {
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleRealtimeRefresh = () => {
+      setLastRealtimeUpdate(new Date().toISOString());
+
+      if (refreshTimer) clearTimeout(refreshTimer);
+
+      refreshTimer = setTimeout(() => {
+        refreshEverything();
+      }, 500);
+    };
+
+    const channel = supabase
+      .channel('hireup-admin-live-console')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'worker_profiles' },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'contractor_profiles' },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'jobs' },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reviews' },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reports' },
+        scheduleRealtimeRefresh
+      )
+      .subscribe(status => {
+        setRealtimeConnected(status === 'SUBSCRIBED');
+      });
+
+    return () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      setRealtimeConnected(false);
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const filteredUsers = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
@@ -473,53 +609,73 @@ export default function AdminDashboard({
 
   const filteredJobs = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return jobs;
 
-    return jobs.filter(job =>
-      [job.title, job.companyName, job.trade, job.location, job.payRate].some(
+    return jobs.filter(job => {
+      if (jobStatusFilter !== 'all' && job.status !== jobStatusFilter) return false;
+      if (jobFeaturedFilter === 'featured' && !job.featured) return false;
+      if (jobFeaturedFilter === 'not_featured' && job.featured) return false;
+
+      if (!query) return true;
+
+      return [job.title, job.companyName, job.trade, job.location, job.payRate].some(
         value => value.toLowerCase().includes(query)
-      )
-    );
-  }, [jobs, searchQuery]);
+      );
+    });
+  }, [jobs, searchQuery, jobStatusFilter, jobFeaturedFilter]);
 
   const filteredReviews = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return reviews;
 
-    return reviews.filter(review =>
-      [
+    return reviews.filter(review => {
+      if (reviewFilter === 'reported' && !review.reported) return false;
+      if (reviewFilter === 'hidden' && !review.hidden) return false;
+      if (reviewFilter === 'visible' && review.hidden) return false;
+
+      if (!query) return true;
+
+      return [
         review.reviewerName,
         review.reviewerRole,
         review.reviewText,
         review.reportReason,
-      ].some(value => value.toLowerCase().includes(query))
-    );
-  }, [reviews, searchQuery]);
+      ].some(value => value.toLowerCase().includes(query));
+    });
+  }, [reviews, searchQuery, reviewFilter]);
 
   const filteredReports = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return reports;
 
-    return reports.filter(report =>
-      [
+    return reports.filter(report => {
+      if (reportStatusFilter !== 'all' && report.status !== reportStatusFilter) {
+        return false;
+      }
+
+      if (!query) return true;
+
+      return [
         report.targetType,
         report.reason,
         report.details,
         report.status,
-      ].some(value => value.toLowerCase().includes(query))
-    );
-  }, [reports, searchQuery]);
+      ].some(value => value.toLowerCase().includes(query));
+    });
+  }, [reports, searchQuery, reportStatusFilter]);
 
   const filteredAudit = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return auditLogs;
 
-    return auditLogs.filter(log =>
-      [log.action, log.targetType, log.targetId, log.adminUserId].some(value =>
+    return auditLogs.filter(log => {
+      if (auditTypeFilter !== 'all' && log.targetType !== auditTypeFilter) {
+        return false;
+      }
+
+      if (!query) return true;
+
+      return [log.action, log.targetType, log.targetId, log.adminUserId].some(value =>
         value.toLowerCase().includes(query)
-      )
-    );
-  }, [auditLogs, searchQuery]);
+      );
+    });
+  }, [auditLogs, searchQuery, auditTypeFilter]);
 
   const handleSort = (
     targetSection: Exclude<AdminSection, 'overview' | 'analytics'>,
@@ -738,16 +894,6 @@ export default function AdminDashboard({
 
     if (selectedUsers.length === 0) return;
 
-    if (
-      !confirmAction(
-        `Apply this action to ${selectedUsers.length} selected user${
-          selectedUsers.length === 1 ? '' : 's'
-        }?`
-      )
-    ) {
-      return;
-    }
-
     setSectionLoading(true);
     setSectionError(null);
 
@@ -792,16 +938,6 @@ export default function AdminDashboard({
 
     if (selectedJobs.length === 0) return;
 
-    if (
-      !confirmAction(
-        `${action === 'delete' ? 'Permanently delete' : 'Apply this action to'} ${
-          selectedJobs.length
-        } selected job${selectedJobs.length === 1 ? '' : 's'}?`
-      )
-    ) {
-      return;
-    }
-
     setSectionLoading(true);
     setSectionError(null);
 
@@ -840,16 +976,6 @@ export default function AdminDashboard({
 
     if (selectedReviews.length === 0) return;
 
-    if (
-      !confirmAction(
-        `${action === 'delete' ? 'Permanently delete' : 'Apply this action to'} ${
-          selectedReviews.length
-        } selected review${selectedReviews.length === 1 ? '' : 's'}?`
-      )
-    ) {
-      return;
-    }
-
     setSectionLoading(true);
     setSectionError(null);
 
@@ -875,16 +1001,6 @@ export default function AdminDashboard({
     );
 
     if (selectedReports.length === 0) return;
-
-    if (
-      !confirmAction(
-        `Mark ${selectedReports.length} selected report${
-          selectedReports.length === 1 ? '' : 's'
-        } as ${status}?`
-      )
-    ) {
-      return;
-    }
 
     setSectionLoading(true);
     setSectionError(null);
@@ -922,7 +1038,189 @@ export default function AdminDashboard({
     }
   };
 
-  const confirmAction = (message: string): boolean => window.confirm(message);
+  const confirmAction = (
+    title: string,
+    message: string,
+    action: () => Promise<void> | void,
+    tone: 'default' | 'warning' | 'danger' = 'warning',
+    confirmLabel = 'Confirm'
+  ) => {
+    setConfirmState({
+      title,
+      message,
+      action,
+      tone,
+      confirmLabel,
+    });
+  };
+
+  const exportCurrentSection = () => {
+    const date = new Date().toISOString().slice(0, 10);
+
+    if (section === 'users') {
+      const rows =
+        selectedIds.users.size > 0
+          ? sortedUsers.filter(user => selectedIds.users.has(user.id))
+          : sortedUsers;
+
+      downloadCsv(
+        `hireup-users-${date}.csv`,
+        [
+          'ID',
+          'Name',
+          'Type',
+          'Email',
+          'Trade or Industry',
+          'Location',
+          'Verification Status',
+          'Account Status',
+          'Joined',
+        ],
+        rows.map(user => [
+          user.id,
+          user.name,
+          user.type,
+          user.email,
+          user.tradeOrIndustry,
+          user.location,
+          user.verificationStatus,
+          user.accountStatus,
+          user.createdAt,
+        ])
+      );
+      return;
+    }
+
+    if (section === 'jobs') {
+      const rows =
+        selectedIds.jobs.size > 0
+          ? sortedJobs.filter(job => selectedIds.jobs.has(job.id))
+          : sortedJobs;
+
+      downloadCsv(
+        `hireup-jobs-${date}.csv`,
+        [
+          'ID',
+          'Title',
+          'Company',
+          'Trade',
+          'Location',
+          'Pay Rate',
+          'Status',
+          'Featured',
+          'Created',
+        ],
+        rows.map(job => [
+          job.id,
+          job.title,
+          job.companyName,
+          job.trade,
+          job.location,
+          job.payRate,
+          job.status,
+          job.featured,
+          job.createdAt,
+        ])
+      );
+      return;
+    }
+
+    if (section === 'reviews') {
+      const rows =
+        selectedIds.reviews.size > 0
+          ? sortedReviews.filter(review => selectedIds.reviews.has(review.id))
+          : sortedReviews;
+
+      downloadCsv(
+        `hireup-reviews-${date}.csv`,
+        [
+          'ID',
+          'Reviewer',
+          'Role',
+          'Rating',
+          'Review',
+          'Reported',
+          'Report Reason',
+          'Moderated',
+          'Hidden',
+          'Created',
+        ],
+        rows.map(review => [
+          review.id,
+          review.reviewerName,
+          review.reviewerRole,
+          review.rating,
+          review.reviewText,
+          review.reported,
+          review.reportReason,
+          review.moderated,
+          review.hidden,
+          review.createdAt,
+        ])
+      );
+      return;
+    }
+
+    if (section === 'reports') {
+      const rows =
+        selectedIds.reports.size > 0
+          ? sortedReports.filter(report => selectedIds.reports.has(report.id))
+          : sortedReports;
+
+      downloadCsv(
+        `hireup-reports-${date}.csv`,
+        [
+          'ID',
+          'Target Type',
+          'Target ID',
+          'Reason',
+          'Details',
+          'Status',
+          'Assigned Admin',
+          'Resolution Notes',
+          'Created',
+          'Updated',
+        ],
+        rows.map(report => [
+          report.id,
+          report.targetType,
+          report.targetId,
+          report.reason,
+          report.details,
+          report.status,
+          report.assignedAdminId,
+          report.resolutionNotes,
+          report.createdAt,
+          report.updatedAt,
+        ])
+      );
+      return;
+    }
+
+    if (section === 'audit') {
+      downloadCsv(
+        `hireup-audit-log-${date}.csv`,
+        [
+          'ID',
+          'Admin User ID',
+          'Action',
+          'Target Type',
+          'Target ID',
+          'Details',
+          'Created',
+        ],
+        sortedAudit.map(log => [
+          log.id,
+          log.adminUserId,
+          log.action,
+          log.targetType,
+          log.targetId,
+          log.details,
+          log.createdAt,
+        ])
+      );
+    }
+  };
 
   const openUsersQueue = (
     accountType: 'all' | AdminManagedUserType = 'all',
@@ -1025,6 +1323,56 @@ export default function AdminDashboard({
     ])
   );
 
+  const activityFeed = useMemo(() => {
+    const entries = [
+      ...users.slice(0, 6).map(user => ({
+        id: `user-${user.id}`,
+        type: 'user',
+        title: `${user.name} joined HireUp`,
+        detail: user.type === 'worker' ? user.tradeOrIndustry : 'Contractor account',
+        date: user.createdAt,
+      })),
+      ...jobs.slice(0, 6).map(job => ({
+        id: `job-${job.id}`,
+        type: 'job',
+        title: `New vacancy: ${job.title}`,
+        detail: job.companyName,
+        date: job.createdAt,
+      })),
+      ...reviews.slice(0, 6).map(review => ({
+        id: `review-${review.id}`,
+        type: 'review',
+        title: `${review.reviewerName} submitted a review`,
+        detail: `${review.rating}/5 rating`,
+        date: review.createdAt,
+      })),
+      ...reports.slice(0, 6).map(report => ({
+        id: `report-${report.id}`,
+        type: 'report',
+        title: `New ${report.targetType} report`,
+        detail: report.reason,
+        date: report.createdAt,
+      })),
+      ...auditLogs.slice(0, 6).map(log => ({
+        id: `audit-${log.id}`,
+        type: 'audit',
+        title: log.action,
+        detail: `${log.targetType}: ${log.targetId}`,
+        date: log.createdAt,
+      })),
+    ];
+
+    return entries
+      .filter(entry => entry.date)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 12);
+  }, [users, jobs, reviews, reports, auditLogs]);
+
+  const auditTargetTypes = useMemo(
+    () => Array.from(new Set(auditLogs.map(log => log.targetType))).sort(),
+    [auditLogs]
+  );
+
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
       <header className="sticky top-0 z-40 bg-white border-b border-zinc-200">
@@ -1042,6 +1390,37 @@ export default function AdminDashboard({
           </div>
 
           <div className="flex items-center gap-2">
+            <div
+              className={`hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg text-[9px] font-mono font-black uppercase ${
+                realtimeConnected
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : 'bg-zinc-100 text-zinc-500'
+              }`}
+              title={
+                lastRealtimeUpdate
+                  ? `Last live update: ${formatDate(lastRealtimeUpdate)}`
+                  : 'Waiting for a live database event'
+              }
+            >
+              <Radio
+                className={`w-3.5 h-3.5 ${
+                  realtimeConnected ? 'animate-pulse' : ''
+                }`}
+              />
+              {realtimeConnected ? 'Live' : 'Connecting'}
+            </div>
+
+            {['users', 'jobs', 'reviews', 'reports', 'audit'].includes(section) && (
+              <button
+                type="button"
+                onClick={exportCurrentSection}
+                className="px-3 py-2 border border-zinc-200 hover:border-[#34D399] rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export
+              </button>
+            )}
+
             <button
               type="button"
               onClick={refreshEverything}
@@ -1168,6 +1547,79 @@ export default function AdminDashboard({
               </div>
             </section>
 
+            <section className="grid grid-cols-1 xl:grid-cols-[1.3fr_0.7fr] gap-5">
+              <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+                <div className="px-5 py-4 border-b border-zinc-200 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-black uppercase">Live Activity Centre</h3>
+                    <p className="text-[10px] text-zinc-400 mt-1">
+                      Recent registrations, jobs, reviews, reports and admin actions
+                    </p>
+                  </div>
+                  <Activity className="w-5 h-5 text-[#10B981]" />
+                </div>
+                <div className="divide-y divide-zinc-100">
+                  {activityFeed.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-zinc-400">
+                      No recent activity.
+                    </div>
+                  ) : (
+                    activityFeed.map(entry => (
+                      <div key={entry.id} className="p-4 flex items-start gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-zinc-100 flex items-center justify-center flex-shrink-0">
+                          {entry.type === 'job' ? (
+                            <Briefcase className="w-4 h-4 text-zinc-500" />
+                          ) : entry.type === 'review' ? (
+                            <Star className="w-4 h-4 text-zinc-500" />
+                          ) : entry.type === 'report' ? (
+                            <Flag className="w-4 h-4 text-zinc-500" />
+                          ) : entry.type === 'audit' ? (
+                            <ListChecks className="w-4 h-4 text-zinc-500" />
+                          ) : (
+                            <Users className="w-4 h-4 text-zinc-500" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-black truncate">{entry.title}</p>
+                          <p className="text-xs text-zinc-500 truncate">{entry.detail}</p>
+                        </div>
+                        <span className="text-[9px] font-mono text-zinc-400 whitespace-nowrap">
+                          {formatDate(entry.date)}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-zinc-950 text-white rounded-2xl p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[9px] font-mono font-black uppercase text-[#34D399]">
+                      Moderation Health
+                    </p>
+                    <h3 className="text-xl font-black mt-1">Queue Snapshot</h3>
+                  </div>
+                  <Clock3 className="w-5 h-5 text-[#34D399]" />
+                </div>
+
+                <div className="space-y-3 mt-6">
+                  {[
+                    ['Pending workers', stats?.pendingWorkerVerifications ?? 0],
+                    ['Pending contractors', stats?.pendingContractorVerifications ?? 0],
+                    ['Reported reviews', stats?.reportedReviews ?? 0],
+                    ['Open reports', reports.filter(report => report.status === 'open').length],
+                    ['Suspended accounts', (stats?.suspendedWorkers ?? 0) + (stats?.suspendedContractors ?? 0)],
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                      <span className="text-xs text-zinc-300">{label}</span>
+                      <strong className="text-lg">{value}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
             <section>
               <h3 className="text-lg font-black uppercase mb-4">
                 Action Required
@@ -1230,6 +1682,10 @@ export default function AdminDashboard({
               </div>
             )}
 
+            <div className="flex items-center gap-2 text-[10px] font-mono font-black uppercase text-zinc-500">
+              <SlidersHorizontal className="w-4 h-4" />
+              Advanced filters
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <select
                 value={typeFilter}
@@ -1473,6 +1929,27 @@ export default function AdminDashboard({
 
         {section === 'jobs' && (
           <section className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <select
+                value={jobStatusFilter}
+                onChange={event => setJobStatusFilter(event.target.value as 'all' | AdminJobStatus)}
+                className="p-3 bg-white border border-zinc-200 rounded-xl text-xs font-bold"
+              >
+                <option value="all">All job statuses</option>
+                <option value="live">Live</option>
+                <option value="closed">Closed</option>
+                <option value="removed">Removed</option>
+              </select>
+              <select
+                value={jobFeaturedFilter}
+                onChange={event => setJobFeaturedFilter(event.target.value as 'all' | 'featured' | 'not_featured')}
+                className="p-3 bg-white border border-zinc-200 rounded-xl text-xs font-bold"
+              >
+                <option value="all">All featured states</option>
+                <option value="featured">Featured only</option>
+                <option value="not_featured">Not featured</option>
+              </select>
+            </div>
             {selectedIds.jobs.size > 0 && (
               <div className="sticky top-20 z-20 bg-zinc-950 text-white rounded-2xl p-4 flex flex-col lg:flex-row lg:items-center gap-3">
                 <p className="text-sm font-black flex-1">
@@ -1518,11 +1995,12 @@ export default function AdminDashboard({
             {paginatedJobs.map(job => (
               <div
                 key={job.id}
-                className="p-4 flex flex-col lg:flex-row lg:items-center gap-4"
+                onClick={() => setDetailTarget({ type: 'job', item: job })}
+                className="p-4 flex flex-col lg:flex-row lg:items-center gap-4 cursor-pointer hover:bg-zinc-50"
               >
                 <button
                   type="button"
-                  onClick={() => toggleSelected('jobs', job.id)}
+                  onClick={event => { event.stopPropagation(); toggleSelected('jobs', job.id); }}
                   className="text-zinc-400 hover:text-[#10B981] flex-shrink-0"
                   aria-label={`Select ${job.title}`}
                 >
@@ -1586,13 +2064,13 @@ export default function AdminDashboard({
                   <button
                     type="button"
                     onClick={() => {
-                      if (
-                        confirmAction(
-                          `Permanently delete "${job.title}"? This cannot be undone.`
-                        )
-                      ) {
-                        runLocalAction(job.id, () => deleteAdminJob(job.id));
-                      }
+                      confirmAction(
+                        'Delete job',
+                        `Permanently delete "${job.title}"? This cannot be undone.`,
+                        () => runLocalAction(job.id, () => deleteAdminJob(job.id)),
+                        'danger',
+                        'Delete'
+                      );
                     }}
                     className="p-2 bg-red-50 text-red-600 rounded-lg"
                   >
@@ -1620,6 +2098,16 @@ export default function AdminDashboard({
 
         {section === 'reviews' && (
           <section className="space-y-3">
+            <select
+              value={reviewFilter}
+              onChange={event => setReviewFilter(event.target.value as 'all' | 'reported' | 'hidden' | 'visible')}
+              className="w-full sm:w-72 p-3 bg-white border border-zinc-200 rounded-xl text-xs font-bold"
+            >
+              <option value="all">All reviews</option>
+              <option value="reported">Reported only</option>
+              <option value="hidden">Hidden only</option>
+              <option value="visible">Visible only</option>
+            </select>
             {selectedIds.reviews.size > 0 && (
               <div className="sticky top-20 z-20 bg-zinc-950 text-white rounded-2xl p-4 flex flex-col lg:flex-row lg:items-center gap-3">
                 <p className="text-sm font-black flex-1">
@@ -1660,14 +2148,15 @@ export default function AdminDashboard({
             {paginatedReviews.map(review => (
               <article
                 key={review.id}
-                className={`bg-white border rounded-2xl p-5 ${
+                onClick={() => setDetailTarget({ type: 'review', item: review })}
+                className={`bg-white border rounded-2xl p-5 cursor-pointer hover:border-[#34D399] ${
                   review.reported ? 'border-amber-300' : 'border-zinc-200'
                 }`}
               >
                 <div className="flex flex-col lg:flex-row gap-4">
                   <button
                     type="button"
-                    onClick={() => toggleSelected('reviews', review.id)}
+                    onClick={event => { event.stopPropagation(); toggleSelected('reviews', review.id); }}
                     className="text-zinc-400 hover:text-[#10B981] flex-shrink-0"
                     aria-label={`Select review by ${review.reviewerName}`}
                   >
@@ -1740,11 +2229,16 @@ export default function AdminDashboard({
                     <button
                       type="button"
                       onClick={() => {
-                        if (confirmAction('Permanently delete this review?')) {
-                          runLocalAction(review.id, () =>
-                            updateAdminReview(review.id, 'delete')
-                          );
-                        }
+                        confirmAction(
+                          'Delete review',
+                          'Permanently delete this review? This cannot be undone.',
+                          () =>
+                            runLocalAction(review.id, () =>
+                              updateAdminReview(review.id, 'delete')
+                            ),
+                          'danger',
+                          'Delete'
+                        );
                       }}
                       className="p-2 bg-red-50 text-red-600 rounded-lg"
                     >
@@ -1769,6 +2263,17 @@ export default function AdminDashboard({
 
         {section === 'reports' && (
           <section className="space-y-3">
+            <select
+              value={reportStatusFilter}
+              onChange={event => setReportStatusFilter(event.target.value as 'all' | AdminReportStatus)}
+              className="w-full sm:w-72 p-3 bg-white border border-zinc-200 rounded-xl text-xs font-bold"
+            >
+              <option value="all">All report statuses</option>
+              <option value="open">Open</option>
+              <option value="reviewing">Reviewing</option>
+              <option value="resolved">Resolved</option>
+              <option value="dismissed">Dismissed</option>
+            </select>
             {selectedIds.reports.size > 0 && (
               <div className="sticky top-20 z-20 bg-zinc-950 text-white rounded-2xl p-4 flex flex-col lg:flex-row lg:items-center gap-3">
                 <p className="text-sm font-black flex-1">
@@ -1817,12 +2322,13 @@ export default function AdminDashboard({
               paginatedReports.map(report => (
                 <article
                   key={report.id}
-                  className="bg-white border border-zinc-200 rounded-2xl p-5"
+                  onClick={() => setDetailTarget({ type: 'report', item: report })}
+                  className="bg-white border border-zinc-200 rounded-2xl p-5 cursor-pointer hover:border-[#34D399]"
                 >
                   <div className="flex flex-col lg:flex-row gap-4">
                     <button
                       type="button"
-                      onClick={() => toggleSelected('reports', report.id)}
+                      onClick={event => { event.stopPropagation(); toggleSelected('reports', report.id); }}
                       className="text-zinc-400 hover:text-[#10B981] flex-shrink-0"
                       aria-label={`Select report ${report.id}`}
                     >
@@ -1890,69 +2396,214 @@ export default function AdminDashboard({
 
         {section === 'analytics' && (
           <section className="space-y-5">
-            <div>
-              <h2 className="text-2xl font-black">Last 14 Days</h2>
-              <p className="text-sm text-zinc-500">
-                Registrations and core platform activity by day.
-              </p>
-            </div>
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black">Interactive Analytics</h2>
+                <p className="text-sm text-zinc-500">
+                  Explore the last 14 days of platform activity.
+                </p>
+              </div>
 
-            <div className="bg-white border border-zinc-200 rounded-2xl p-5 overflow-x-auto">
-              <div className="min-w-[850px] grid grid-cols-14 gap-3 h-72 items-end">
-                {analytics.map(point => {
-                  const total =
-                    point.users +
-                    point.jobs +
-                    point.matches +
-                    point.messages +
-                    point.interviews +
-                    point.reviews;
-                  const height = Math.max(4, (total / maxAnalyticsValue) * 220);
-
-                  return (
-                    <div key={point.date} className="h-full flex flex-col justify-end">
-                      <div className="text-[9px] text-center font-bold mb-2">
-                        {total}
-                      </div>
-                      <div
-                        className="w-full bg-[#34D399] rounded-t-lg"
-                        style={{ height }}
-                        title={`${point.date}: ${total} total events`}
-                      />
-                      <p className="text-[8px] text-zinc-400 text-center mt-2">
-                        {point.date.slice(5)}
-                      </p>
-                    </div>
-                  );
-                })}
+              <div className="flex gap-2 flex-wrap">
+                {(
+                  [
+                    'users',
+                    'jobs',
+                    'matches',
+                    'messages',
+                    'interviews',
+                    'reviews',
+                  ] as AnalyticsMetric[]
+                ).map(metric => (
+                  <button
+                    key={metric}
+                    type="button"
+                    onClick={() => setAnalyticsMetric(metric)}
+                    className={`px-3 py-2 rounded-lg text-[9px] font-mono font-black uppercase ${
+                      analyticsMetric === metric
+                        ? 'bg-zinc-950 text-white'
+                        : 'bg-white border border-zinc-200 text-zinc-500'
+                    }`}
+                  >
+                    {metric}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-              {[
-                ['Users', analytics.reduce((sum, p) => sum + p.users, 0)],
-                ['Jobs', analytics.reduce((sum, p) => sum + p.jobs, 0)],
-                ['Matches', analytics.reduce((sum, p) => sum + p.matches, 0)],
-                ['Messages', analytics.reduce((sum, p) => sum + p.messages, 0)],
-                ['Interviews', analytics.reduce((sum, p) => sum + p.interviews, 0)],
-                ['Reviews', analytics.reduce((sum, p) => sum + p.reviews, 0)],
-              ].map(([label, value]) => (
-                <div
-                  key={String(label)}
-                  className="bg-white border border-zinc-200 rounded-xl p-4"
-                >
-                  <p className="text-2xl font-black">{value}</p>
-                  <p className="text-[9px] font-mono font-black uppercase text-zinc-500">
-                    {label}
+            <div className="bg-white border border-zinc-200 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <p className="text-[9px] font-mono font-black uppercase text-zinc-400">
+                    Selected Metric
+                  </p>
+                  <p className="text-xl font-black capitalize mt-1">
+                    {analyticsMetric}
                   </p>
                 </div>
-              ))}
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+              </div>
+
+              {analytics.length === 0 ? (
+                <div className="h-72 flex items-center justify-center text-sm text-zinc-400">
+                  No analytics data available.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <svg
+                    viewBox="0 0 900 320"
+                    className="min-w-[800px] w-full h-80"
+                    role="img"
+                    aria-label={`${analyticsMetric} activity chart`}
+                  >
+                    {[0, 1, 2, 3, 4].map(line => (
+                      <line
+                        key={line}
+                        x1="55"
+                        x2="875"
+                        y1={35 + line * 55}
+                        y2={35 + line * 55}
+                        stroke="currentColor"
+                        className="text-zinc-100"
+                        strokeWidth="1"
+                      />
+                    ))}
+
+                    <polyline
+                      fill="none"
+                      stroke="currentColor"
+                      className="text-[#10B981]"
+                      strokeWidth="4"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      points={analytics
+                        .map((point, index) => {
+                          const maxValue = Math.max(
+                            1,
+                            ...analytics.map(item => item[analyticsMetric])
+                          );
+                          const x =
+                            60 +
+                            (index * 805) /
+                              Math.max(1, analytics.length - 1);
+                          const y =
+                            255 -
+                            (point[analyticsMetric] / maxValue) * 205;
+                          return `${x},${y}`;
+                        })
+                        .join(' ')}
+                    />
+
+                    {analytics.map((point, index) => {
+                      const maxValue = Math.max(
+                        1,
+                        ...analytics.map(item => item[analyticsMetric])
+                      );
+                      const x =
+                        60 +
+                        (index * 805) /
+                          Math.max(1, analytics.length - 1);
+                      const y =
+                        255 -
+                        (point[analyticsMetric] / maxValue) * 205;
+
+                      return (
+                        <g key={point.date}>
+                          <circle
+                            cx={x}
+                            cy={y}
+                            r="6"
+                            fill="currentColor"
+                            className="text-[#34D399]"
+                          >
+                            <title>
+                              {point.date}: {point[analyticsMetric]}{' '}
+                              {analyticsMetric}
+                            </title>
+                          </circle>
+                          <text
+                            x={x}
+                            y="285"
+                            textAnchor="middle"
+                            className="fill-zinc-400 text-[9px]"
+                          >
+                            {point.date.slice(5)}
+                          </text>
+                          <text
+                            x={x}
+                            y={Math.max(18, y - 12)}
+                            textAnchor="middle"
+                            className="fill-zinc-700 text-[10px] font-bold"
+                          >
+                            {point[analyticsMetric]}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+              {(
+                [
+                  'users',
+                  'jobs',
+                  'matches',
+                  'messages',
+                  'interviews',
+                  'reviews',
+                ] as AnalyticsMetric[]
+              ).map(metric => {
+                const total = analytics.reduce(
+                  (sum, point) => sum + point[metric],
+                  0
+                );
+
+                return (
+                  <button
+                    key={metric}
+                    type="button"
+                    onClick={() => setAnalyticsMetric(metric)}
+                    className={`text-left border rounded-xl p-4 ${
+                      analyticsMetric === metric
+                        ? 'bg-zinc-950 text-white border-zinc-950'
+                        : 'bg-white border-zinc-200'
+                    }`}
+                  >
+                    <p className="text-2xl font-black">{total}</p>
+                    <p
+                      className={`text-[9px] font-mono font-black uppercase ${
+                        analyticsMetric === metric
+                          ? 'text-[#34D399]'
+                          : 'text-zinc-500'
+                      }`}
+                    >
+                      {metric}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
           </section>
         )}
 
         {section === 'audit' && (
-          <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+          <section className="space-y-4">
+            <select
+              value={auditTypeFilter}
+              onChange={event => setAuditTypeFilter(event.target.value)}
+              className="w-full sm:w-72 p-3 bg-white border border-zinc-200 rounded-xl text-xs font-bold"
+            >
+              <option value="all">All target types</option>
+              {auditTargetTypes.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+            <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
             <div className="hidden md:grid grid-cols-[1.2fr_0.8fr_1fr_0.8fr] gap-4 px-4 py-3 bg-zinc-50 border-b border-zinc-200">
               <SortButton label="Action" field="action" sort={sorts.audit} onSort={field => handleSort('audit', field)} />
               <SortButton label="Target" field="targetType" sort={sorts.audit} onSort={field => handleSort('audit', field)} />
@@ -1969,7 +2620,8 @@ export default function AdminDashboard({
               paginatedAudit.map(log => (
                 <div
                   key={log.id}
-                  className="p-4 flex flex-col md:flex-row md:items-center gap-3"
+                  onClick={() => setDetailTarget({ type: 'audit', item: log })}
+                  className="p-4 flex flex-col md:flex-row md:items-center gap-3 cursor-pointer hover:bg-zinc-50"
                 >
                   <div className="w-9 h-9 rounded-xl bg-zinc-100 flex items-center justify-center">
                     <ListChecks className="w-4 h-4 text-zinc-500" />
@@ -2004,7 +2656,186 @@ export default function AdminDashboard({
                 }
               />
             </div>
+            </div>
           </section>
+        )}
+
+        {detailTarget && (
+          <div className="fixed inset-0 z-50">
+            <button
+              type="button"
+              aria-label="Close detail panel"
+              onClick={() => setDetailTarget(null)}
+              className="absolute inset-0 bg-black/35 backdrop-blur-[1px]"
+            />
+
+            <aside className="absolute right-0 top-0 h-full w-full max-w-lg bg-white shadow-2xl border-l border-zinc-200 overflow-y-auto">
+              <div className="sticky top-0 z-10 bg-white border-b border-zinc-200 p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-mono font-black text-[#10B981] uppercase">
+                    Admin Detail View
+                  </p>
+                  <h3 className="text-lg font-black mt-1 capitalize">
+                    {detailTarget.type}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDetailTarget(null)}
+                  className="p-2 rounded-lg border border-zinc-200"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4">
+                {detailTarget.type === 'job' && (
+                  <>
+                    <div className="p-5 bg-zinc-950 text-white rounded-2xl">
+                      <p className="text-[9px] font-mono uppercase text-[#34D399]">
+                        Vacancy
+                      </p>
+                      <h4 className="text-xl font-black mt-2">{detailTarget.item.title}</h4>
+                      <p className="text-sm text-zinc-400 mt-2">{detailTarget.item.companyName}</p>
+                    </div>
+                    {[
+                      ['Trade', detailTarget.item.trade],
+                      ['Location', detailTarget.item.location],
+                      ['Pay', detailTarget.item.payRate],
+                      ['Status', detailTarget.item.status],
+                      ['Featured', detailTarget.item.featured ? 'Yes' : 'No'],
+                      ['Created', formatDate(detailTarget.item.createdAt)],
+                      ['Job ID', detailTarget.item.id],
+                    ].map(([label, value]) => (
+                      <div key={label} className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl">
+                        <p className="text-[9px] font-mono font-black uppercase text-zinc-400">{label}</p>
+                        <p className="text-sm font-bold mt-1 break-all">{value}</p>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {detailTarget.type === 'review' && (
+                  <>
+                    <div className="p-5 bg-zinc-950 text-white rounded-2xl">
+                      <p className="text-[9px] font-mono uppercase text-[#34D399]">Review</p>
+                      <h4 className="text-xl font-black mt-2">{detailTarget.item.reviewerName}</h4>
+                      <p className="text-amber-400 mt-2">{'★'.repeat(Math.round(detailTarget.item.rating))}</p>
+                    </div>
+                    <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl">
+                      <p className="text-sm leading-relaxed">{detailTarget.item.reviewText}</p>
+                    </div>
+                    {detailTarget.item.reportReason && (
+                      <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm">
+                        {detailTarget.item.reportReason}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {detailTarget.type === 'report' && (
+                  <>
+                    <div className="p-5 bg-zinc-950 text-white rounded-2xl">
+                      <p className="text-[9px] font-mono uppercase text-[#34D399]">{detailTarget.item.targetType} report</p>
+                      <h4 className="text-xl font-black mt-2">{detailTarget.item.reason}</h4>
+                    </div>
+                    <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl">
+                      <p className="text-sm">{detailTarget.item.details || 'No additional details supplied.'}</p>
+                    </div>
+                    {[
+                      ['Status', detailTarget.item.status],
+                      ['Target ID', detailTarget.item.targetId],
+                      ['Reporter ID', detailTarget.item.reporterId],
+                      ['Created', formatDate(detailTarget.item.createdAt)],
+                      ['Updated', formatDate(detailTarget.item.updatedAt)],
+                    ].map(([label, value]) => (
+                      <div key={label} className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl">
+                        <p className="text-[9px] font-mono font-black uppercase text-zinc-400">{label}</p>
+                        <p className="text-sm font-bold mt-1 break-all">{value}</p>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {detailTarget.type === 'audit' && (
+                  <>
+                    <div className="p-5 bg-zinc-950 text-white rounded-2xl">
+                      <p className="text-[9px] font-mono uppercase text-[#34D399]">Audit event</p>
+                      <h4 className="text-xl font-black mt-2">{detailTarget.item.action}</h4>
+                    </div>
+                    {[
+                      ['Target type', detailTarget.item.targetType],
+                      ['Target ID', detailTarget.item.targetId],
+                      ['Admin ID', detailTarget.item.adminUserId],
+                      ['Created', formatDate(detailTarget.item.createdAt)],
+                    ].map(([label, value]) => (
+                      <div key={label} className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl">
+                        <p className="text-[9px] font-mono font-black uppercase text-zinc-400">{label}</p>
+                        <p className="text-sm font-bold mt-1 break-all">{value}</p>
+                      </div>
+                    ))}
+                    <pre className="p-4 bg-zinc-950 text-emerald-300 rounded-xl text-xs overflow-x-auto">
+                      {JSON.stringify(detailTarget.item.details, null, 2)}
+                    </pre>
+                  </>
+                )}
+              </div>
+            </aside>
+          </div>
+        )}
+
+        {confirmState && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <button
+              type="button"
+              aria-label="Cancel confirmation"
+              onClick={() => setConfirmState(null)}
+              className="absolute inset-0 bg-black/45 backdrop-blur-sm"
+            />
+            <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-zinc-200 p-6">
+              <div
+                className={`w-11 h-11 rounded-xl flex items-center justify-center ${
+                  confirmState.tone === 'danger'
+                    ? 'bg-red-50 text-red-600'
+                    : confirmState.tone === 'warning'
+                    ? 'bg-amber-50 text-amber-600'
+                    : 'bg-emerald-50 text-emerald-600'
+                }`}
+              >
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-black mt-4">{confirmState.title}</h3>
+              <p className="text-sm text-zinc-500 mt-2 leading-relaxed">
+                {confirmState.message}
+              </p>
+              <div className="flex gap-2 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setConfirmState(null)}
+                  className="flex-1 px-4 py-3 border border-zinc-200 rounded-xl text-[10px] font-mono font-black uppercase"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const action = confirmState.action;
+                    setConfirmState(null);
+                    await action();
+                  }}
+                  className={`flex-1 px-4 py-3 rounded-xl text-white text-[10px] font-mono font-black uppercase ${
+                    confirmState.tone === 'danger'
+                      ? 'bg-red-600'
+                      : confirmState.tone === 'warning'
+                      ? 'bg-amber-500'
+                      : 'bg-[#34D399]'
+                  }`}
+                >
+                  {confirmState.confirmLabel}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {selectedUser && (
@@ -2163,21 +2994,25 @@ export default function AdminDashboard({
                       <button
                         type="button"
                         onClick={async () => {
-                          if (!confirmAction(`Reject verification for ${selectedUser.name}?`)) {
-                            return;
-                          }
-
-                          await onUpdateVerificationStatus(
+                          confirmAction(
+                            'Reject verification',
+                            `Reject verification for ${selectedUser.name}?`,
+                            async () => {
+                              await onUpdateVerificationStatus(
                             selectedUser.id,
                             selectedUser.type,
                             'rejected'
                           );
 
-                          setSelectedUser({
-                            ...selectedUser,
-                            verificationStatus: 'rejected',
-                            verified: false,
-                          });
+                              setSelectedUser({
+                                ...selectedUser,
+                                verificationStatus: 'rejected',
+                                verified: false,
+                              });
+                            },
+                            'danger',
+                            'Reject'
+                          );
                         }}
                         className="px-4 py-3 bg-red-50 text-red-700 rounded-xl text-[10px] font-mono font-black uppercase flex items-center justify-center gap-2"
                       >
@@ -2219,19 +3054,25 @@ export default function AdminDashboard({
                     {selectedUser.accountStatus === 'active' && (
                       <button
                         type="button"
-                        onClick={async () => {
-                          if (!confirmAction(`Suspend ${selectedUser.name}?`)) return;
+                        onClick={() => {
+                          confirmAction(
+                            'Suspend account',
+                            `Suspend ${selectedUser.name}?`,
+                            async () => {
+                              await onUpdateAccountStatus(
+                                selectedUser.id,
+                                selectedUser.type,
+                                'suspended'
+                              );
 
-                          await onUpdateAccountStatus(
-                            selectedUser.id,
-                            selectedUser.type,
-                            'suspended'
+                              setSelectedUser({
+                                ...selectedUser,
+                                accountStatus: 'suspended',
+                              });
+                            },
+                            'warning',
+                            'Suspend'
                           );
-
-                          setSelectedUser({
-                            ...selectedUser,
-                            accountStatus: 'suspended',
-                          });
                         }}
                         className="w-full px-4 py-3 bg-amber-50 text-amber-700 rounded-xl text-[10px] font-mono font-black uppercase flex items-center justify-center gap-2"
                       >
@@ -2243,25 +3084,25 @@ export default function AdminDashboard({
                     {selectedUser.accountStatus !== 'banned' && (
                       <button
                         type="button"
-                        onClick={async () => {
-                          if (
-                            !confirmAction(
-                              `Ban ${selectedUser.name}? They will remain banned until manually reactivated.`
-                            )
-                          ) {
-                            return;
-                          }
+                        onClick={() => {
+                          confirmAction(
+                            'Ban account',
+                            `Ban ${selectedUser.name}? They will remain banned until manually reactivated.`,
+                            async () => {
+                              await onUpdateAccountStatus(
+                                selectedUser.id,
+                                selectedUser.type,
+                                'banned'
+                              );
 
-                          await onUpdateAccountStatus(
-                            selectedUser.id,
-                            selectedUser.type,
-                            'banned'
+                              setSelectedUser({
+                                ...selectedUser,
+                                accountStatus: 'banned',
+                              });
+                            },
+                            'danger',
+                            'Ban'
                           );
-
-                          setSelectedUser({
-                            ...selectedUser,
-                            accountStatus: 'banned',
-                          });
                         }}
                         className="w-full px-4 py-3 bg-red-600 text-white rounded-xl text-[10px] font-mono font-black uppercase flex items-center justify-center gap-2"
                       >

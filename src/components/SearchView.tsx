@@ -6,9 +6,14 @@
 import React, { useState } from 'react';
 import { 
   Search, SlidersHorizontal, MapPin, Award, Wrench, Briefcase,
-  Star, ShieldCheck, Clock, Check, ChevronRight, X, Heart, ArrowUpDown
+  Star, ShieldCheck, Clock, Check, ChevronRight, X, Heart, ArrowUpDown, Sparkles
 } from 'lucide-react';
 import { WorkerProfile, JobProfile, UserType } from '../types';
+import {
+  bestWorkerMatchAcrossJobs,
+  rankJobsForWorker,
+  scoreWorkerForJob,
+} from '../lib/matching';
 import SearchableDropdown from './SearchableDropdown';
 import { HOMETOWNS, LICENCES, POSITION_LENGTHS, GRADES, REQUIREMENTS, TRADES_CATEGORIES, TRADE_SUBCATEGORIES_MAP } from '../data/datasets';
 
@@ -16,6 +21,7 @@ interface SearchViewProps {
   userType: UserType;
   workers: WorkerProfile[];
   jobs: JobProfile[];
+  currentUser?: { id: string; email: string; userType: UserType } | null;
   onSelectWorker: (worker: WorkerProfile) => void;
   onSelectJob: (job: JobProfile) => void;
   onNavigate: (view: string) => void;
@@ -25,6 +31,7 @@ export default function SearchView({
   userType,
   workers,
   jobs,
+  currentUser,
   onSelectWorker,
   onSelectJob,
   onNavigate
@@ -333,8 +340,32 @@ export default function SearchView({
     return sorted;
   };
 
-  const sortedWorkers = sortWorkers(filteredWorkers);
-  const sortedJobs = sortJobs(filteredJobs);
+  const loggedInWorker = workers.find(worker => worker.id === currentUser?.id);
+  const contractorJobs = jobs.filter(job => job.companyId === currentUser?.id);
+
+  const sortedWorkers =
+    sortOrder === 'relevance' && userType === 'employer' && contractorJobs.length > 0
+      ? [...filteredWorkers].sort(
+          (a, b) =>
+            bestWorkerMatchAcrossJobs(b, contractorJobs).score -
+            bestWorkerMatchAcrossJobs(a, contractorJobs).score
+        )
+      : sortWorkers(filteredWorkers);
+
+  const sortedJobs =
+    sortOrder === 'relevance' && userType === 'worker' && loggedInWorker
+      ? rankJobsForWorker(loggedInWorker, filteredJobs).map(result => result.item)
+      : sortJobs(filteredJobs);
+
+  const getWorkerMatch = (worker: WorkerProfile) =>
+    contractorJobs.length > 0
+      ? bestWorkerMatchAcrossJobs(worker, contractorJobs)
+      : { score: 1, reasons: ['Post a vacancy to calculate a match'], strengths: [], gaps: [] };
+
+  const getJobMatch = (job: JobProfile) =>
+    loggedInWorker
+      ? scoreWorkerForJob(loggedInWorker, job)
+      : { score: 1, reasons: ['Complete a worker profile to calculate a match'], strengths: [], gaps: [] };
 
   const clearFilters = () => {
     setSelectedTrade(null);
@@ -758,6 +789,15 @@ export default function SearchView({
                 key={worker.id}
                 className="bg-white border border-zinc-200 rounded-xl p-4 shadow-xs hover:border-[#34D399]/30 transition-all flex flex-col justify-between"
               >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[9px] font-mono font-black uppercase">
+                    <Sparkles className="w-3 h-3" />
+                    {getWorkerMatch(worker).score}% match
+                  </span>
+                  <span className="text-[9px] text-zinc-400">
+                    {getWorkerMatch(worker).reasons[0]}
+                  </span>
+                </div>
                 <div className="flex gap-4">
                   <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-zinc-100 border border-zinc-100">
                     <img 
@@ -826,6 +866,15 @@ export default function SearchView({
                 key={job.id}
                 className="bg-white border border-zinc-200 rounded-xl p-4 shadow-xs hover:border-[#34D399]/30 transition-all flex flex-col justify-between"
               >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[9px] font-mono font-black uppercase">
+                    <Sparkles className="w-3 h-3" />
+                    {getJobMatch(job).score}% match
+                  </span>
+                  <span className="text-[9px] text-zinc-400">
+                    {getJobMatch(job).reasons[0]}
+                  </span>
+                </div>
                 <div className="flex gap-4">
                   <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-white border border-zinc-200 flex items-center justify-center p-1.5">
                     <img 

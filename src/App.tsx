@@ -1441,6 +1441,7 @@ export default function App() {
                     userType={userType}
                     workers={workers}
                     jobs={jobs}
+                    currentUser={currentUser}
                     onSelectWorker={(w) => setSelectedWorker(w)}
                     onSelectJob={(j) => setSelectedJob(j)}
                     onNavigate={(v) => setCurrentView(v)}

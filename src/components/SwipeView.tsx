@@ -12,6 +12,10 @@ import {
 } from 'lucide-react';
 import { WorkerProfile, JobProfile, CompanyProfile, UserType } from '../types';
 import { supabase, saveItemInDb, fetchSavedItems } from '../lib/supabase';
+import {
+  bestWorkerMatchAcrossJobs,
+  scoreWorkerForJob,
+} from '../lib/matching';
 
 interface SwipeViewProps {
   userType: UserType;
@@ -383,6 +387,19 @@ export default function SwipeView({
     setCurrentIndex(0);
   };
 
+
+  const loggedInWorker = workers.find(worker => worker.id === currentUser?.id);
+  const contractorJobs = jobs.filter(job => job.companyId === currentUser?.id);
+
+  const getSwipeWorkerMatch = (worker: WorkerProfile) =>
+    bestWorkerMatchAcrossJobs(worker, contractorJobs);
+
+  const getSwipeJobMatch = (job: JobProfile) =>
+    loggedInWorker
+      ? scoreWorkerForJob(loggedInWorker, job)
+      : { score: 1, reasons: ['Complete your profile to calculate a match'], strengths: [], gaps: [] };
+
+
   return (
     <div id="swipe_view" className="flex flex-col h-[calc(100vh-130px)] max-w-lg mx-auto relative justify-between pb-4">
       
@@ -477,6 +494,10 @@ export default function SwipeView({
                       >
                         <div className="space-y-1.5 flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[9px] font-mono font-black uppercase">
+                              <Sparkles className="w-3 h-3" />
+                              {aiMatch.score}% match
+                            </span>
                             <h4 
                               onClick={() => onSelectWorker(worker)}
                               className="text-base font-bold text-zinc-900 hover:text-[#10B981] transition-colors cursor-pointer truncate"
@@ -561,6 +582,7 @@ export default function SwipeView({
                   {jobDeck.map((job) => {
                     const isUrgent = job.title.toLowerCase().includes('urgent') || job.description.toLowerCase().includes('urgent');
                     const isApplied = appliedJobIds.includes(job.id);
+                    const aiMatch = getSwipeJobMatch(job);
                     return (
                       <div 
                         key={job.id} 
@@ -693,6 +715,10 @@ export default function SwipeView({
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
+                    <div className="absolute top-4 right-4 z-20 px-3 py-1.5 bg-zinc-950/90 text-white rounded-full text-[10px] font-mono font-black uppercase flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#34D399]" />
+                      {getSwipeWorkerMatch(worker).score}% match
+                    </div>
                     <motion.div style={{ opacity: opacityRight }} className="absolute top-8 left-8 border-4 border-emerald-500 text-emerald-500 font-mono font-black text-2xl px-4 py-1.5 rounded-lg transform -rotate-12 z-30 pointer-events-none uppercase">
                       SHORTLIST
                     </motion.div>
