@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { 
   Briefcase, MapPin, Calendar, Award, MessageSquare, 
   ChevronRight, Activity, Clock, ShieldCheck, Eye, 
-  CheckCircle2, Sparkles, User, Users, Heart, Plus, X
+  CheckCircle2, Sparkles, User, Users, Heart, Plus, X, Star
 } from 'lucide-react';
 import { WorkerProfile, JobProfile, CompanyProfile, Match, Message, Interview, UserType } from '../types';
 
@@ -174,10 +174,14 @@ export default function DashboardView({
     w.rating >= 4.8
   ).slice(0, 3);
 
-  // Resolved contractor messages
-  const contractorMatches = matches.filter(m => 
-    activeVacancies.some(v => v.id === m.jobId)
-  );
+  // Resolve all matches belonging to this contractor, including direct matches
+  // that were created before a specific vacancy was attached.
+  const contractorMatches = matches.filter(match => {
+    if (match.contractorId === loggedInCompany.id) return true;
+
+    const matchedJob = jobs.find(job => job.id === match.jobId);
+    return matchedJob?.companyId === loggedInCompany.id;
+  });
 
   const contractorChatMessages = messages.filter(msg => 
     contractorMatches.some(m => m.id === msg.matchId)
@@ -199,6 +203,35 @@ export default function DashboardView({
     };
   }).filter(item => item.worker && item.job).slice(0, 3);
 
+
+  // Live dashboard analytics
+  const workerMessageCount = messages.filter(message =>
+    workerMatches.some(match => match.id === message.matchId)
+  ).length;
+
+  const workerInterviewCount = interviews.filter(
+    interview => interview.workerId === loggedInWorker.id
+  ).length;
+
+  const contractorMessageCount = messages.filter(message =>
+    contractorMatches.some(match => match.id === message.matchId)
+  ).length;
+
+  const contractorInterviewCount = interviews.filter(interview => {
+    const interviewJob = jobs.find(job => job.id === interview.jobId);
+    return interviewJob?.companyId === loggedInCompany.id;
+  }).length;
+
+  const workerRating =
+    loggedInWorker.rating !== null && loggedInWorker.rating !== undefined
+      ? Number(loggedInWorker.rating).toFixed(1)
+      : 'New';
+
+  const contractorRating =
+    loggedInCompany.stats?.rating !== null &&
+    loggedInCompany.stats?.rating !== undefined
+      ? Number(loggedInCompany.stats.rating).toFixed(1)
+      : 'New';
 
   const handleUpdateAvailability = (val: string) => {
     const updated = { ...loggedInWorker, availability: val };
@@ -334,6 +367,151 @@ export default function DashboardView({
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Live Analytics Overview */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        {userType === 'worker' ? (
+          <>
+            <button
+              type="button"
+              onClick={() => onNavigate('matches')}
+              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                  <Heart className="w-4 h-4" />
+                </span>
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+              </div>
+              <p className="text-2xl font-black text-zinc-950 mt-4">{workerMatches.length}</p>
+              <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
+                Matches
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigate('messages')}
+              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4" />
+                </span>
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+              </div>
+              <p className="text-2xl font-black text-zinc-950 mt-4">{workerMessageCount}</p>
+              <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
+                Messages
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigate('interviews')}
+              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                  <Calendar className="w-4 h-4" />
+                </span>
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+              </div>
+              <p className="text-2xl font-black text-zinc-950 mt-4">{workerInterviewCount}</p>
+              <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
+                Interviews
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigate('profile')}
+              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="w-9 h-9 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center">
+                  <Star className="w-4 h-4 fill-current" />
+                </span>
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+              </div>
+              <p className="text-2xl font-black text-zinc-950 mt-4">{workerRating}</p>
+              <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
+                Rating · {loggedInWorker.reviewsCount} Reviews
+              </p>
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => setShowPostJobModal(true)}
+              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                  <Briefcase className="w-4 h-4" />
+                </span>
+                <Plus className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+              </div>
+              <p className="text-2xl font-black text-zinc-950 mt-4">{activeVacancies.length}</p>
+              <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
+                Live Jobs
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigate('matches')}
+              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                  <Users className="w-4 h-4" />
+                </span>
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+              </div>
+              <p className="text-2xl font-black text-zinc-950 mt-4">{contractorMatches.length}</p>
+              <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
+                Active Matches
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigate('interviews')}
+              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                  <Calendar className="w-4 h-4" />
+                </span>
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+              </div>
+              <p className="text-2xl font-black text-zinc-950 mt-4">{contractorInterviewCount}</p>
+              <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
+                Interviews
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigate('profile')}
+              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="w-9 h-9 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center">
+                  <Star className="w-4 h-4 fill-current" />
+                </span>
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+              </div>
+              <p className="text-2xl font-black text-zinc-950 mt-4">{contractorRating}</p>
+              <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
+                Rating · {loggedInCompany.reviews.length} Reviews
+              </p>
+            </button>
+          </>
+        )}
       </div>
 
       {/* ================= WORKER DASHBOARD ================= */}
