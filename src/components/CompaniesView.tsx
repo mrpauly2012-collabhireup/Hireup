@@ -4,6 +4,9 @@
  */
 
 import React, { useMemo, useState } from 'react';
+import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import {
   ShieldCheck,
   MapPin,
@@ -23,6 +26,9 @@ import {
   CheckCircle2,
   Building2,
   Eye,
+  List,
+  Map,
+  Navigation,
 } from 'lucide-react';
 import {
   CompanyProfile,
@@ -47,6 +53,7 @@ interface CompaniesViewProps {
 
 type AvailabilityFilter = 'all' | 'immediate' | 'week' | 'available';
 type HiringFilter = 'all' | 'hiring' | 'not_hiring';
+type WorkerDisplayMode = 'list' | 'map';
 
 const normalise = (value?: string | null) => (value || '').trim().toLowerCase();
 
@@ -57,6 +64,95 @@ const safeWebsiteUrl = (website?: string) => {
 
 const formatRating = (rating: number | null | undefined) =>
   rating === null || rating === undefined ? 'New' : Number(rating).toFixed(1);
+
+const UK_LOCATION_COORDINATES: Record<string, [number, number]> = {
+  london: [51.5074, -0.1278],
+  brighton: [50.8225, -0.1372],
+  'brighton and hove': [50.8225, -0.1372],
+  worthing: [50.8179, -0.3729],
+  shoreham: [50.8342, -0.2748],
+  'shoreham by sea': [50.8342, -0.2748],
+  crawley: [51.1091, -0.1872],
+  horsham: [51.0629, -0.3259],
+  chichester: [50.8365, -0.7792],
+  portsmouth: [50.8198, -1.088],
+  southampton: [50.9097, -1.4044],
+  guildford: [51.2362, -0.5704],
+  reading: [51.4543, -0.9781],
+  oxford: [51.752, -1.2577],
+  bristol: [51.4545, -2.5879],
+  birmingham: [52.4862, -1.8904],
+  manchester: [53.4808, -2.2426],
+  liverpool: [53.4084, -2.9916],
+  leeds: [53.8008, -1.5491],
+  sheffield: [53.3811, -1.4701],
+  nottingham: [52.9548, -1.1581],
+  leicester: [52.6369, -1.1398],
+  coventry: [52.4068, -1.5197],
+  newcastle: [54.9783, -1.6178],
+  cardiff: [51.4816, -3.1791],
+  glasgow: [55.8642, -4.2518],
+  edinburgh: [55.9533, -3.1883],
+  belfast: [54.5973, -5.9301],
+};
+
+const locationCoordinates = (location?: string, seed = ''): [number, number] => {
+  const locationKey = normalise(location).replace(/-/g, ' ');
+  const direct = UK_LOCATION_COORDINATES[locationKey];
+  if (direct) return direct;
+
+  const partial = Object.entries(UK_LOCATION_COORDINATES).find(([name]) =>
+    locationKey.includes(name) || name.includes(locationKey)
+  );
+  if (partial) return partial[1];
+
+  // Stable UK fallback for towns not yet in the local lookup table.
+  const hash = `${locationKey}-${seed}`.split('').reduce((total, char) => total + char.charCodeAt(0), 0);
+  return [52.2 + ((hash % 240) - 120) / 100, -1.8 + ((hash % 180) - 90) / 100];
+};
+
+const availabilityTone = (availability?: string) => {
+  const value = normalise(availability);
+  if (value.includes('immediate') || value.includes('now')) {
+    return { label: 'Available now', colour: '#10B981', pulse: true };
+  }
+  if (value.includes('week')) {
+    return { label: 'Available this week', colour: '#F59E0B', pulse: false };
+  }
+  if (value.includes('unavailable')) {
+    return { label: 'Unavailable', colour: '#A1A1AA', pulse: false };
+  }
+  return { label: availability || 'Availability listed', colour: '#3B82F6', pulse: false };
+};
+
+const workerMapIcon = (availability?: string) => {
+  const tone = availabilityTone(availability);
+  return L.divIcon({
+    className: '',
+    html: `<div style="position:relative;width:34px;height:42px;display:flex;align-items:flex-start;justify-content:center;">
+      ${tone.pulse ? `<span style="position:absolute;top:2px;width:28px;height:28px;border-radius:9999px;background:${tone.colour};opacity:.25;animation:hireup-map-pulse 1.6s ease-out infinite;"></span>` : ''}
+      <span style="position:relative;width:28px;height:28px;border-radius:9999px;background:${tone.colour};border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,.28);"></span>
+      <span style="position:absolute;top:24px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:10px solid ${tone.colour};"></span>
+    </div>`,
+    iconSize: [34, 42],
+    iconAnchor: [17, 40],
+    popupAnchor: [0, -38],
+  });
+};
+
+function FitWorkerMap({ points }: { points: Array<[number, number]> }) {
+  const map = useMap();
+  React.useEffect(() => {
+    if (points.length === 0) return;
+    if (points.length === 1) {
+      map.setView(points[0], 10);
+      return;
+    }
+    map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 10 });
+  }, [map, points]);
+  return null;
+}
+
 
 export default function CompaniesView({
   userType,
@@ -76,6 +172,7 @@ export default function CompaniesView({
   const [minimumRating, setMinimumRating] = useState('all');
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [expandedCompanyId, setExpandedCompanyId] = useState<string | null>(null);
+  const [workerDisplayMode, setWorkerDisplayMode] = useState<WorkerDisplayMode>('list');
 
   const loggedInWorker = workers.find(worker => worker.id === currentUserId);
   const loggedInCompany = companies.find(company => company.id === currentUserId);
@@ -306,6 +403,19 @@ export default function CompaniesView({
   ]);
 
   const isContractorView = userType === 'employer';
+  const immediatelyAvailableWorkers = filteredWorkers.filter(worker => {
+    const availability = normalise(worker.availability);
+    return availability.includes('immediate') || availability.includes('now');
+  });
+  const averageWorkerMatch = filteredWorkers.length
+    ? Math.round(
+        filteredWorkers.reduce((total, worker) => total + workerMatch(worker).score, 0) /
+          filteredWorkers.length
+      )
+    : 0;
+  const workerMapPoints = filteredWorkers.map(worker =>
+    locationCoordinates(worker.location, worker.id)
+  );
 
   return (
     <div
@@ -462,6 +572,155 @@ export default function CompaniesView({
 
       {isContractorView ? (
         <section className="space-y-4">
+          <style>{`
+            @keyframes hireup-map-pulse {
+              0% { transform: scale(.75); opacity: .45; }
+              75%, 100% { transform: scale(1.85); opacity: 0; }
+            }
+            .hireup-worker-map .leaflet-popup-content-wrapper {
+              border-radius: 16px;
+              box-shadow: 0 16px 40px rgba(0,0,0,.18);
+            }
+            .hireup-worker-map .leaflet-popup-content { margin: 0; width: 270px !important; }
+          `}</style>
+
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="grid grid-cols-3 gap-2 flex-1">
+              <div className="bg-white border border-zinc-200 rounded-xl p-3">
+                <p className="text-[8px] font-mono font-black text-zinc-400 uppercase">Visible workers</p>
+                <p className="text-xl font-black mt-1">{filteredWorkers.length}</p>
+              </div>
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
+                <p className="text-[8px] font-mono font-black text-emerald-700 uppercase">Available now</p>
+                <p className="text-xl font-black text-emerald-800 mt-1">{immediatelyAvailableWorkers.length}</p>
+              </div>
+              <div className="bg-zinc-950 text-white rounded-xl p-3">
+                <p className="text-[8px] font-mono font-black text-[#34D399] uppercase">Average AI match</p>
+                <p className="text-xl font-black mt-1">{averageWorkerMatch}%</p>
+              </div>
+            </div>
+
+            <div className="inline-flex bg-zinc-100 p-1 rounded-xl self-start lg:self-auto">
+              <button
+                type="button"
+                onClick={() => setWorkerDisplayMode('list')}
+                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
+                  workerDisplayMode === 'list' ? 'bg-white text-zinc-950 shadow-sm' : 'text-zinc-500'
+                }`}
+              >
+                <List className="w-3.5 h-3.5" /> List View
+              </button>
+              <button
+                type="button"
+                onClick={() => setWorkerDisplayMode('map')}
+                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
+                  workerDisplayMode === 'map' ? 'bg-zinc-950 text-white shadow-sm' : 'text-zinc-500'
+                }`}
+              >
+                <Map className="w-3.5 h-3.5" /> Live Map
+              </button>
+            </div>
+          </div>
+
+          {workerDisplayMode === 'map' && (
+            <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-zinc-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-black flex items-center gap-2">
+                    <Navigation className="w-4 h-4 text-[#10B981]" /> Worker Availability Map
+                  </p>
+                  <p className="text-[10px] text-zinc-500 mt-0.5">
+                    Pins use each worker’s saved town or city, not live GPS tracking.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3 text-[9px] font-mono font-black uppercase">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Available now</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> This week</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Available soon</span>
+                </div>
+              </div>
+
+              <div className="hireup-worker-map h-[560px] w-full relative z-0">
+                <MapContainer
+                  center={[52.5, -1.5]}
+                  zoom={6}
+                  scrollWheelZoom
+                  className="h-full w-full"
+                >
+                  <TileLayer
+                    attribution='&copy; OpenStreetMap contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <FitWorkerMap points={workerMapPoints} />
+                  {filteredWorkers.map(worker => {
+                    const coordinates = locationCoordinates(worker.location, worker.id);
+                    const match = workerMatch(worker);
+                    const tone = availabilityTone(worker.availability);
+                    const isSaved = savedIds.includes(worker.id);
+
+                    return (
+                      <Marker
+                        key={`map-${worker.id}`}
+                        position={coordinates}
+                        icon={workerMapIcon(worker.availability)}
+                      >
+                        <Popup>
+                          <div className="overflow-hidden rounded-2xl bg-white">
+                            <div className="bg-zinc-950 text-white p-4">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={worker.profilePhotoUrl || worker.avatar}
+                                  alt={worker.name}
+                                  className="w-12 h-12 rounded-xl object-cover border border-white/20"
+                                />
+                                <div className="min-w-0">
+                                  <p className="font-black text-sm truncate">{worker.name}</p>
+                                  <p className="text-[10px] text-[#34D399] font-bold">{worker.trade}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between mt-3">
+                                <span className="text-[9px] font-mono font-black uppercase" style={{ color: tone.colour }}>
+                                  {tone.label}
+                                </span>
+                                <span className="text-xl font-black">{match.score}%</span>
+                              </div>
+                            </div>
+                            <div className="p-4 space-y-3">
+                              <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                <span className="flex items-center gap-1 text-zinc-600"><MapPin className="w-3 h-3" /> {worker.location}</span>
+                                <span className="font-mono font-black text-zinc-900 text-right">{worker.payRate}</span>
+                                <span className="flex items-center gap-1 text-zinc-600"><Clock className="w-3 h-3" /> {worker.experience}</span>
+                                <span className="flex items-center justify-end gap-1 text-zinc-600"><Star className="w-3 h-3 text-amber-500 fill-current" /> {formatRating(worker.rating)}</span>
+                              </div>
+                              <p className="text-[10px] text-emerald-700">{match.reasons[0] || match.label}</p>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSaved(worker.id)}
+                                  className={`flex-1 py-2 rounded-lg border text-[9px] font-mono font-black uppercase ${isSaved ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'border-zinc-200 text-zinc-600'}`}
+                                >
+                                  {isSaved ? 'Saved' : 'Save'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onSelectWorker(worker)}
+                                  className="flex-1 py-2 bg-zinc-950 text-white rounded-lg text-[9px] font-mono font-black uppercase"
+                                >
+                                  View Profile
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    );
+                  })}
+                </MapContainer>
+              </div>
+            </div>
+          )}
+
+          {workerDisplayMode === 'list' && (
           {filteredWorkers.length === 0 ? (
             <div className="bg-white border border-zinc-200 border-dashed rounded-2xl p-10 text-center">
               <Users className="w-8 h-8 text-zinc-300 mx-auto" />
@@ -612,6 +871,7 @@ export default function CompaniesView({
                 </article>
               );
             })
+          )}
           )}
         </section>
       ) : (
