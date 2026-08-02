@@ -142,6 +142,7 @@ export default function DashboardView({
   const resolvedRecJobs = rankedWorkerJobs.slice(0, 3).map(result => result.item);
   const workerJobMatch = (job: JobProfile) =>
     scoreWorkerForJob(loggedInWorker, job);
+  const topWorkerMatch = rankedWorkerJobs[0]?.match;
 
   const workerMatches = matches.filter(m => m.workerId === loggedInWorker.id);
   
@@ -374,6 +375,40 @@ export default function DashboardView({
           </div>
         </div>
       </div>
+
+      <section className="bg-gradient-to-r from-zinc-950 to-zinc-900 text-white rounded-2xl p-5 md:p-6 border border-zinc-800">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-[#34D399]/15 text-[#34D399] flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-6 h-6" />
+          </div>
+
+          <div className="flex-1">
+            <p className="text-[9px] font-mono font-black text-[#34D399] uppercase tracking-wider">
+              HireUp Smart Matching
+            </p>
+            <h2 className="text-xl font-black mt-1">
+              {userType === 'worker'
+                ? topWorkerMatch
+                  ? `${topWorkerMatch.score}% ${topWorkerMatch.label}`
+                  : `${resolvedRecJobs.length} recommended opportunities found`
+                : `${recommendedWorkers.length} recommended workers found`}
+            </h2>
+            <p className="text-xs text-zinc-400 mt-1">
+              {userType === 'worker'
+                ? 'Your jobs are ranked using your trade, qualifications, location, availability and pay.'
+                : 'Workers are ranked against your active vacancies and their requirements.'}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onNavigate('swipe')}
+            className="px-4 py-2.5 bg-[#34D399] text-zinc-950 rounded-xl text-[10px] font-mono font-black uppercase whitespace-nowrap"
+          >
+            View Smart Matches
+          </button>
+        </div>
+      </section>
 
       {/* Live Analytics Overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">

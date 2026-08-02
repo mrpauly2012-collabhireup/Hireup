@@ -14,6 +14,11 @@ import {
 import { WorkerProfile, CompanyProfile, UserType, JobProfile } from '../types';
 import SearchableDropdown from './SearchableDropdown';
 import { uploadFileToStorage } from '../lib/supabase';
+import {
+  bestWorkerMatchAcrossJobs,
+  calculateProfileStrength,
+  scoreWorkerForJob,
+} from '../lib/matching';
 import { HOMETOWNS, LICENCES, POSITION_LENGTHS, GRADES, REQUIREMENTS, TRADES_CATEGORIES } from '../data/datasets';
 
 interface ProfileViewProps {
@@ -634,6 +639,30 @@ export default function ProfileView({
   };
   const categoryAverages = getCategoryAverages();
 
+  const workerProfileStrength = calculateProfileStrength(workerProfile);
+  const workerRelevantJobs = jobs.filter(job =>
+    job.trade?.toLowerCase().includes(workerProfile.trade?.toLowerCase() || '') ||
+    workerProfile.trade?.toLowerCase().includes(job.trade?.toLowerCase() || '')
+  );
+  const workerBestMatch = workerRelevantJobs.length > 0
+    ? scoreWorkerForJob(workerProfile, workerRelevantJobs[0])
+    : bestWorkerMatchAcrossJobs(workerProfile, jobs);
+
+  const companyJobs = jobs.filter(job => job.companyId === companyProfile.id);
+  const companyAiReadiness = Math.round(
+    Math.min(
+      100,
+      (companyProfile.description ? 15 : 0) +
+      (companyProfile.location ? 10 : 0) +
+      (companyProfile.industry ? 10 : 0) +
+      ((companyProfile.requirements || []).length > 0 ? 15 : 0) +
+      ((companyProfile.benefits || []).length > 0 ? 10 : 0) +
+      (companyProfile.verified ? 15 : 0) +
+      ((companyProfile.companyGalleryImages || []).length > 0 ? 10 : 0) +
+      (companyJobs.length > 0 ? 15 : 0)
+    )
+  );
+
   return (
     <div id="profile-management-container" className="space-y-6 pb-24 font-sans animate-fade-in relative max-w-7xl mx-auto px-4">
       
@@ -860,7 +889,104 @@ export default function ProfileView({
               </p>
             </div>
 
-            {/* WORKER SPECIFIC: QUALIFICATIONS, Timeline, LICENCES */}
+            
+      <section className="bg-zinc-950 text-white rounded-3xl p-6 md:p-8 border border-zinc-800 shadow-sm">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#34D399]" />
+              <p className="text-[10px] font-mono font-black text-[#34D399] uppercase tracking-wider">
+                HireUp AI Scorecard
+              </p>
+            </div>
+
+            <div className="flex items-end gap-3 mt-4">
+              <span className="text-5xl font-black">
+                {userType === 'worker' ? workerBestMatch.score : companyAiReadiness}
+              </span>
+              <span className="text-lg text-zinc-400 mb-1">/100</span>
+            </div>
+
+            <h3 className="text-xl font-black mt-2">
+              {userType === 'worker'
+                ? workerBestMatch.label
+                : companyAiReadiness >= 85
+                ? 'Excellent recruiter profile'
+                : companyAiReadiness >= 65
+                ? 'Strong recruiter profile'
+                : 'Profile needs improvement'}
+            </h3>
+
+            <p className="text-sm text-zinc-400 mt-2 max-w-2xl">
+              {userType === 'worker'
+                ? workerBestMatch.reasons[0] || 'Complete more profile details to improve your future match scores.'
+                : 'This score measures how ready your company profile and vacancies are for smart candidate matching.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:w-[55%]">
+            {(userType === 'worker'
+              ? [
+                  ['Trade', workerBestMatch.breakdown.trade],
+                  ['Qualifications', workerBestMatch.breakdown.qualifications],
+                  ['Experience', workerBestMatch.breakdown.experience],
+                  ['Location', workerBestMatch.breakdown.location],
+                  ['Availability', workerBestMatch.breakdown.availability],
+                  ['Pay', workerBestMatch.breakdown.pay],
+                  ['Verification', workerBestMatch.breakdown.verification],
+                  ['Profile', workerBestMatch.breakdown.profile],
+                ]
+              : [
+                  ['Profile', companyAiReadiness],
+                  ['Vacancies', Math.min(100, companyJobs.length * 25)],
+                  ['Requirements', (companyProfile.requirements || []).length ? 100 : 20],
+                  ['Verification', companyProfile.verified ? 100 : 35],
+                ]
+            ).map(([label, value]) => (
+              <div key={String(label)} className="bg-white/5 border border-white/10 rounded-xl p-3">
+                <p className="text-[9px] font-mono font-black text-zinc-400 uppercase">
+                  {label}
+                </p>
+                <p className="text-xl font-black mt-1">{value}%</p>
+                <div className="h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
+                  <div
+                    className="h-full bg-[#34D399] rounded-full"
+                    style={{ width: `${value}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {userType === 'worker' && (
+          <div className="mt-6 pt-5 border-t border-white/10">
+            <p className="text-[10px] font-mono font-black text-zinc-400 uppercase">
+              Improve my score
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+              {workerProfileStrength.improvements
+                .filter(item => !item.completed)
+                .slice(0, 6)
+                .map(item => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => setProfileMode('edit')}
+                    className="flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-left"
+                  >
+                    <span className="text-xs font-bold">{item.label}</span>
+                    <span className="text-xs font-mono font-black text-[#34D399]">
+                      +{item.points}%
+                    </span>
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
+      </section>
+
+{/* WORKER SPECIFIC: QUALIFICATIONS, Timeline, LICENCES */}
             {userType === 'worker' && (
               <>
                 {/* Qualifications & Cards */}

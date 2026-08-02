@@ -1522,6 +1522,12 @@ export default function App() {
                 return (
                   <AnalyticsView 
                     userType={userType}
+                    currentUserId={currentUser?.id}
+                    workers={workers}
+                    jobs={jobs}
+                    matches={matches}
+                    interviews={interviews}
+                    companies={companies}
                   />
                 );
               case 'settings':

@@ -13,6 +13,8 @@ import {
   bestWorkerMatchAcrossJobs,
   rankJobsForWorker,
   scoreWorkerForJob,
+  scoreJobAgainstNaturalLanguage,
+  scoreWorkerAgainstNaturalLanguage,
 } from '../lib/matching';
 import SearchableDropdown from './SearchableDropdown';
 import { HOMETOWNS, LICENCES, POSITION_LENGTHS, GRADES, REQUIREMENTS, TRADES_CATEGORIES, TRADE_SUBCATEGORIES_MAP } from '../data/datasets';
@@ -37,6 +39,7 @@ export default function SearchView({
   onNavigate
 }: SearchViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [aiQuery, setAiQuery] = useState('');
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [cscsTier, setCscsTier] = useState<string | null>(null);
@@ -344,7 +347,13 @@ export default function SearchView({
   const contractorJobs = jobs.filter(job => job.companyId === currentUser?.id);
 
   const sortedWorkers =
-    sortOrder === 'relevance' && userType === 'employer' && contractorJobs.length > 0
+    aiQuery.trim() && userType === 'employer'
+      ? [...filteredWorkers].sort(
+          (a, b) =>
+            scoreWorkerAgainstNaturalLanguage(b, aiQuery, contractorJobs) -
+            scoreWorkerAgainstNaturalLanguage(a, aiQuery, contractorJobs)
+        )
+      : sortOrder === 'relevance' && userType === 'employer' && contractorJobs.length > 0
       ? [...filteredWorkers].sort(
           (a, b) =>
             bestWorkerMatchAcrossJobs(b, contractorJobs).score -
@@ -353,7 +362,13 @@ export default function SearchView({
       : sortWorkers(filteredWorkers);
 
   const sortedJobs =
-    sortOrder === 'relevance' && userType === 'worker' && loggedInWorker
+    aiQuery.trim() && userType === 'worker'
+      ? [...filteredJobs].sort(
+          (a, b) =>
+            scoreJobAgainstNaturalLanguage(b, aiQuery, loggedInWorker) -
+            scoreJobAgainstNaturalLanguage(a, aiQuery, loggedInWorker)
+        )
+      : sortOrder === 'relevance' && userType === 'worker' && loggedInWorker
       ? rankJobsForWorker(loggedInWorker, filteredJobs).map(result => result.item)
       : sortJobs(filteredJobs);
 
@@ -400,6 +415,60 @@ export default function SearchView({
         >
           <MapPin className="w-3.5 h-3.5 text-white animate-pulse" /> Search Filters & Map
         </button>
+      </div>
+
+      <div className="bg-zinc-950 text-white rounded-2xl p-4 border border-zinc-800 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#34D399]/15 text-[#34D399] flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[9px] font-mono font-black text-[#34D399] uppercase tracking-wider">
+              HireUp Smart Matching
+            </p>
+            <h3 className="text-base font-black mt-1">
+              Results ranked by your profile
+            </h3>
+            <p className="text-xs text-zinc-400 mt-1">
+              Match scores use trade, qualifications, licences, location, availability and pay.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-4 h-4 text-[#10B981]" />
+          <p className="text-[10px] font-mono font-black uppercase text-zinc-600">
+            {userType === 'worker' ? 'AI Job Finder' : 'AI Recruiter'}
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            value={aiQuery}
+            onChange={event => setAiQuery(event.target.value)}
+            placeholder={
+              userType === 'worker'
+                ? 'Example: weekend electrical work in London paying £250/day'
+                : 'Example: electrician in Brighton, ECS Gold, available Monday'
+            }
+            className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:border-[#34D399]"
+          />
+          {aiQuery && (
+            <button
+              type="button"
+              onClick={() => setAiQuery('')}
+              className="px-4 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-mono font-black uppercase"
+            >
+              Clear AI Search
+            </button>
+          )}
+        </div>
+        {aiQuery && (
+          <p className="text-xs text-emerald-700 mt-3">
+            Smart ranking active for: “{aiQuery}”
+          </p>
+        )}
       </div>
 
       {/* Immersive Search input */}
