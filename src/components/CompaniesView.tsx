@@ -904,8 +904,7 @@ export default function CompaniesView({
                 </article>
               );
             })
-          )}
-          )}
+          ))}
           </div>
         </section>
       ) : (
