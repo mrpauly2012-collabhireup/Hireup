@@ -427,251 +427,390 @@ export default function CompaniesView({
           <div className="flex-1">
             <div className="flex items-center gap-2">
               {isContractorView ? (
-                <Wrench className="w-5 h-5 text-[#34D399]" />
-              ) : (
-                <Building2 className="w-5 h-5 text-[#34D399]" />
-              )}
-              <p className="text-[10px] font-mono font-black text-[#34D399] uppercase tracking-wider">
-                Verified HireUp Network
-              </p>
-            </div>
-            <h2 className="text-2xl md:text-3xl font-black mt-2">
-              {isContractorView ? 'Verified Workers' : 'Verified Businesses'}
-            </h2>
-            <p className="text-sm text-zinc-400 mt-2 max-w-2xl">
-              {isContractorView
-                ? 'Discover approved tradespeople ranked against your active vacancies.'
-                : 'Discover approved contractors, live vacancies and employers matched to your worker profile.'}
-            </p>
-          </div>
-
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4 min-w-48">
-            <p className="text-[9px] font-mono uppercase text-zinc-400">
-              Verified profiles
-            </p>
-            <p className="text-3xl font-black mt-1">
-              {isContractorView
-                ? verifiedWorkers.length
-                : verifiedCompanies.length}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white border border-zinc-200 rounded-2xl p-4 space-y-4">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal className="w-4 h-4 text-[#10B981]" />
-          <p className="text-[10px] font-mono font-black uppercase text-zinc-500">
-            Search and filters
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
-          <div className="relative xl:col-span-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={event => setSearchQuery(event.target.value)}
-              placeholder={
-                isContractorView
-                  ? 'Search trade, skill, licence or location...'
-                  : 'Search company, trade or location...'
-              }
-              className="w-full pl-9 pr-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-[#34D399]"
-            />
-          </div>
-
-          <select
-            value={tradeFilter}
-            onChange={event => setTradeFilter(event.target.value)}
-            className="px-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
-          >
-            <option value="all">All trades</option>
-            {availableTrades.map(trade => (
-              <option key={trade} value={trade}>
-                {trade}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={locationFilter}
-            onChange={event => setLocationFilter(event.target.value)}
-            className="px-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
-          >
-            <option value="all">All locations</option>
-            {availableLocations.map(location => (
-              <option key={location} value={location}>
-                {location}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={minimumRating}
-            onChange={event => setMinimumRating(event.target.value)}
-            className="px-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
-          >
-            <option value="all">Any rating</option>
-            <option value="4">4.0+ rating</option>
-            <option value="4.5">4.5+ rating</option>
-            <option value="4.8">4.8+ rating</option>
-          </select>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {isContractorView ? (
-            <>
-              {[
-                ['all', 'All availability'],
-                ['immediate', 'Immediate'],
-                ['week', 'Available soon'],
-                ['available', 'Available workers'],
-              ].map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() =>
-                    setAvailabilityFilter(value as AvailabilityFilter)
-                  }
-                  className={`px-3 py-2 rounded-lg text-[10px] font-mono font-black uppercase border ${
-                    availabilityFilter === value
-                      ? 'bg-[#34D399] border-[#34D399] text-zinc-950'
-                      : 'bg-white border-zinc-200 text-zinc-500'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </>
-          ) : (
-            <>
-              {[
-                ['all', 'All businesses'],
-                ['hiring', 'Hiring now'],
-                ['not_hiring', 'No open roles'],
-              ].map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setHiringFilter(value as HiringFilter)}
-                  className={`px-3 py-2 rounded-lg text-[10px] font-mono font-black uppercase border ${
-                    hiringFilter === value
-                      ? 'bg-[#34D399] border-[#34D399] text-zinc-950'
-                      : 'bg-white border-zinc-200 text-zinc-500'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </>
-          )}
-        </div>
-      </section>
-
-      {isContractorView ? (
         <section className="space-y-4">
           <style>{`
             @keyframes hireup-map-pulse {
               0% { transform: scale(.75); opacity: .45; }
               75%, 100% { transform: scale(1.85); opacity: 0; }
             }
+
+            .hireup-worker-map .leaflet-container {
+              width: 100%;
+              height: 100%;
+              background: #e4e4e7;
+              font-family: inherit;
+            }
+
             .hireup-worker-map .leaflet-popup-content-wrapper {
               border-radius: 16px;
+              overflow: hidden;
+              padding: 0;
               box-shadow: 0 16px 40px rgba(0,0,0,.18);
             }
-            .hireup-worker-map .leaflet-popup-content { margin: 0; width: 270px !important; }
+
+            .hireup-worker-map .leaflet-popup-content {
+              width: 270px !important;
+              margin: 0;
+            }
           `}</style>
 
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            <div className="grid grid-cols-3 gap-2 flex-1">
-              <div className="bg-white border border-zinc-200 rounded-xl p-3">
-                <p className="text-[8px] font-mono font-black text-zinc-400 uppercase">Visible workers</p>
-                <p className="text-xl font-black mt-1">{filteredWorkers.length}</p>
-              </div>
-              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
-                <p className="text-[8px] font-mono font-black text-emerald-700 uppercase">Available now</p>
-                <p className="text-xl font-black text-emerald-800 mt-1">{immediatelyAvailableWorkers.length}</p>
-              </div>
-              <div className="bg-zinc-950 text-white rounded-xl p-3">
-                <p className="text-[8px] font-mono font-black text-[#34D399] uppercase">Average AI match</p>
-                <p className="text-xl font-black mt-1">{averageWorkerMatch}%</p>
-              </div>
-            </div>
+          {/* VIEW CONTROLS */}
+          <div className="bg-white border border-zinc-200 rounded-2xl p-4">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+              <div className="grid grid-cols-3 gap-2 flex-1">
+                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                  <p className="text-[8px] font-mono font-black text-zinc-400 uppercase">
+                    Visible workers
+                  </p>
+                  <p className="text-xl font-black mt-1">{filteredWorkers.length}</p>
+                </div>
 
-            <div className="inline-flex bg-zinc-100 p-1 rounded-xl self-start lg:self-auto">
-              <button
-                type="button"
-                onClick={() => setWorkerDisplayMode('list')}
-                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
-                  workerDisplayMode === 'list' ? 'bg-white text-zinc-950 shadow-sm' : 'text-zinc-500'
-                }`}
-              >
-                <List className="w-3.5 h-3.5" /> List View
-              </button>
-              <button
-                type="button"
-                onClick={() => setWorkerDisplayMode('split')}
-                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
-                  workerDisplayMode === 'split'
-                    ? 'bg-[#34D399] text-zinc-950 shadow-sm'
-                    : 'text-zinc-500'
-                }`}
-              >
-                <Navigation className="w-3.5 h-3.5" /> Split View
-              </button>
+                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
+                  <p className="text-[8px] font-mono font-black text-emerald-700 uppercase">
+                    Available now
+                  </p>
+                  <p className="text-xl font-black text-emerald-800 mt-1">
+                    {immediatelyAvailableWorkers.length}
+                  </p>
+                </div>
 
-              <button
-                type="button"
-                onClick={() => setWorkerDisplayMode('map')}
-                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
-                  workerDisplayMode === 'map' ? 'bg-zinc-950 text-white shadow-sm' : 'text-zinc-500'
-                }`}
-              >
-                <Map className="w-3.5 h-3.5" /> Full Map
-              </button>
+                <div className="bg-zinc-950 text-white rounded-xl p-3">
+                  <p className="text-[8px] font-mono font-black text-[#34D399] uppercase">
+                    Average AI match
+                  </p>
+                  <p className="text-xl font-black mt-1">{averageWorkerMatch}%</p>
+                </div>
+              </div>
+
+              <div className="inline-flex flex-wrap bg-zinc-100 p-1 rounded-xl self-start xl:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setWorkerDisplayMode('list')}
+                  className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
+                    workerDisplayMode === 'list'
+                      ? 'bg-white text-zinc-950 shadow-sm'
+                      : 'text-zinc-500'
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" />
+                  List
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setWorkerDisplayMode('split')}
+                  className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
+                    workerDisplayMode === 'split'
+                      ? 'bg-[#34D399] text-zinc-950 shadow-sm'
+                      : 'text-zinc-500'
+                  }`}
+                >
+                  <Navigation className="w-3.5 h-3.5" />
+                  Map + List
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setWorkerDisplayMode('map')}
+                  className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
+                    workerDisplayMode === 'map'
+                      ? 'bg-zinc-950 text-white shadow-sm'
+                      : 'text-zinc-500'
+                  }`}
+                >
+                  <Map className="w-3.5 h-3.5" />
+                  Full Map
+                </button>
+              </div>
             </div>
           </div>
 
-          <p className="text-[10px] text-zinc-500">
-            Split View keeps the worker map visible while you compare verified profiles.
-          </p>
+          {/* SPLIT VIEW: EXACTLY TWO GRID CHILDREN */}
+          {workerDisplayMode === 'split' && (
+            <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,3fr)_minmax(420px,2fr)] gap-4 items-start">
+              {/* LEFT: MAP */}
+              <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden 2xl:sticky 2xl:top-4">
+                <div className="px-4 py-3 border-b border-zinc-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-black flex items-center gap-2">
+                        <Navigation className="w-4 h-4 text-[#10B981]" />
+                        Worker Availability Map
+                      </p>
+                      <p className="text-[10px] text-zinc-500 mt-0.5">
+                        Based on each worker&apos;s saved town or city—not live GPS.
+                      </p>
+                    </div>
 
-          <div
-            className={
-              workerDisplayMode === 'split'
-                ? 'grid grid-cols-1 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-4 items-start'
-                : ''
-            }
-          >
-          {(workerDisplayMode === 'map' || workerDisplayMode === 'split') && (
-            <div
-              className={`bg-white border border-zinc-200 rounded-2xl overflow-hidden ${
-                workerDisplayMode === 'split' ? 'xl:sticky xl:top-4' : ''
-              }`}
-            >
-              <div className="px-4 py-3 border-b border-zinc-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <p className="text-sm font-black flex items-center gap-2">
-                    <Navigation className="w-4 h-4 text-[#10B981]" /> Worker Availability Map
-                  </p>
-                  <p className="text-[10px] text-zinc-500 mt-0.5">
-                    Pins use each worker’s saved town or city, not live GPS tracking.
-                  </p>
+                    <div className="flex flex-wrap gap-3 text-[9px] font-mono font-black uppercase">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                        Now
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                        This week
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                        Soon
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-3 text-[9px] font-mono font-black uppercase">
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Available now</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> This week</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Available soon</span>
+
+                <div className="hireup-worker-map h-[680px] w-full relative z-0">
+                  <MapContainer
+                    center={[52.5, -1.5]}
+                    zoom={6}
+                    scrollWheelZoom
+                    className="h-full w-full"
+                  >
+                    <TileLayer
+                      attribution="&copy; OpenStreetMap contributors"
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <FitWorkerMap points={workerMapPoints} />
+
+                    {filteredWorkers.map(worker => {
+                      const match = workerMatch(worker);
+                      const tone = availabilityTone(worker.availability);
+                      const isSaved = savedIds.includes(worker.id);
+
+                      return (
+                        <Marker
+                          key={`split-map-${worker.id}`}
+                          position={locationCoordinates(worker.location, worker.id)}
+                          icon={workerMapIcon(worker.availability)}
+                        >
+                          <Popup>
+                            <div className="bg-white">
+                              <div className="bg-zinc-950 text-white p-4">
+                                <div className="flex items-center gap-3">
+                                  <img
+                                    src={worker.profilePhotoUrl || worker.avatar}
+                                    alt={worker.name}
+                                    className="w-12 h-12 rounded-xl object-cover border border-white/20"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                  <div className="min-w-0">
+                                    <p className="font-black text-sm truncate">
+                                      {worker.name}
+                                    </p>
+                                    <p className="text-[10px] text-[#34D399] font-bold">
+                                      {worker.trade}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between mt-3">
+                                  <span
+                                    className="text-[9px] font-mono font-black uppercase"
+                                    style={{ color: tone.colour }}
+                                  >
+                                    {tone.label}
+                                  </span>
+                                  <span className="text-xl font-black">{match.score}%</span>
+                                </div>
+                              </div>
+
+                              <div className="p-4 space-y-3">
+                                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                  <span className="flex items-center gap-1 text-zinc-600">
+                                    <MapPin className="w-3 h-3" />
+                                    {worker.location}
+                                  </span>
+                                  <span className="text-right font-mono font-black">
+                                    {worker.payRate}
+                                  </span>
+                                  <span className="flex items-center gap-1 text-zinc-600">
+                                    <Clock className="w-3 h-3" />
+                                    {worker.experience}
+                                  </span>
+                                  <span className="flex items-center justify-end gap-1">
+                                    <Star className="w-3 h-3 text-amber-500 fill-current" />
+                                    {formatRating(worker.rating)}
+                                  </span>
+                                </div>
+
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleSaved(worker.id)}
+                                    className={`flex-1 py-2 rounded-lg border text-[9px] font-mono font-black uppercase ${
+                                      isSaved
+                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                        : 'border-zinc-200 text-zinc-600'
+                                    }`}
+                                  >
+                                    {isSaved ? 'Saved' : 'Save'}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => onSelectWorker(worker)}
+                                    className="flex-1 py-2 bg-zinc-950 text-white rounded-lg text-[9px] font-mono font-black uppercase"
+                                  >
+                                    View Profile
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </Popup>
+                        </Marker>
+                      );
+                    })}
+                  </MapContainer>
                 </div>
               </div>
 
-              <div
-                className={`hireup-worker-map w-full relative z-0 ${
-                  workerDisplayMode === 'split' ? 'h-[720px]' : 'h-[620px]'
-                }`}
-              >
+              {/* RIGHT: ONE SCROLLABLE LIST CONTAINER */}
+              <div className="bg-zinc-100/60 border border-zinc-200 rounded-2xl p-3">
+                <div className="flex items-center justify-between px-1 pb-3">
+                  <div>
+                    <p className="text-sm font-black">Verified workers</p>
+                    <p className="text-[10px] text-zinc-500">
+                      Sorted by your strongest AI match
+                    </p>
+                  </div>
+                  <span className="px-2 py-1 bg-white border border-zinc-200 rounded-lg text-[9px] font-mono font-black">
+                    {filteredWorkers.length} RESULTS
+                  </span>
+                </div>
+
+                <div className="h-[620px] overflow-y-auto space-y-3 pr-1">
+                  {filteredWorkers.length === 0 ? (
+                    <div className="bg-white border border-zinc-200 border-dashed rounded-xl p-8 text-center">
+                      <Users className="w-7 h-7 text-zinc-300 mx-auto" />
+                      <p className="text-sm font-black mt-2">No workers found</p>
+                    </div>
+                  ) : (
+                    filteredWorkers.map(worker => {
+                      const match = workerMatch(worker);
+                      const isSaved = savedIds.includes(worker.id);
+
+                      return (
+                        <article
+                          key={`split-card-${worker.id}`}
+                          className="bg-white border border-zinc-200 rounded-xl p-3 hover:border-[#34D399] transition-all"
+                        >
+                          <div className="flex items-start gap-3">
+                            <img
+                              src={worker.profilePhotoUrl || worker.avatar}
+                              alt={worker.name}
+                              className="w-14 h-14 rounded-xl object-cover border border-zinc-200 flex-shrink-0"
+                              referrerPolicy="no-referrer"
+                            />
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <h3 className="text-sm font-black truncate">
+                                    {worker.name}
+                                  </h3>
+                                  <p className="text-[11px] font-bold text-[#10B981] truncate">
+                                    {worker.trade}
+                                  </p>
+                                </div>
+
+                                <div className="bg-zinc-950 text-white rounded-lg px-2 py-1.5 text-center flex-shrink-0">
+                                  <p className="text-[7px] font-mono text-[#34D399] uppercase">
+                                    Match
+                                  </p>
+                                  <p className="text-base font-black leading-none mt-0.5">
+                                    {match.score}%
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-zinc-500 mt-2">
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {worker.location}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {worker.experience}
+                                </span>
+                                <span className="font-mono font-black text-zinc-800">
+                                  {worker.payRate}
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {(worker.qualifications || []).slice(0, 2).map(item => (
+                                  <span
+                                    key={item}
+                                    className="px-1.5 py-0.5 bg-zinc-50 border border-zinc-200 rounded text-[8px] font-mono font-bold text-zinc-600 truncate max-w-40"
+                                  >
+                                    {item}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 pt-3 border-t border-zinc-100 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={`w-2 h-2 rounded-full ${
+                                  normalise(worker.availability).includes('immediate')
+                                    ? 'bg-emerald-500'
+                                    : 'bg-blue-500'
+                                }`}
+                              />
+                              <span className="text-[9px] font-mono font-black uppercase text-zinc-500">
+                                {worker.availability}
+                              </span>
+                            </div>
+
+                            <div className="flex gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => toggleSaved(worker.id)}
+                                className={`p-2 rounded-lg border ${
+                                  isSaved
+                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                    : 'border-zinc-200 text-zinc-500'
+                                }`}
+                                title={isSaved ? 'Remove saved worker' : 'Save worker'}
+                              >
+                                <Bookmark
+                                  className={`w-3.5 h-3.5 ${
+                                    isSaved ? 'fill-current' : ''
+                                  }`}
+                                />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => onSelectWorker(worker)}
+                                className="px-3 py-2 bg-zinc-950 text-white rounded-lg text-[9px] font-mono font-black uppercase"
+                              >
+                                Profile
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* FULL MAP VIEW */}
+          {workerDisplayMode === 'map' && (
+            <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-zinc-200">
+                <p className="text-sm font-black flex items-center gap-2">
+                  <Navigation className="w-4 h-4 text-[#10B981]" />
+                  Full Worker Availability Map
+                </p>
+              </div>
+
+              <div className="hireup-worker-map h-[680px] w-full relative z-0">
                 <MapContainer
                   center={[52.5, -1.5]}
                   zoom={6}
@@ -679,233 +818,127 @@ export default function CompaniesView({
                   className="h-full w-full"
                 >
                   <TileLayer
-                    attribution='&copy; OpenStreetMap contributors'
+                    attribution="&copy; OpenStreetMap contributors"
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
                   <FitWorkerMap points={workerMapPoints} />
-                  {filteredWorkers.map(worker => {
-                    const coordinates = locationCoordinates(worker.location, worker.id);
-                    const match = workerMatch(worker);
-                    const tone = availabilityTone(worker.availability);
-                    const isSaved = savedIds.includes(worker.id);
 
-                    return (
-                      <Marker
-                        key={`map-${worker.id}`}
-                        position={coordinates}
-                        icon={workerMapIcon(worker.availability)}
-                      >
-                        <Popup>
-                          <div className="overflow-hidden rounded-2xl bg-white">
-                            <div className="bg-zinc-950 text-white p-4">
-                              <div className="flex items-center gap-3">
-                                <img
-                                  src={worker.profilePhotoUrl || worker.avatar}
-                                  alt={worker.name}
-                                  className="w-12 h-12 rounded-xl object-cover border border-white/20"
-                                />
-                                <div className="min-w-0">
-                                  <p className="font-black text-sm truncate">{worker.name}</p>
-                                  <p className="text-[10px] text-[#34D399] font-bold">{worker.trade}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center justify-between mt-3">
-                                <span className="text-[9px] font-mono font-black uppercase" style={{ color: tone.colour }}>
-                                  {tone.label}
-                                </span>
-                                <span className="text-xl font-black">{match.score}%</span>
-                              </div>
-                            </div>
-                            <div className="p-4 space-y-3">
-                              <div className="grid grid-cols-2 gap-2 text-[10px]">
-                                <span className="flex items-center gap-1 text-zinc-600"><MapPin className="w-3 h-3" /> {worker.location}</span>
-                                <span className="font-mono font-black text-zinc-900 text-right">{worker.payRate}</span>
-                                <span className="flex items-center gap-1 text-zinc-600"><Clock className="w-3 h-3" /> {worker.experience}</span>
-                                <span className="flex items-center justify-end gap-1 text-zinc-600"><Star className="w-3 h-3 text-amber-500 fill-current" /> {formatRating(worker.rating)}</span>
-                              </div>
-                              <p className="text-[10px] text-emerald-700">{match.reasons[0] || match.label}</p>
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => toggleSaved(worker.id)}
-                                  className={`flex-1 py-2 rounded-lg border text-[9px] font-mono font-black uppercase ${isSaved ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'border-zinc-200 text-zinc-600'}`}
-                                >
-                                  {isSaved ? 'Saved' : 'Save'}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => onSelectWorker(worker)}
-                                  className="flex-1 py-2 bg-zinc-950 text-white rounded-lg text-[9px] font-mono font-black uppercase"
-                                >
-                                  View Profile
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    );
-                  })}
+                  {filteredWorkers.map(worker => (
+                    <Marker
+                      key={`full-map-${worker.id}`}
+                      position={locationCoordinates(worker.location, worker.id)}
+                      icon={workerMapIcon(worker.availability)}
+                    >
+                      <Popup>
+                        <div className="p-3">
+                          <p className="text-sm font-black">{worker.name}</p>
+                          <p className="text-[10px] font-bold text-[#10B981]">
+                            {worker.trade}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => onSelectWorker(worker)}
+                            className="w-full mt-3 py-2 bg-zinc-950 text-white rounded-lg text-[9px] font-mono font-black uppercase"
+                          >
+                            View Profile
+                          </button>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
                 </MapContainer>
               </div>
             </div>
           )}
 
-          {(workerDisplayMode === 'list' || workerDisplayMode === 'split') && (
-            filteredWorkers.length === 0 ? (
-            <div className="bg-white border border-zinc-200 border-dashed rounded-2xl p-10 text-center">
-              <Users className="w-8 h-8 text-zinc-300 mx-auto" />
-              <h3 className="font-black mt-3">No verified workers found</h3>
-              <p className="text-xs text-zinc-500 mt-1">
-                Try clearing or widening your filters.
-              </p>
-            </div>
-          ) : (
-            filteredWorkers.map(worker => {
-              const match = workerMatch(worker);
-              const isSaved = savedIds.includes(worker.id);
+          {/* NORMAL LIST VIEW */}
+          {workerDisplayMode === 'list' && (
+            <div className="space-y-4">
+              {filteredWorkers.length === 0 ? (
+                <div className="bg-white border border-zinc-200 border-dashed rounded-2xl p-10 text-center">
+                  <Users className="w-8 h-8 text-zinc-300 mx-auto" />
+                  <h3 className="font-black mt-3">No verified workers found</h3>
+                </div>
+              ) : (
+                filteredWorkers.map(worker => {
+                  const match = workerMatch(worker);
+                  const isSaved = savedIds.includes(worker.id);
 
-              return (
-                <article
-                  key={worker.id}
-                  className="bg-white border border-zinc-200 rounded-2xl p-5 hover:border-[#34D399] transition-all"
-                >
-                  <div className="flex flex-col lg:flex-row gap-5">
-                    <div className="flex gap-4 flex-1 min-w-0">
-                      <div className="w-20 h-20 rounded-2xl overflow-hidden bg-zinc-100 border border-zinc-200 flex-shrink-0">
-                        <img
-                          src={worker.profilePhotoUrl || worker.avatar}
-                          alt={worker.name}
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
+                  return (
+                    <article
+                      key={`list-card-${worker.id}`}
+                      className="bg-white border border-zinc-200 rounded-2xl p-5 hover:border-[#34D399] transition-all"
+                    >
+                      <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-5">
+                        <div className="flex gap-4 min-w-0">
+                          <img
+                            src={worker.profilePhotoUrl || worker.avatar}
+                            alt={worker.name}
+                            className="w-20 h-20 rounded-2xl object-cover border border-zinc-200 flex-shrink-0"
+                            referrerPolicy="no-referrer"
+                          />
 
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-lg font-black truncate">
-                            {worker.name}
-                          </h3>
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[9px] font-mono font-black uppercase">
-                            <ShieldCheck className="w-3 h-3" />
-                            Verified worker
-                          </span>
-                          {normalise(worker.availability).includes(
-                            'immediate'
-                          ) && (
-                            <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded-full text-[9px] font-mono font-black uppercase">
-                              Available now
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="text-sm font-bold text-[#10B981] mt-1">
-                          {worker.trade}
-                          {worker.subcategory ? ` · ${worker.subcategory}` : ''}
-                        </p>
-
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500 mt-2">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5" />
-                            {worker.location}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5" />
-                            {worker.experience}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Star className="w-3.5 h-3.5 text-amber-500 fill-current" />
-                            {formatRating(worker.rating)}
-                          </span>
-                          <span className="font-mono font-black text-zinc-800">
-                            {worker.payRate}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap gap-1.5 mt-3">
-                          {[...(worker.qualifications || []), ...(worker.licences || [])]
-                            .slice(0, 5)
-                            .map(item => (
-                              <span
-                                key={item}
-                                className="px-2 py-1 bg-zinc-100 border border-zinc-200 rounded-lg text-[9px] font-mono font-bold text-zinc-600"
-                              >
-                                {item}
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="text-lg font-black truncate">
+                                {worker.name}
+                              </h3>
+                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[9px] font-mono font-black uppercase">
+                                <ShieldCheck className="w-3 h-3" />
+                                Verified
                               </span>
-                            ))}
-                        </div>
-                      </div>
-                    </div>
+                            </div>
 
-                    <div className={`bg-zinc-950 text-white rounded-2xl p-4 ${
-                      workerDisplayMode === 'split' ? 'lg:w-60' : 'lg:w-72'
-                    }`}>
-                      <div className="flex items-center justify-between">
-                        <div>
+                            <p className="text-sm font-bold text-[#10B981] mt-1">
+                              {worker.trade}
+                            </p>
+
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500 mt-2">
+                              <span>{worker.location}</span>
+                              <span>{worker.experience}</span>
+                              <span>{worker.payRate}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-zinc-950 text-white rounded-2xl p-4">
                           <p className="text-[9px] font-mono uppercase text-[#34D399]">
                             HireUp AI match
                           </p>
-                          <p className="text-3xl font-black mt-1">
-                            {match.score}%
-                          </p>
-                          <p className="text-xs font-bold text-zinc-300">
-                            {match.label}
+                          <p className="text-3xl font-black mt-1">{match.score}%</p>
+                          <p className="text-xs text-zinc-400 mt-2">
+                            {match.reasons[0] || match.label}
                           </p>
                         </div>
-                        <Sparkles className="w-6 h-6 text-[#34D399]" />
                       </div>
-                      <p className="text-[10px] text-zinc-400 mt-3">
-                        {match.reasons[0] ||
-                          'Ranked against your active vacancies.'}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="mt-5 pt-4 border-t border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
-                      <span className="flex items-center gap-1">
-                        <Truck className="w-3.5 h-3.5" />
-                        {(worker.toolsAndTransport || []).slice(0, 2).join(' · ') ||
-                          'Transport not listed'}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Award className="w-3.5 h-3.5" />
-                        {worker.reviewsCount} reviews
-                      </span>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => toggleSaved(worker.id)}
-                        className={`px-3 py-2 rounded-xl border text-[10px] font-mono font-black uppercase flex items-center gap-1 ${
-                          isSaved
-                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                            : 'bg-white border-zinc-200 text-zinc-600'
-                        }`}
-                      >
-                        <Bookmark
-                          className={`w-3.5 h-3.5 ${
-                            isSaved ? 'fill-current' : ''
+                      <div className="mt-5 pt-4 border-t border-zinc-100 flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleSaved(worker.id)}
+                          className={`px-3 py-2 rounded-xl border text-[10px] font-mono font-black uppercase ${
+                            isSaved
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                              : 'border-zinc-200 text-zinc-600'
                           }`}
-                        />
-                        {isSaved ? 'Saved' : 'Save'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onSelectWorker(worker)}
-                        className="px-4 py-2 bg-zinc-950 text-white rounded-xl text-[10px] font-mono font-black uppercase flex items-center gap-1"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        View profile
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })
-          ))}
-          </div>
+                        >
+                          {isSaved ? 'Saved' : 'Save'}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onSelectWorker(worker)}
+                          className="px-4 py-2 bg-zinc-950 text-white rounded-xl text-[10px] font-mono font-black uppercase"
+                        >
+                          View Profile
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })
+              )}
+            </div>
+          )}
         </section>
       ) : (
         <section className="space-y-5">
