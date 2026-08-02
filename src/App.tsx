@@ -554,8 +554,20 @@ export default function App() {
       throw new Error("Invalid review: The reviewed contractor is not associated with this job.");
     }
 
-    // Check if match exists
-    const matchExists = matches.some(m => m.jobId === jobId && m.workerId === workerId);
+    // Accept either a job-specific match or an existing direct worker-contractor match.
+    // Direct matches created before a vacancy is attached can legitimately have no job_id.
+    const matchExists = matches.some(match => {
+      const matchesWorker = match.workerId === workerId;
+      const matchesContractor =
+        match.contractorId === contractorId ||
+        jobs.find(jobItem => jobItem.id === match.jobId)?.companyId === contractorId;
+
+      const matchesThisJob = match.jobId === jobId;
+      const isDirectMatch = !match.jobId;
+
+      return matchesWorker && matchesContractor && (matchesThisJob || isDirectMatch);
+    });
+
     if (!matchExists) {
       throw new Error("Reviews are only allowed if a match exists between both parties on HireUp.");
     }
