@@ -427,6 +427,150 @@ export default function CompaniesView({
           <div className="flex-1">
             <div className="flex items-center gap-2">
               {isContractorView ? (
+                <Wrench className="w-5 h-5 text-[#34D399]" />
+              ) : (
+                <Building2 className="w-5 h-5 text-[#34D399]" />
+              )}
+              <p className="text-[10px] font-mono font-black text-[#34D399] uppercase tracking-wider">
+                Verified HireUp Network
+              </p>
+            </div>
+            <h2 className="text-2xl md:text-3xl font-black mt-2">
+              {isContractorView ? 'Verified Workers' : 'Verified Businesses'}
+            </h2>
+            <p className="text-sm text-zinc-400 mt-2 max-w-2xl">
+              {isContractorView
+                ? 'Discover approved tradespeople ranked against your active vacancies.'
+                : 'Discover approved contractors, live vacancies and employers matched to your worker profile.'}
+            </p>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 min-w-48">
+            <p className="text-[9px] font-mono uppercase text-zinc-400">
+              Verified profiles
+            </p>
+            <p className="text-3xl font-black mt-1">
+              {isContractorView
+                ? verifiedWorkers.length
+                : verifiedCompanies.length}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white border border-zinc-200 rounded-2xl p-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal className="w-4 h-4 text-[#10B981]" />
+          <p className="text-[10px] font-mono font-black uppercase text-zinc-500">
+            Search and filters
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+          <div className="relative xl:col-span-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={event => setSearchQuery(event.target.value)}
+              placeholder={
+                isContractorView
+                  ? 'Search trade, skill, licence or location...'
+                  : 'Search company, trade or location...'
+              }
+              className="w-full pl-9 pr-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-[#34D399]"
+            />
+          </div>
+
+          <select
+            value={tradeFilter}
+            onChange={event => setTradeFilter(event.target.value)}
+            className="px-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
+          >
+            <option value="all">All trades</option>
+            {availableTrades.map(trade => (
+              <option key={trade} value={trade}>
+                {trade}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={locationFilter}
+            onChange={event => setLocationFilter(event.target.value)}
+            className="px-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
+          >
+            <option value="all">All locations</option>
+            {availableLocations.map(location => (
+              <option key={location} value={location}>
+                {location}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={minimumRating}
+            onChange={event => setMinimumRating(event.target.value)}
+            className="px-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
+          >
+            <option value="all">Any rating</option>
+            <option value="4">4.0+ rating</option>
+            <option value="4.5">4.5+ rating</option>
+            <option value="4.8">4.8+ rating</option>
+          </select>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {isContractorView ? (
+            <>
+              {[
+                ['all', 'All availability'],
+                ['immediate', 'Immediate'],
+                ['week', 'Available soon'],
+                ['available', 'Available workers'],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() =>
+                    setAvailabilityFilter(value as AvailabilityFilter)
+                  }
+                  className={`px-3 py-2 rounded-lg text-[10px] font-mono font-black uppercase border ${
+                    availabilityFilter === value
+                      ? 'bg-[#34D399] border-[#34D399] text-zinc-950'
+                      : 'bg-white border-zinc-200 text-zinc-500'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </>
+          ) : (
+            <>
+              {[
+                ['all', 'All businesses'],
+                ['hiring', 'Hiring now'],
+                ['not_hiring', 'No open roles'],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setHiringFilter(value as HiringFilter)}
+                  className={`px-3 py-2 rounded-lg text-[10px] font-mono font-black uppercase border ${
+                    hiringFilter === value
+                      ? 'bg-[#34D399] border-[#34D399] text-zinc-950'
+                      : 'bg-white border-zinc-200 text-zinc-500'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+      </section>
+
+      {isContractorView ? (
         <section className="space-y-4">
           <style>{`
             @keyframes hireup-map-pulse {
@@ -454,7 +598,6 @@ export default function CompaniesView({
             }
           `}</style>
 
-          {/* VIEW CONTROLS */}
           <div className="bg-white border border-zinc-200 rounded-2xl p-4">
             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
               <div className="grid grid-cols-3 gap-2 flex-1">
@@ -525,10 +668,8 @@ export default function CompaniesView({
             </div>
           </div>
 
-          {/* SPLIT VIEW: EXACTLY TWO GRID CHILDREN */}
           {workerDisplayMode === 'split' && (
             <div className="grid grid-cols-1 2xl:grid-cols-[520px_minmax(0,1fr)] gap-4 items-start">
-              {/* LEFT: MAP */}
               <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden 2xl:sticky 2xl:top-4">
                 <div className="px-4 py-3 border-b border-zinc-200">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -594,9 +735,7 @@ export default function CompaniesView({
                                     referrerPolicy="no-referrer"
                                   />
                                   <div className="min-w-0">
-                                    <p className="font-black text-sm truncate">
-                                      {worker.name}
-                                    </p>
+                                    <p className="font-black text-sm truncate">{worker.name}</p>
                                     <p className="text-[10px] text-[#34D399] font-bold">
                                       {worker.trade}
                                     </p>
@@ -664,7 +803,6 @@ export default function CompaniesView({
                 </div>
               </div>
 
-              {/* RIGHT: ONE SCROLLABLE LIST CONTAINER */}
               <div className="bg-zinc-100/60 border border-zinc-200 rounded-2xl p-3">
                 <div className="flex items-center justify-between px-1 pb-3">
                   <div>
@@ -800,7 +938,6 @@ export default function CompaniesView({
             </div>
           )}
 
-          {/* FULL MAP VIEW */}
           {workerDisplayMode === 'map' && (
             <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
               <div className="px-4 py-3 border-b border-zinc-200">
@@ -810,7 +947,7 @@ export default function CompaniesView({
                 </p>
               </div>
 
-              <div className="hireup-worker-map h-[680px] w-full relative z-0">
+              <div className="hireup-worker-map h-[620px] w-full relative z-0">
                 <MapContainer
                   center={[52.5, -1.5]}
                   zoom={6}
@@ -851,7 +988,6 @@ export default function CompaniesView({
             </div>
           )}
 
-          {/* NORMAL LIST VIEW */}
           {workerDisplayMode === 'list' && (
             <div className="space-y-4">
               {filteredWorkers.length === 0 ? (
