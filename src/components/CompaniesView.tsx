@@ -53,7 +53,7 @@ interface CompaniesViewProps {
 
 type AvailabilityFilter = 'all' | 'immediate' | 'week' | 'available';
 type HiringFilter = 'all' | 'hiring' | 'not_hiring';
-type WorkerDisplayMode = 'list' | 'map';
+type WorkerDisplayMode = 'list' | 'split' | 'map';
 
 const normalise = (value?: string | null) => (value || '').trim().toLowerCase();
 
@@ -172,7 +172,7 @@ export default function CompaniesView({
   const [minimumRating, setMinimumRating] = useState('all');
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [expandedCompanyId, setExpandedCompanyId] = useState<string | null>(null);
-  const [workerDisplayMode, setWorkerDisplayMode] = useState<WorkerDisplayMode>('list');
+  const [workerDisplayMode, setWorkerDisplayMode] = useState<WorkerDisplayMode>('split');
 
   const loggedInWorker = workers.find(worker => worker.id === currentUserId);
   const loggedInCompany = companies.find(company => company.id === currentUserId);
@@ -612,18 +612,45 @@ export default function CompaniesView({
               </button>
               <button
                 type="button"
+                onClick={() => setWorkerDisplayMode('split')}
+                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
+                  workerDisplayMode === 'split'
+                    ? 'bg-[#34D399] text-zinc-950 shadow-sm'
+                    : 'text-zinc-500'
+                }`}
+              >
+                <Navigation className="w-3.5 h-3.5" /> Split View
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setWorkerDisplayMode('map')}
                 className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
                   workerDisplayMode === 'map' ? 'bg-zinc-950 text-white shadow-sm' : 'text-zinc-500'
                 }`}
               >
-                <Map className="w-3.5 h-3.5" /> Live Map
+                <Map className="w-3.5 h-3.5" /> Full Map
               </button>
             </div>
           </div>
 
-          {workerDisplayMode === 'map' && (
-            <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+          <p className="text-[10px] text-zinc-500">
+            Split View keeps the worker map visible while you compare verified profiles.
+          </p>
+
+          <div
+            className={
+              workerDisplayMode === 'split'
+                ? 'grid grid-cols-1 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-4 items-start'
+                : ''
+            }
+          >
+          {(workerDisplayMode === 'map' || workerDisplayMode === 'split') && (
+            <div
+              className={`bg-white border border-zinc-200 rounded-2xl overflow-hidden ${
+                workerDisplayMode === 'split' ? 'xl:sticky xl:top-4' : ''
+              }`}
+            >
               <div className="px-4 py-3 border-b border-zinc-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <p className="text-sm font-black flex items-center gap-2">
@@ -640,7 +667,11 @@ export default function CompaniesView({
                 </div>
               </div>
 
-              <div className="hireup-worker-map h-[560px] w-full relative z-0">
+              <div
+                className={`hireup-worker-map w-full relative z-0 ${
+                  workerDisplayMode === 'split' ? 'h-[720px]' : 'h-[620px]'
+                }`}
+              >
                 <MapContainer
                   center={[52.5, -1.5]}
                   zoom={6}
@@ -720,8 +751,8 @@ export default function CompaniesView({
             </div>
           )}
 
-          {workerDisplayMode === 'list' && (
-          {filteredWorkers.length === 0 ? (
+          {(workerDisplayMode === 'list' || workerDisplayMode === 'split') && (
+            filteredWorkers.length === 0 ? (
             <div className="bg-white border border-zinc-200 border-dashed rounded-2xl p-10 text-center">
               <Users className="w-8 h-8 text-zinc-300 mx-auto" />
               <h3 className="font-black mt-3">No verified workers found</h3>
@@ -806,7 +837,9 @@ export default function CompaniesView({
                       </div>
                     </div>
 
-                    <div className="lg:w-72 bg-zinc-950 text-white rounded-2xl p-4">
+                    <div className={`bg-zinc-950 text-white rounded-2xl p-4 ${
+                      workerDisplayMode === 'split' ? 'lg:w-60' : 'lg:w-72'
+                    }`}>
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-[9px] font-mono uppercase text-[#34D399]">
@@ -873,6 +906,7 @@ export default function CompaniesView({
             })
           )}
           )}
+          </div>
         </section>
       ) : (
         <section className="space-y-5">
