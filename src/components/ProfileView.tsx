@@ -18,8 +18,8 @@ import { HOMETOWNS, LICENCES, POSITION_LENGTHS, GRADES, REQUIREMENTS, TRADES_CAT
 
 interface ProfileViewProps {
   userType: UserType;
-  workerProfile: WorkerProfile;
-  companyProfile: CompanyProfile;
+  workerProfile: WorkerProfile | null;
+  companyProfile: CompanyProfile | null;
   jobs: JobProfile[];
   reviews?: any[];
   interviews?: any[];
@@ -30,10 +30,75 @@ interface ProfileViewProps {
   onModerateReview?: (reviewId: string, action: 'approve' | 'delete') => void;
 }
 
+const EMPTY_WORKER_PROFILE = {
+  id: '',
+  name: '',
+  trade: '',
+  subcategory: '',
+  experience: '',
+  qualifications: [],
+  location: '',
+  availability: '',
+  payRate: '',
+  rating: 0,
+  reviewsCount: 0,
+  verified: false,
+  verifiedBadges: [],
+  portfolio: [],
+  workHistory: [],
+  toolsAndTransport: [],
+  about: '',
+  reviews: [],
+  references: [],
+  phone: '',
+  email: '',
+  avatar: '',
+  coverImage: '',
+  licences: [],
+  positionLengths: [],
+  profilePhotoUrl: '',
+  galleryImages: [],
+  cvUrl: '',
+  certificateFiles: [],
+  licenceImages: []
+} as WorkerProfile;
+
+const EMPTY_COMPANY_PROFILE = {
+  id: '',
+  name: '',
+  logo: '',
+  coverImage: '',
+  description: '',
+  openVacanciesCount: 0,
+  benefits: [],
+  verified: false,
+  location: '',
+  stats: { projects: 0, workers: 0, rating: 0 },
+  reviews: [],
+  requirements: [],
+  website: '',
+  industry: '',
+  companySize: '',
+  companyHouseNumber: '',
+  vatNumber: '',
+  insuranceStatus: '',
+  phone: '',
+  companyLogoUrl: '',
+  companyGalleryImages: [],
+  verificationDocuments: [],
+  publicLiabilityInsurance: '',
+  employersLiabilityInsurance: '',
+  businessAddress: '',
+  postcode: '',
+  contactName: '',
+  contactPhone: '',
+  contactEmail: ''
+} as CompanyProfile;
+
 export default function ProfileView({
   userType,
-  workerProfile,
-  companyProfile,
+  workerProfile: providedWorkerProfile,
+  companyProfile: providedCompanyProfile,
   jobs,
   reviews = [],
   interviews = [],
@@ -43,6 +108,9 @@ export default function ProfileView({
   onReportReview,
   onModerateReview
 }: ProfileViewProps) {
+  const workerProfile = providedWorkerProfile ?? EMPTY_WORKER_PROFILE;
+  const companyProfile = providedCompanyProfile ?? EMPTY_COMPANY_PROFILE;
+
   const profileId = userType === 'worker' ? workerProfile.id : companyProfile.id;
 
   // Tabs toggle inside profile: 'live' (Digital CV public view) vs 'edit' (Update settings form)

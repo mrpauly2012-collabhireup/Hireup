@@ -11,7 +11,7 @@ import {
   Heart, LayoutGrid, List, AlertCircle, Briefcase
 } from 'lucide-react';
 import { WorkerProfile, JobProfile, CompanyProfile, UserType } from '../types';
-import { supabase, saveItemInDb } from '../lib/supabase';
+import { supabase, saveItemInDb, fetchSavedItems } from '../lib/supabase';
 
 interface SwipeViewProps {
   userType: UserType;
@@ -19,7 +19,7 @@ interface SwipeViewProps {
   jobs: JobProfile[];
   companies?: CompanyProfile[];
   currentUser?: { id: string; email: string; userType: UserType } | null;
-  onMatchCreated: (workerId: string, jobId: string) => void;
+  onMatchCreated: (workerId: string, jobId: string | null, contractorId?: string) => void;
   onSelectWorker: (worker: WorkerProfile) => void;
   onSelectJob: (job: JobProfile) => void;
   onNavigate: (view: string) => void;
@@ -84,21 +84,76 @@ export default function SwipeView({
   const [jobDeck, setJobDeck] = useState<JobProfile[]>(combinedWorkerOpportunities);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  useEffect(() => {
-    setWorkerDeck(workers);
-    setCurrentIndex(0);
-  }, [workers]);
-
-  useEffect(() => {
-    setJobDeck(combinedWorkerOpportunities);
-    setCurrentIndex(0);
-  }, [combinedWorkerOpportunities]);
-
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | 'up' | null>(null);
-  
-  // Track applied/matched jobs to display correct status and prevent double submission
+
+  // Track applied/matched jobs to display correct status and prevent double submission.
+  // These states must be declared before the effects that use them.
   const [appliedJobIds, setAppliedJobIds] = useState<string[]>([]);
   const [shortlistedWorkerIds, setShortlistedWorkerIds] = useState<string[]>([]);
+  const [persistedAppliedJobIds, setPersistedAppliedJobIds] = useState<string[]>([]);
+  const [persistedShortlistedWorkerIds, setPersistedShortlistedWorkerIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const visibleWorkers = workers.filter(
+      worker => !persistedShortlistedWorkerIds.includes(worker.id)
+    );
+    setWorkerDeck(visibleWorkers);
+    setCurrentIndex(0);
+  }, [workers, persistedShortlistedWorkerIds]);
+
+  useEffect(() => {
+    const visibleOpportunities = combinedWorkerOpportunities.filter(
+      opportunity => !persistedAppliedJobIds.includes(opportunity.id)
+    );
+    setJobDeck(visibleOpportunities);
+    setCurrentIndex(0);
+  }, [combinedWorkerOpportunities, persistedAppliedJobIds]);
+
+  // Reload saved applications/shortlists from Supabase after login or refresh.
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSavedState = async () => {
+      if (!currentUser) {
+        setAppliedJobIds([]);
+        setShortlistedWorkerIds([]);
+        setPersistedAppliedJobIds([]);
+        setPersistedShortlistedWorkerIds([]);
+        return;
+      }
+
+      const savedItems = await fetchSavedItems(currentUser.id);
+      if (cancelled) return;
+
+      if (currentUser.userType === 'worker') {
+        const savedOpportunityIds = savedItems.flatMap(item => {
+          if (item.itemType === 'job') return [item.itemId];
+          if (item.itemType === 'company') return [`contractor-${item.itemId}`];
+          return [];
+        });
+
+        setAppliedJobIds(savedOpportunityIds);
+        setPersistedAppliedJobIds(savedOpportunityIds);
+        setShortlistedWorkerIds([]);
+        setPersistedShortlistedWorkerIds([]);
+      } else {
+        const savedWorkerIds = savedItems
+          .filter(item => item.itemType === 'worker')
+          .map(item => item.itemId);
+
+        setShortlistedWorkerIds(savedWorkerIds);
+        setPersistedShortlistedWorkerIds(savedWorkerIds);
+        setAppliedJobIds([]);
+        setPersistedAppliedJobIds([]);
+      }
+    };
+
+    loadSavedState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser?.id, currentUser?.userType]);
 
   // Register likes in Supabase and check for mutual match
   const registerLikeAndCheckMatch = async (itemId: string, itemType: 'worker' | 'job' | 'company') => {
@@ -142,7 +197,8 @@ export default function SwipeView({
           console.log("MUTUAL MATCH DETECTED! Worker liked job/contractor and contractor liked worker.");
           
           // Trigger match creation
-          onMatchCreated(myUserId, targetJobId.startsWith('dummy-') ? jobs[0]?.id || targetJobId : targetJobId);
+          const resolvedJobId = targetJobId.startsWith('dummy-') ? (jobs.find(j => j.companyId === contractorId)?.id || null) : targetJobId;
+          onMatchCreated(myUserId, resolvedJobId, contractorId);
           
           const currentJob = jobs.find(j => j.id === targetJobId) || combinedWorkerOpportunities.find(o => o.id === itemId) || {
             id: targetJobId,
@@ -199,29 +255,40 @@ export default function SwipeView({
           matchedJobId = myJobIds[0] || '';
         }
 
-        if (matchedJobId) {
-          onMatchCreated(workerId, matchedJobId);
+        onMatchCreated(workerId, matchedJobId || null, myCompanyId);
 
-          const currentJob = jobs.find(j => j.id === matchedJobId) || {
-            id: matchedJobId,
-            title: 'General Vacancy',
-            companyName: 'My Company',
-            companyLogo: 'https://images.unsplash.com/photo-1516880711640-ef7db81be3e1?w=200&auto=format&fit=crop&q=80',
-            companyCover: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&auto=format&fit=crop&q=80',
-            payRate: 'Competitive CIS Rates'
-          } as JobProfile;
+        const currentJob = jobs.find(j => j.id === matchedJobId) || {
+          id: matchedJobId || `contractor-${myCompanyId}`,
+          companyId: myCompanyId,
+          title: 'General Trade Opportunity',
+          companyName: companies.find(c => c.id === myCompanyId)?.name || 'My Company',
+          companyLogo: companies.find(c => c.id === myCompanyId)?.logo || '',
+          companyCover: companies.find(c => c.id === myCompanyId)?.coverImage || '',
+          payRate: 'Competitive CIS Rates',
+          trade: companies.find(c => c.id === myCompanyId)?.industry || 'Multi-Trade',
+          subcategory: '',
+          location: companies.find(c => c.id === myCompanyId)?.location || '',
+          startDate: 'Immediate',
+          duration: 'Ongoing',
+          employmentType: 'Contract',
+          qualifications: [],
+          verified: false,
+          description: 'Direct contractor match',
+          benefits: [],
+          requirements: [],
+          companyStats: { projects: 0, workers: 0, rating: 5 }
+        } as JobProfile;
 
-          const currentWorker = workers.find(w => w.id === workerId) || {
-            id: workerId,
-            name: 'Candidate',
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80'
-          } as WorkerProfile;
+        const currentWorker = workers.find(w => w.id === workerId) || {
+          id: workerId,
+          name: 'Candidate',
+          avatar: ''
+        } as WorkerProfile;
 
-          setCelebrationMatch({
-            worker: currentWorker,
-            job: currentJob
-          });
-        }
+        setCelebrationMatch({
+          worker: currentWorker,
+          job: currentJob
+        });
       }
     }
   };

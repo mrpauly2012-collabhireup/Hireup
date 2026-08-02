@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import { WorkerProfile, CompanyProfile, JobProfile, Match, Message, Interview, UserType } from '../types';
-import { INITIAL_COMPANIES, INITIAL_JOBS, INITIAL_WORKERS, INITIAL_MATCHES, INITIAL_MESSAGES, INITIAL_INTERVIEWS } from '../data';
 
 // Supabase Connection details
 export const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL || 'https://ewtikkoghisdpumiigwg.supabase.co';
@@ -13,18 +12,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   }
 });
 
-// Static UUIDs for Seed Data to maintain relational integrity in Supabase
-export const SEED_IDS = {
-  company1: '11111111-1111-1111-1111-111111111111',
-  company2: '22222222-2222-2222-2222-222222222222',
-  company3: '33333333-3333-3333-3333-333333333333',
-  job1: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-  job2: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-  job3: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
-  worker1: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
-  worker2: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
-  worker3: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
-};
 
 // SQL schema for user reference
 export const SQL_MIGRATION_SCRIPT = `
@@ -638,8 +625,9 @@ export async function signInUser(email: string, password: string) {
     return { id: userId, email: authData.user.email!, userType: 'employer' as UserType };
   }
 
-  // If no profile yet, return default worker and allow profile creation
-  return { id: userId, email: authData.user.email!, userType: 'worker' as UserType };
+  throw new Error(
+    'Your authenticated account does not have a worker or contractor profile. Please complete registration or contact support.'
+  );
 }
 
 // Sign Out function
@@ -792,69 +780,96 @@ export async function createJobInDb(job: Omit<JobProfile, 'id'>): Promise<JobPro
   return mapJobFromDb(data);
 }
 
-export async function createMatchInDb(workerId: string, jobId: string): Promise<Match> {
-  // Prevent duplicate matches
-  try {
-    const { data: existingMatches, error: queryError } = await supabase
-      .from('matches')
-      .select('*')
-      .eq('worker_id', workerId)
-      .eq('job_id', jobId);
-      
-    if (!queryError && existingMatches && existingMatches.length > 0) {
-      const match = existingMatches[0];
-      return {
-        id: match.id,
-        workerId: match.worker_id,
-        jobId: match.job_id,
-        matchedAt: match.matched_at,
-        lastMessageText: match.last_message_text,
-        lastMessageTime: match.last_message_time,
-      };
-    }
-  } catch (err) {
-    console.warn("Error checking for duplicate matches:", err);
+export async function createMatchInDb(
+  workerId: string,
+  jobId: string | null,
+  explicitContractorId?: string
+): Promise<Match> {
+  let contractorId: string | null = explicitContractorId || null;
+
+  if (!contractorId && jobId) {
+    const { data: jobData, error: jobError } = await supabase
+      .from('jobs')
+      .select('contractor_id, company_id')
+      .eq('id', jobId)
+      .maybeSingle();
+
+    if (jobError) throw jobError;
+    contractorId = jobData?.contractor_id || jobData?.company_id || null;
   }
 
-  // Fetch job details to get contractor_id
-  let contractorId = null;
-  try {
-    const { data: jobData } = await supabase.from('jobs').select('contractor_id, company_id').eq('id', jobId).maybeSingle();
-    if (jobData) {
-      contractorId = jobData.contractor_id || jobData.company_id;
-    }
-  } catch (err) {
-    console.warn("Error resolving contractor_id for match:", err);
+  if (!contractorId) {
+    throw new Error('Could not resolve contractor for this match.');
   }
 
-  const { data, error } = await supabase.from('matches').insert({
-    worker_id: workerId,
-    job_id: jobId,
-    contractor_id: contractorId,
-    status: 'active',
-    last_message_text: "You matched! Say hello and discuss site details.",
-    last_message_time: "Just now"
-  }).select('*').single();
+  let duplicateQuery = supabase
+    .from('matches')
+    .select('*')
+    .eq('worker_id', workerId)
+    .eq('contractor_id', contractorId);
+
+  duplicateQuery = jobId
+    ? duplicateQuery.eq('job_id', jobId)
+    : duplicateQuery.is('job_id', null);
+
+  const { data: existingMatches, error: duplicateError } = await duplicateQuery.limit(1);
+  if (duplicateError) throw duplicateError;
+
+  if (existingMatches && existingMatches.length > 0) {
+    const match = existingMatches[0];
+    return {
+      id: match.id,
+      workerId: match.worker_id,
+      jobId: match.job_id || '',
+      matchedAt: match.matched_at,
+      lastMessageText: match.last_message_text,
+      lastMessageTime: match.last_message_time,
+      status: match.status || 'active',
+      contractorId: match.contractor_id,
+    };
+  }
+
+  const { data, error } = await supabase
+    .from('matches')
+    .insert({
+      worker_id: workerId,
+      contractor_id: contractorId,
+      job_id: jobId,
+      status: 'active',
+      matched_at: new Date().toISOString(),
+    })
+    .select('*')
+    .single();
 
   if (error) throw error;
 
-  // Insert automatic intro message
-  await supabase.from('messages').insert({
+  const introText =
+    'Match unlocked! Discuss trade availability, qualifications, and possible site walkthroughs.';
+
+  const { error: messageError } = await supabase.from('messages').insert({
     match_id: data.id,
     sender: 'employer',
     sender_id: contractorId,
     recipient_id: workerId,
-    text: "Automatic system dispatch: Match unlocked! Discuss trade availability, CSCS clearances, or propose walkthrough slots.",
-    message: "Automatic system dispatch: Match unlocked! Discuss trade availability, CSCS clearances, or propose walkthrough slots."
+    text: introText,
+    message: introText,
+    is_read: false,
+    read: false,
   });
+
+  if (messageError) {
+    console.warn('Match created, but intro message could not be added:', messageError.message);
+  }
 
   return {
     id: data.id,
     workerId: data.worker_id,
-    jobId: data.job_id,
+    jobId: data.job_id || '',
     matchedAt: data.matched_at,
-    lastMessageText: data.last_message_text,
-    lastMessageTime: data.last_message_time,
+    lastMessageText: introText,
+    lastMessageTime: 'Just now',
+    status: data.status || 'active',
+    contractorId: data.contractor_id,
   };
 }
 
@@ -1154,38 +1169,6 @@ export async function updateCompanyProfileInDb(id: string, profile: CompanyProfi
   if (error) throw error;
 }
 
-// Memory fallback to support seamless execution if Supabase tables are not fully run
-let localReviewsFallback: any[] = [
-  {
-    id: 'r_init_1',
-    reviewer_id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
-    reviewed_user_id: '11111111-1111-1111-1111-111111111111',
-    job_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-    rating: 5.0,
-    review_text: 'Fantastic firm to work for. Paid on time every Friday, site managers know what they are doing, clean and organised material staging areas.',
-    reviewer_name: 'Dave K. (Electrician)',
-    reviewer_role: 'Subcontractor',
-    categories: { communication: 5, site_organisation: 5, payment_speed: 5, professionalism: 5, accuracy_of_job_description: 5 },
-    reported: false,
-    moderated: false,
-    created_at: '2026-05-12T10:00:00Z'
-  },
-  {
-    id: 'r_init_2',
-    reviewer_id: '11111111-1111-1111-1111-111111111111',
-    reviewed_user_id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
-    job_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-    rating: 5.0,
-    review_text: 'Dave did a fantastic job on our Chelsea development. Neat trunking, excellent attitude, and very efficient with testing. Will hire again.',
-    reviewer_name: 'Robert J. (Site Agent)',
-    reviewer_role: 'Apex Build Group',
-    categories: { reliability: 5, quality_of_work: 5, communication: 5, professionalism: 5, timekeeping: 5 },
-    reported: false,
-    moderated: false,
-    created_at: '2026-05-10T14:30:00Z'
-  }
-];
-
 export interface Review {
   id: string;
   reviewerId: string;
@@ -1203,67 +1186,31 @@ export interface Review {
 }
 
 export async function fetchReviewsFromDb(): Promise<Review[]> {
-  try {
-    const { data, error } = await supabase
-      .from('reviews')
-      .select('*')
-      .order('created_at', { ascending: false });
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-    if (error) {
-      if (error.code === 'PGRST116' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
-        console.warn("Reviews table not provisioned. Falling back to local state.");
-        return localReviewsFallback.map(r => ({
-          id: r.id,
-          reviewerId: r.reviewer_id,
-          reviewedUserId: r.reviewed_user_id,
-          jobId: r.job_id,
-          rating: Number(r.rating),
-          reviewText: r.review_text,
-          reviewerName: r.reviewer_name,
-          reviewerRole: r.reviewer_role,
-          categories: r.categories || {},
-          reported: r.reported || false,
-          reportReason: r.report_reason,
-          moderated: r.moderated || false,
-          createdAt: r.created_at,
-        }));
-      }
-      throw error;
-    }
-
-    return (data || []).map((r: any) => ({
-      id: r.id,
-      reviewerId: r.reviewer_id,
-      reviewedUserId: r.reviewed_user_id,
-      jobId: r.job_id,
-      rating: Number(r.rating),
-      reviewText: r.review_text,
-      reviewerName: r.reviewer_name,
-      reviewerRole: r.reviewer_role,
-      categories: r.categories || {},
-      reported: r.reported || false,
-      reportReason: r.report_reason,
-      moderated: r.moderated || false,
-      createdAt: r.created_at || r.timestamp,
-    }));
-  } catch (err: any) {
-    console.warn("Reviews select fail:", err.message);
-    return localReviewsFallback.map(r => ({
-      id: r.id,
-      reviewerId: r.reviewer_id,
-      reviewedUserId: r.reviewed_user_id,
-      jobId: r.job_id,
-      rating: Number(r.rating),
-      reviewText: r.review_text,
-      reviewerName: r.reviewer_name,
-      reviewerRole: r.reviewer_role,
-      categories: r.categories || {},
-      reported: r.reported || false,
-      reportReason: r.report_reason,
-      moderated: r.moderated || false,
-      createdAt: r.created_at,
-    }));
+  if (error) {
+    console.warn("Could not load reviews from Supabase:", error.message);
+    return [];
   }
+
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    reviewerId: r.reviewer_id,
+    reviewedUserId: r.reviewed_user_id,
+    jobId: r.job_id,
+    rating: Number(r.rating),
+    reviewText: r.review_text,
+    reviewerName: r.reviewer_name,
+    reviewerRole: r.reviewer_role,
+    categories: r.categories || {},
+    reported: r.reported || false,
+    reportReason: r.report_reason,
+    moderated: r.moderated || false,
+    createdAt: r.created_at || r.timestamp,
+  }));
 }
 
 export async function createReviewInDb(
@@ -1358,37 +1305,8 @@ export async function createReviewInDb(
       createdAt: data.created_at,
     };
   } catch (err: any) {
-    console.warn("Inserting to reviews table failed, falling back to local fallback + JSONB column updates:", err.message);
-    
-    // Add to local fallback list
-    localReviewsFallback.push(newReviewObj);
-
-    // Sync to profiles
-    const mappedReviewItem = {
-      id: newReviewObj.id,
-      reviewer: reviewerName,
-      role: reviewerRole,
-      rating: Number(rating),
-      text: reviewText,
-      date: new Date().toISOString().split('T')[0]
-    };
-
-    await syncReviewToProfile(reviewedUserId, mappedReviewItem, rating);
-
-    return {
-      id: newReviewObj.id,
-      reviewerId: newReviewObj.reviewer_id,
-      reviewedUserId: newReviewObj.reviewed_user_id,
-      jobId: newReviewObj.job_id,
-      rating: Number(newReviewObj.rating),
-      reviewText: newReviewObj.review_text,
-      reviewerName: newReviewObj.reviewer_name,
-      reviewerRole: newReviewObj.reviewer_role,
-      categories: newReviewObj.categories || {},
-      reported: newReviewObj.reported || false,
-      moderated: newReviewObj.moderated || false,
-      createdAt: newReviewObj.created_at,
-    };
+    console.error("Review insert failed:", err.message);
+    throw err;
   }
 }
 
@@ -1442,143 +1360,36 @@ async function syncReviewToProfile(userId: string, reviewItem: any, newRatingVal
 }
 
 export async function reportReviewInDb(reviewId: string, reason: string): Promise<void> {
-  try {
+  const { error } = await supabase
+    .from('reviews')
+    .update({ reported: true, report_reason: reason })
+    .eq('id', reviewId);
+
+  if (error) throw error;
+}
+
+export async function moderateReviewInDb(
+  reviewId: string,
+  action: 'approve' | 'delete'
+): Promise<void> {
+  if (action === 'delete') {
     const { error } = await supabase
       .from('reviews')
-      .update({ reported: true, report_reason: reason })
+      .delete()
       .eq('id', reviewId);
 
     if (error) throw error;
-  } catch (err: any) {
-    console.warn("reportReviewInDb failed, applying to local fallback:", err.message);
-    const rev = localReviewsFallback.find(r => r.id === reviewId);
-    if (rev) {
-      rev.reported = true;
-      rev.report_reason = reason;
-    }
+    return;
   }
-}
 
-export async function moderateReviewInDb(reviewId: string, action: 'approve' | 'delete'): Promise<void> {
-  try {
-    if (action === 'delete') {
-      const { error } = await supabase
-        .from('reviews')
-        .delete()
-        .eq('id', reviewId);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase
-        .from('reviews')
-        .update({ reported: false, report_reason: null, moderated: true })
-        .eq('id', reviewId);
-      if (error) throw error;
-    }
-  } catch (err: any) {
-    console.warn("moderateReviewInDb failed, applying to local fallback:", err.message);
-    if (action === 'delete') {
-      localReviewsFallback = localReviewsFallback.filter(r => r.id !== reviewId);
-    } else {
-      const rev = localReviewsFallback.find(r => r.id === reviewId);
-      if (rev) {
-        rev.reported = false;
-        rev.report_reason = null;
-        rev.moderated = true;
-      }
-    }
-  }
-}
+  const { error } = await supabase
+    .from('reviews')
+    .update({
+      reported: false,
+      report_reason: null,
+      moderated: true
+    })
+    .eq('id', reviewId);
 
-// Main seeder function to initialize tables with the user requested seed content inside Supabase
-export async function seedInitialDataToSupabase() {
-  try {
-    const isConnected = await testConnection();
-    if (!isConnected) {
-      console.warn("Could not seed initial data: Supabase tables are not provisioned yet.");
-      return;
-    }
-
-    // Check if contractor/company profiles is empty
-    const { data: existingCompanies } = await supabase.from('contractor_profiles').select('id').limit(1);
-    if (!existingCompanies || existingCompanies.length === 0) {
-      console.log("Seeding contractor profiles...");
-      const seededCompanies = INITIAL_COMPANIES.map((c, i) => {
-        const id = i === 0 ? SEED_IDS.company1 : i === 1 ? SEED_IDS.company2 : SEED_IDS.company3;
-        return {
-          id,
-          user_id: id,
-          company_name: c.name,
-          logo: c.logo || 'https://images.unsplash.com/photo-1516880711640-ef7db81be3e1?w=200&auto=format&fit=crop&q=80',
-          hiring_requirements: c.requirements || ['Right to work in UK', 'Valid CSCS Certification'],
-          trades_hiring_for: [c.industry || 'General construction'].filter(Boolean),
-          email: `${c.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@hiring.co.uk`,
-          phone: '01273 900200',
-        };
-      });
-      await supabase.from('contractor_profiles').insert(seededCompanies);
-    }
-
-    // Check if workers is empty
-    const { data: existingWorkers } = await supabase.from('worker_profiles').select('id').limit(1);
-    if (!existingWorkers || existingWorkers.length === 0) {
-      console.log("Seeding workers...");
-      const seededWorkers = INITIAL_WORKERS.map((w, i) => {
-        const id = i === 0 ? SEED_IDS.worker1 : i === 1 ? SEED_IDS.worker2 : SEED_IDS.worker3;
-        return {
-          id,
-          user_id: id,
-          full_name: w.name,
-          years_experience: w.experience,
-          hometown: w.location,
-          bio: w.about,
-          qualifications: w.qualifications || [],
-          availability: w.availability || 'Immediate',
-          phone: w.phone || '07911 123456',
-          email: w.email || `${w.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@trades.co.uk`,
-          licences: w.licences || [],
-          employment_preferences: w.positionLengths || [],
-          day_rate: w.payRate || '£150/day',
-          own_tools: w.toolsAndTransport?.some(t => t.toLowerCase().includes('tool')) ?? false,
-          own_transport: w.toolsAndTransport?.some(t => t.toLowerCase().includes('van') || t.toLowerCase().includes('licence') || t.toLowerCase().includes('driving')) ?? false,
-        };
-      });
-      await supabase.from('worker_profiles').insert(seededWorkers);
-    }
-
-    // Check if jobs is empty
-    const { data: existingJobs } = await supabase.from('jobs').select('id').limit(1);
-    if (!existingJobs || existingJobs.length === 0) {
-      console.log("Seeding jobs...");
-      const seededJobs = INITIAL_JOBS.map((j, i) => {
-        const id = i === 0 ? SEED_IDS.job1 : i === 1 ? SEED_IDS.job2 : SEED_IDS.job3;
-        const companyId = i === 0 ? SEED_IDS.company1 : i === 1 ? SEED_IDS.company2 : SEED_IDS.company3;
-        return {
-          id,
-          company_id: companyId,
-          company_name: j.companyName,
-          company_logo: j.companyLogo,
-          company_cover: j.companyCover,
-          title: j.title,
-          trade: j.trade,
-          subcategory: j.subcategory,
-          pay_rate: j.payRate,
-          location: j.location,
-          start_date: j.startDate,
-          duration: j.duration,
-          employment_type: j.employmentType,
-          qualifications: j.qualifications,
-          verified: j.verified,
-          description: j.description,
-          benefits: j.benefits,
-          requirements: j.requirements,
-          company_stats: j.companyStats,
-        };
-      });
-      await supabase.from('jobs').insert(seededJobs);
-    }
-
-    console.log("Supabase tables seed successful!");
-  } catch (err: any) {
-    console.error("Seed execution failed:", err.message);
-  }
+  if (error) throw error;
 }

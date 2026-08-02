@@ -8,14 +8,11 @@ import {
   Activity, Briefcase, Heart, MessageSquare, Calendar, Star, 
   Bell, Users, TrendingUp, Settings, User, HardHat, Wrench, 
   ShieldCheck, MapPin, Award, Clock, ArrowRight, X, ChevronRight, LogOut,
-  Video, Phone, UserCheck, FileText, CheckCircle2, ExternalLink, Image as ImageIcon, ClipboardCheck
+  Video, UserCheck, FileText, CheckCircle2, ExternalLink, Image as ImageIcon, ClipboardCheck
 } from 'lucide-react';
 import { 
   WorkerProfile, JobProfile, CompanyProfile, Match, Message, Interview, UserType 
 } from './types';
-import { 
-  INITIAL_COMPANIES, INITIAL_JOBS, INITIAL_WORKERS, INITIAL_MATCHES, INITIAL_MESSAGES, INITIAL_INTERVIEWS 
-} from './data';
 import { 
   supabase, 
   fetchWorkers, 
@@ -26,7 +23,6 @@ import {
   fetchMessages,
   fetchMessagesForMatches,
   createNotificationInDb,
-  seedInitialDataToSupabase, 
   createMatchInDb, 
   sendMessageInDb, 
   createInterviewInDb, 
@@ -77,23 +73,8 @@ export default function App() {
     isIncoming?: boolean;
   }
   const [activeCall, setActiveCall] = useState<ActiveCallState | null>(null);
-  const [incomingCall, setIncomingCall] = useState<ActiveCallState | null>(null);
 
-  interface InterviewSlot {
-    id: string;
-    companyId: string;
-    dateStr: string;
-    timeStr: string;
-    isBooked: boolean;
-  }
-  const [interviewSlots, setInterviewSlots] = useState<InterviewSlot[]>([
-    { id: 'slot-1', companyId: 'c1', dateStr: '2026-07-07', timeStr: '10:00', isBooked: false },
-    { id: 'slot-2', companyId: 'c1', dateStr: '2026-07-07', timeStr: '14:00', isBooked: false },
-    { id: 'slot-3', companyId: 'c1', dateStr: '2026-07-08', timeStr: '09:30', isBooked: false },
-    { id: 'slot-4', companyId: 'c2', dateStr: '2026-07-09', timeStr: '11:00', isBooked: false },
-    { id: 'slot-5', companyId: 'c2', dateStr: '2026-07-09', timeStr: '15:30', isBooked: false },
-    { id: 'slot-6', companyId: 'c3', dateStr: '2026-07-10', timeStr: '10:30', isBooked: false },
-  ]);
+
 
   // Data Collections
   const [workers, setWorkers] = useState<WorkerProfile[]>([]);
@@ -119,10 +100,7 @@ export default function App() {
     setDbLoading(true);
     setDbSyncError(null);
     try {
-      // 1. Run seeder to populate base tables in Supabase if they are currently empty
-      await seedInitialDataToSupabase();
-
-      // 2. Query tables in parallel
+      // Query live Supabase tables in parallel
       const [dbWorkers, dbCompanies, dbJobs, dbMatches, dbInterviews, dbReviews] = await Promise.all([
         fetchWorkers(),
         fetchCompanies(),
@@ -369,18 +347,7 @@ export default function App() {
       }
     } catch (err: any) {
       console.error("Match insertion error:", err.message);
-      // Fallback local match in case tables are not writable
-      const fallbackId = `m_${Date.now()}`;
-      const fallbackMatch: Match = {
-        id: fallbackId,
-        workerId,
-        jobId,
-        matchedAt: new Date().toISOString(),
-        lastMessageText: "You matched! Say hello and discuss site details.",
-        lastMessageTime: "Just now"
-      };
-      setMatches(prev => [fallbackMatch, ...prev]);
-      setSelectedMatchId(fallbackId);
+      alert(`Could not create the match: ${err.message || err}`);
     }
   };
 
@@ -621,12 +588,7 @@ export default function App() {
       }
     } catch (err: any) {
       console.error("Walkthrough schedule error:", err.message);
-      // Fallback local insert
-      const fallback: Interview = {
-        ...newInterview,
-        id: `int_fallback_${Date.now()}`
-      };
-      setInterviews(prev => [fallback, ...prev]);
+      alert(`Could not schedule the walkthrough: ${err.message || err}`);
     }
   };
 
@@ -703,8 +665,7 @@ export default function App() {
       setJobs(prev => [created, ...prev]);
     } catch (err: any) {
       console.error("Job insertion error:", err.message);
-      // Fallback local state
-      setJobs(prev => [j, ...prev]);
+      alert(`Could not create the job: ${err.message || err}`);
     }
   };
 
@@ -712,8 +673,6 @@ export default function App() {
   const handleAuthSuccess = (session: { id: string; email: string; userType: UserType }) => {
     setCurrentUser(session);
     setUserType(session.userType);
-    localStorage.setItem('hireup_current_user', JSON.stringify(session));
-    localStorage.setItem('hireup_user_type', session.userType);
     setCurrentView('dashboard');
   };
 
@@ -725,59 +684,17 @@ export default function App() {
       console.error("Supabase sign out error:", err);
     }
     setCurrentUser(null);
-    localStorage.removeItem('hireup_current_user');
     setCurrentView('dashboard');
   };
 
-  // Resolved profiles for logged-in users
-  const loggedInWorker = workers.find(w => w.id === currentUser?.id) || workers[0] || {
-    id: currentUser?.id || 'w_temp',
-    name: 'Loading Profile...',
-    trade: 'General Laborer',
-    subcategory: '',
-    experience: '1 Year',
-    qualifications: [],
-    location: 'London',
-    availability: 'Immediate',
-    payRate: '£150/day',
-    rating: 5.0,
-    reviewsCount: 0,
-    verified: false,
-    verifiedBadges: [],
-    portfolio: [],
-    workHistory: [],
-    toolsAndTransport: [],
-    about: 'Loading your profile...',
-    reviews: [],
-    references: [],
-    phone: '',
-    email: currentUser?.email || '',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&auto=format&fit=crop&q=80',
-    licences: [],
-    positionLengths: []
-  };
+  // Resolve only the profile owned by the authenticated Supabase user.
+  const loggedInWorker = currentUser?.userType === 'worker'
+    ? workers.find(w => w.id === currentUser.id) || null
+    : null;
 
-  const loggedInCompany = companies.find(c => c.id === currentUser?.id) || companies[0] || {
-    id: currentUser?.id || 'c_temp',
-    name: 'Loading Company...',
-    logo: 'https://images.unsplash.com/photo-1516880711640-ef7db81be3e1?w=200&auto=format&fit=crop&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&auto=format&fit=crop&q=80',
-    description: 'Loading details...',
-    openVacanciesCount: 0,
-    benefits: [],
-    verified: false,
-    location: '',
-    stats: { projects: 0, workers: 0, rating: 5.0 },
-    reviews: [],
-    requirements: [],
-    website: '',
-    industry: 'Construction',
-    companySize: '1-10 Employees',
-    companyHouseNumber: '',
-    vatNumber: '',
-    insuranceStatus: ''
-  };
+  const loggedInCompany = currentUser?.userType === 'employer'
+    ? companies.find(c => c.id === currentUser.id) || null
+    : null;
 
   if (!currentUser) {
     return (
@@ -789,6 +706,32 @@ export default function App() {
         onAddCompany={handleAddCompany}
         onAddJob={handleAddJob}
       />
+    );
+  }
+
+  const authenticatedProfile = userType === 'worker' ? loggedInWorker : loggedInCompany;
+
+  if (!authenticatedProfile) {
+    return (
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">
+        <div className="w-full max-w-md bg-white border border-zinc-200 rounded-2xl p-6 text-center shadow-sm">
+          <h1 className="text-lg font-black text-zinc-900">{dbLoading ? 'Loading your HireUp profile…' : 'Profile unavailable'}</h1>
+          <p className="mt-2 text-sm text-zinc-500">
+            {dbLoading
+              ? 'Your authenticated Supabase account is being connected to its live profile.'
+              : dbSyncError || 'No live profile was found for this authenticated account.'}
+          </p>
+          {!dbLoading && (
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="mt-5 px-4 py-2 rounded-lg bg-zinc-900 text-white text-xs font-mono font-bold uppercase"
+            >
+              Sign Out
+            </button>
+          )}
+        </div>
+      </div>
     );
   }
 
@@ -835,7 +778,7 @@ export default function App() {
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg overflow-hidden border border-zinc-200 flex-shrink-0 bg-white p-0.5">
               <img 
-                src={userType === 'worker' ? loggedInWorker.avatar : loggedInCompany.logo} 
+                src={userType === 'worker' ? loggedInWorker!.avatar : loggedInCompany!.logo} 
                 alt="user profile" 
                 className="w-full h-full object-cover rounded"
                 referrerPolicy="no-referrer"
@@ -843,10 +786,10 @@ export default function App() {
             </div>
             <div className="overflow-hidden flex-grow">
               <p className="text-xs font-bold text-zinc-800 truncate">
-                {userType === 'worker' ? loggedInWorker.name : loggedInCompany.name}
+                {userType === 'worker' ? loggedInWorker!.name : loggedInCompany!.name}
               </p>
               <p className="text-[9px] font-mono text-zinc-400 truncate uppercase">
-                {userType === 'worker' ? loggedInWorker.trade : 'TIER 1 CONTRACTOR'}
+                {userType === 'worker' ? loggedInWorker!.trade : 'TIER 1 CONTRACTOR'}
               </p>
             </div>
           </div>
@@ -872,44 +815,13 @@ export default function App() {
             <span className="text-sm font-black uppercase tracking-wider text-zinc-900">Hire<span className="text-[#10B981]">Up</span></span>
           </div>
 
-          {/* High-fidelity Persona toggler */}
+          {/* Authenticated account role */}
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono font-black text-zinc-400 uppercase hidden sm:inline">WORKSPACE ROLE:</span>
-            <div className="flex bg-zinc-100 p-1 rounded-lg border border-zinc-200 shadow-inner">
-              <button
-                onClick={() => setUserType('worker')}
-                className={`px-3 py-1 text-[10px] font-mono font-black rounded-md transition-all uppercase flex items-center gap-1 cursor-pointer ${userType === 'worker' ? 'bg-[#34D399] text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-900'}`}
-              >
-                <Wrench className="w-3 h-3" /> TRADESMAN
-              </button>
-              <button
-                onClick={() => setUserType('employer')}
-                className={`px-3 py-1 text-[10px] font-mono font-black rounded-md transition-all uppercase flex items-center gap-1 cursor-pointer ${userType === 'employer' ? 'bg-[#34D399] text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-900'}`}
-              >
-                <HardHat className="w-3 h-3" /> EMPLOYER
-              </button>
+            <span className="text-[10px] font-mono font-black text-zinc-400 uppercase hidden sm:inline">SIGNED IN AS:</span>
+            <div className="px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-lg text-[10px] font-mono font-black text-[#10B981] uppercase flex items-center gap-1.5">
+              {userType === 'worker' ? <Wrench className="w-3 h-3" /> : <HardHat className="w-3 h-3" />}
+              {userType === 'worker' ? 'Worker' : 'Contractor'}
             </div>
-            
-            {/* Walkthrough Live Call Simulation Trigger */}
-            <button
-              onClick={() => {
-                alert("Walkthrough incoming video call scheduled in 3 seconds... Prepare your webcam!");
-                setTimeout(() => {
-                  setIncomingCall({
-                    matchId: 'simulation-call',
-                    partnerName: userType === 'worker' ? 'Apex Construction Ltd (Dave Knyte)' : 'Terry Mac (CSCS Gold Electrician)',
-                    partnerAvatar: userType === 'worker' 
-                      ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150' 
-                      : 'https://images.unsplash.com/photo-1621574539437-4b7cb63120b8?auto=format&fit=crop&q=80&w=150',
-                    partnerTrade: userType === 'worker' ? 'Apex Site Walkthrough Induction' : 'ECS Approved Electrician',
-                  });
-                }, 3000);
-              }}
-              className="px-2 py-1 bg-emerald-500/10 hover:bg-[#34D399] border border-emerald-500/20 text-[#10B981] hover:text-white rounded-lg text-[9px] font-mono font-bold uppercase transition-all flex items-center gap-1 cursor-pointer"
-              title="Test Incoming Walkthrough Call"
-            >
-              <Phone className="w-3 h-3 animate-bounce" /> Simulate Call
-            </button>
           </div>
 
           {/* Alert Bell indicator */}
@@ -920,7 +832,7 @@ export default function App() {
             </button>
             <div className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-200 hidden md:block bg-white p-0.5">
               <img 
-                src={userType === 'worker' ? loggedInWorker.avatar : loggedInCompany.logo} 
+                src={userType === 'worker' ? loggedInWorker!.avatar : loggedInCompany!.logo} 
                 alt="user avatar" 
                 className="w-full h-full object-cover rounded"
                 referrerPolicy="no-referrer"
@@ -1072,8 +984,8 @@ export default function App() {
                 return (
                   <ProfileView 
                     userType={userType}
-                    workerProfile={loggedInWorker}
-                    companyProfile={loggedInCompany}
+                    workerProfile={loggedInWorker!}
+                    companyProfile={loggedInCompany!}
                     jobs={jobs}
                     reviews={reviews}
                     interviews={interviews}
@@ -1580,57 +1492,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Available Interview Slots Section */}
-              <div className="space-y-3 bg-emerald-50/20 p-4 border border-emerald-500/10 rounded-xl">
-                <div className="flex items-center gap-1.5 text-xs font-mono font-black text-[#10B981] uppercase tracking-wide">
-                  <Calendar className="w-4 h-4" /> Available Walkthrough Booking Slots
-                </div>
-                <p className="text-[11px] text-zinc-500 leading-relaxed">
-                  Book an induction walkthrough directly with the site manager:
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {interviewSlots
-                    .filter(slot => slot.companyId === selectedJob.companyId)
-                    .map(slot => (
-                      <button
-                        key={slot.id}
-                        disabled={slot.isBooked}
-                        onClick={() => {
-                          const updatedSlots = interviewSlots.map(s => s.id === slot.id ? { ...s, isBooked: true } : s);
-                          setInterviewSlots(updatedSlots);
-                          
-                          handleScheduleInterview({
-                            workerId: workers[0]?.id || 'w_fallback',
-                            jobId: selectedJob.id,
-                            date: slot.dateStr,
-                            time: slot.timeStr,
-                            location: selectedJob.location,
-                            status: 'confirmed',
-                            ppeRequired: ['Hard Hat', 'Steel Toe Boots', 'Hi-Vis Vest'],
-                            notes: "Automatic induction slot confirmed. Bringing ECS card copy."
-                          });
 
-                          // Generate match
-                          handleMatchCreated(workers[0]?.id || 'w_fallback', selectedJob.id);
-
-                          alert(`Site Induction booked for ${new Date(slot.dateStr).toLocaleDateString('en-GB')} at ${slot.timeStr} BST! Check your Interviews page.`);
-                        }}
-                        className={`p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${
-                          slot.isBooked 
-                            ? 'bg-zinc-50 border-zinc-200 text-zinc-400 cursor-not-allowed' 
-                            : 'bg-white border-emerald-200 hover:border-[#34D399] hover:bg-emerald-50 text-zinc-800 cursor-pointer shadow-xs'
-                        }`}
-                      >
-                        <span className="text-[10px] font-mono font-bold text-zinc-500">
-                          {new Date(slot.dateStr).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
-                        </span>
-                        <span className="text-xs font-black font-mono text-[#10B981] mt-0.5">
-                          {slot.timeStr} BST {slot.isBooked ? '(BOOKED)' : '(BOOK SLOT)'}
-                        </span>
-                      </button>
-                    ))}
-                </div>
-              </div>
             </div>
 
             {/* Sticky Actions bar */}
@@ -1645,7 +1507,7 @@ export default function App() {
               <button
                 onClick={() => {
                   setSelectedJob(null);
-                  handleMatchCreated(workers[0]?.id || 'w_fallback', selectedJob.id);
+                  handleMatchCreated(currentUser.id, selectedJob.id);
                   setCurrentView('messages');
                 }}
                 className="flex-1 py-2.5 bg-[#34D399] hover:bg-[#10B981] text-zinc-950 font-mono text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
@@ -1666,7 +1528,7 @@ export default function App() {
               <button
                 onClick={() => {
                   setSelectedJob(null);
-                  handleMatchCreated(workers[0]?.id || 'w_fallback', selectedJob.id);
+                  handleMatchCreated(currentUser.id, selectedJob.id);
                   // Simulate rapid hire offer
                   alert("Bid submitted! Opened instant site chat to finalize CIS rates and starting details.");
                   setCurrentView('messages');
@@ -1680,52 +1542,7 @@ export default function App() {
         </div>
       )}
 
-      {/* INCOMING VIDEO INTERVIEW / WALKTHROUGH PROMPT CALL OVERLAY */}
-      {incomingCall && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-4 font-sans">
-          <div className="bg-zinc-900 border border-emerald-500/30 w-full max-w-sm rounded-3xl p-6 text-center space-y-6 shadow-2xl relative text-white animate-bounce-short">
-            <div className="mx-auto w-20 h-20 rounded-full overflow-hidden border-2 border-[#34D399] relative">
-              <img 
-                src={incomingCall.partnerAvatar} 
-                alt={incomingCall.partnerName} 
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-              <div className="absolute inset-0 bg-[#34D399]/10 animate-pulse" />
-            </div>
 
-            <div className="space-y-1">
-              <span className="text-[10px] font-mono font-bold text-[#10B981] bg-emerald-500/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                📞 LIVE Walkthrough Call Request
-              </span>
-              <h3 className="text-lg font-bold text-white mt-1">{incomingCall.partnerName}</h3>
-              <p className="text-xs text-zinc-400 font-mono uppercase">{incomingCall.partnerTrade}</p>
-            </div>
-
-            <div className="text-xs text-zinc-400 font-mono animate-pulse">
-              Incoming peer-to-peer walkthrough session...
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setIncomingCall(null)}
-                className="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white font-mono text-xs font-bold rounded-2xl transition-all uppercase cursor-pointer"
-              >
-                Decline
-              </button>
-              <button
-                onClick={() => {
-                  setActiveCall(incomingCall);
-                  setIncomingCall(null);
-                }}
-                className="flex-1 py-2.5 bg-[#34D399] hover:bg-[#10B981] text-zinc-950 font-mono text-xs font-bold rounded-2xl transition-all uppercase flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Phone className="w-4 h-4 fill-current" /> Accept
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* FULL-SCREEN ACTIVE VIDEO CALL ROOM OVERLAY */}
       {activeCall && (
