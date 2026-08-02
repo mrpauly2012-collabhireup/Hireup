@@ -144,6 +144,16 @@ export default function DashboardView({
     scoreWorkerForJob(loggedInWorker, job);
   const topWorkerMatch = rankedWorkerJobs[0]?.match;
 
+  // Jobs promoted from the Admin Dashboard.
+  // The cast keeps this compatible if `featured` has not yet been added
+  // to the shared JobProfile TypeScript interface.
+  const featuredJobs = rankedWorkerJobs
+    .filter(({ item }) =>
+      Boolean((item as JobProfile & { featured?: boolean }).featured)
+    )
+    .slice(0, 4)
+    .map(({ item }) => item);
+
   const workerMatches = matches.filter(m => m.workerId === loggedInWorker.id);
   
   // Resolve matched jobs for matches widget
@@ -562,69 +572,186 @@ export default function DashboardView({
           {/* Left / Main Column */}
           <div className="lg:col-span-8 space-y-10">
             
-            {/* 2. Recommended Jobs */}
+            {/* 2. Featured Jobs */}
             <div className="space-y-4">
-              <div className="flex justify-between items-center pb-2 border-b border-zinc-100">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-3 border-b border-zinc-200">
                 <div>
-                  <h2 className="text-lg font-black text-zinc-950 tracking-tight uppercase">Recommended Jobs</h2>
-                  <p className="text-xs text-zinc-500">Based on your trades, verified certifications, and local radius</p>
+                  <div className="flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center">
+                      <Star className="w-4 h-4 text-amber-500 fill-current" />
+                    </span>
+                    <div>
+                      <h2 className="text-lg font-black text-black tracking-tight uppercase">
+                        Featured Jobs
+                      </h2>
+                      <p className="text-xs text-black">
+                        Jobs selected and promoted by the HireUp admin team
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <button 
+
+                <button
+                  type="button"
                   onClick={() => onNavigate('swipe')}
-                  className="text-xs font-mono font-black text-[#10B981] hover:text-[#34D399] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer"
+                  className="text-xs font-mono font-black text-black hover:text-[#10B981] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer"
                 >
-                  View All <ChevronRight className="w-3.5 h-3.5" />
+                  View All Jobs <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <div className="space-y-4">
-                {resolvedRecJobs.map((job) => (
-                  <div 
-                    key={job.id} 
-                    className="bg-white border border-zinc-200 p-5 rounded-xl hover:border-[#34D399] hover:shadow-sm transition-all flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center"
-                  >
-                    <div className="w-full sm:w-auto flex items-center sm:flex-col sm:items-end gap-2">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[9px] font-mono font-black uppercase">
-                        <Sparkles className="w-3 h-3" />
-                        {workerJobMatch(job).score}% match
-                      </span>
-                    </div>
-                    <div className="flex items-start gap-4 flex-1">
-                      <div className="w-12 h-12 rounded-lg bg-zinc-50 p-1 border border-zinc-200 flex-shrink-0 flex items-center justify-center">
-                        <img 
-                          src={job.companyLogo} 
-                          alt={job.companyName} 
-                          className="max-w-full max-h-full object-contain"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1.5">
-                          <h3 className="font-bold text-zinc-950 text-sm">{job.title}</h3>
-                          {job.verified && <ShieldCheck className="w-4 h-4 text-[#10B981]" />}
-                        </div>
-                        <p className="text-xs text-zinc-500 font-medium">{job.companyName}</p>
-                        
-                        <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1 text-xs text-zinc-600">
-                          <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-zinc-400" /> {job.location}</span>
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-zinc-400" /> {job.duration}</span>
-                          <span className="px-1.5 py-0.5 bg-emerald-50 text-[10px] text-[#10B981] font-mono font-bold rounded uppercase">{job.employmentType}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex sm:flex-col items-end justify-between w-full sm:w-auto pt-2 sm:pt-0 gap-2">
-                      <span className="text-sm font-mono font-black text-[#10B981] bg-[#E6FBF3] px-2.5 py-1 rounded">{job.payRate}</span>
-                      <button 
-                        onClick={() => onSelectJob(job)}
-                        className="px-3 py-1.5 text-[10px] bg-zinc-100 hover:bg-[#34D399] text-zinc-700 hover:text-zinc-950 font-mono font-bold uppercase rounded-lg transition-all flex items-center gap-1 cursor-pointer"
-                      >
-                        <Eye className="w-3.5 h-3.5" /> Quick View
-                      </button>
-                    </div>
+              {featuredJobs.length === 0 ? (
+                <div className="bg-white border border-zinc-200 border-dashed rounded-2xl p-8 text-center">
+                  <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto">
+                    <Star className="w-5 h-5 text-amber-500" />
                   </div>
-                ))}
-              </div>
+                  <h3 className="text-sm font-black text-black mt-3">
+                    No featured jobs currently available
+                  </h3>
+                  <p className="text-xs text-black mt-1">
+                    Jobs marked as featured from the Admin Dashboard will appear here.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('swipe')}
+                    className="mt-4 px-4 py-2.5 bg-[#34D399] text-black rounded-xl text-[10px] font-mono font-black uppercase"
+                  >
+                    Browse all jobs
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {featuredJobs.map(job => {
+                    const match = workerJobMatch(job);
+
+                    return (
+                      <article
+                        key={job.id}
+                        className="bg-white border border-zinc-200 rounded-2xl overflow-hidden hover:border-[#34D399] hover:shadow-md transition-all"
+                      >
+                        <div className="h-1.5 bg-[#34D399]" />
+
+                        <div className="p-5">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3 min-w-0">
+                              <div className="w-12 h-12 rounded-xl bg-zinc-50 border border-zinc-200 p-1.5 flex-shrink-0 flex items-center justify-center">
+                                {job.companyLogo ? (
+                                  <img
+                                    src={job.companyLogo}
+                                    alt={job.companyName}
+                                    className="max-w-full max-h-full object-contain"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                ) : (
+                                  <Briefcase className="w-5 h-5 text-black" />
+                                )}
+                              </div>
+
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 border border-amber-200 text-black rounded-full text-[8px] font-mono font-black uppercase">
+                                    <Star className="w-3 h-3 text-amber-500 fill-current" />
+                                    Featured
+                                  </span>
+
+                                  {job.verified && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 border border-emerald-200 text-black rounded-full text-[8px] font-mono font-black uppercase">
+                                      <ShieldCheck className="w-3 h-3 text-[#10B981]" />
+                                      Verified contractor
+                                    </span>
+                                  )}
+                                </div>
+
+                                <h3 className="text-base font-black text-black mt-2 leading-tight">
+                                  {job.title}
+                                </h3>
+                                <p className="text-xs font-bold text-black mt-1">
+                                  {job.companyName}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="bg-zinc-100 border border-zinc-200 rounded-xl px-2.5 py-2 text-center flex-shrink-0">
+                              <p className="text-[7px] font-mono font-black text-black uppercase">
+                                AI match
+                              </p>
+                              <p className="text-lg font-black text-black leading-none mt-1">
+                                {match.score}%
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 mt-5">
+                            <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                              <p className="text-[8px] font-mono font-black text-black uppercase">
+                                Pay
+                              </p>
+                              <p className="text-sm font-black text-black mt-1">
+                                {job.payRate}
+                              </p>
+                            </div>
+
+                            <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                              <p className="text-[8px] font-mono font-black text-black uppercase">
+                                Start date
+                              </p>
+                              <p className="text-xs font-black text-black mt-1">
+                                {job.startDate || 'Immediate'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-xs text-black">
+                            <span className="flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-black" />
+                              {job.location}
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-black" />
+                              {job.duration || 'Ongoing'}
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <Briefcase className="w-3.5 h-3.5 text-black" />
+                              {job.employmentType}
+                            </span>
+                          </div>
+
+                          {match.reasons[0] && (
+                            <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                              <p className="text-[9px] font-mono font-black text-black uppercase">
+                                Why it matches
+                              </p>
+                              <p className="text-xs text-black mt-1">
+                                {match.reasons[0]}
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-2 gap-2 mt-5 pt-4 border-t border-zinc-200">
+                            <button
+                              type="button"
+                              onClick={() => onSelectJob(job)}
+                              className="py-2.5 border border-zinc-300 text-black rounded-xl text-[10px] font-mono font-black uppercase flex items-center justify-center gap-1.5 hover:bg-zinc-50"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              View job
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => onSelectJob(job)}
+                              className="py-2.5 bg-[#34D399] text-black rounded-xl text-[10px] font-mono font-black uppercase flex items-center justify-center gap-1.5 hover:bg-[#10B981]"
+                            >
+                              <Briefcase className="w-3.5 h-3.5" />
+                              Apply
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* 3. Recent Matches */}
