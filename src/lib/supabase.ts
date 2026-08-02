@@ -764,7 +764,7 @@ export async function createJobInDb(job: Omit<JobProfile, 'id'>): Promise<JobPro
     hourly_rate: job.payRate?.includes('hour') ? job.payRate : null,
     location: job.location,
     postcode: 'BN1 1AA',
-    start_date: job.startDate,
+    start_date: job.startDate?.trim() ? job.startDate : null,
     duration: job.duration,
     employment_type: job.employmentType,
     qualifications: job.qualifications,

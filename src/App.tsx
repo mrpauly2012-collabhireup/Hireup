@@ -660,7 +660,7 @@ export default function App() {
   };
 
   // Action: Add custom job vacancy
-  const handleAddJob = async (j: JobProfile) => {
+  const handleAddJob = async (j: Omit<JobProfile, 'id'>) => {
     try {
       const created = await createJobInDb(j);
       setJobs(prev => [created, ...prev]);
@@ -869,6 +869,7 @@ export default function App() {
                     onSelectJob={(j) => setSelectedJob(j)}
                     onUpdateWorker={handleUpdateWorker}
                     onUpdateCompany={handleUpdateCompany}
+                    onCreateJob={handleAddJob}
                   />
                 );
               case 'swipe':
@@ -1015,6 +1016,7 @@ export default function App() {
                     onSelectJob={(j) => setSelectedJob(j)}
                     onUpdateWorker={handleUpdateWorker}
                     onUpdateCompany={handleUpdateCompany}
+                    onCreateJob={handleAddJob}
                   />
                 );
             }

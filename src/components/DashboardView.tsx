@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { 
   Briefcase, MapPin, Calendar, Award, MessageSquare, 
   ChevronRight, Activity, Clock, ShieldCheck, Eye, 
-  CheckCircle2, Sparkles, User, Users, Heart
+  CheckCircle2, Sparkles, User, Users, Heart, Plus, X
 } from 'lucide-react';
 import { WorkerProfile, JobProfile, CompanyProfile, Match, Message, Interview, UserType } from '../types';
 
@@ -25,6 +25,7 @@ interface DashboardViewProps {
   onSelectJob: (job: JobProfile) => void;
   onUpdateWorker: (updated: WorkerProfile) => void;
   onUpdateCompany: (updated: CompanyProfile) => void;
+  onCreateJob: (job: Omit<JobProfile, 'id'>) => Promise<void>;
 }
 
 export default function DashboardView({
@@ -40,10 +41,28 @@ export default function DashboardView({
   onSelectWorker,
   onSelectJob,
   onUpdateWorker,
-  onUpdateCompany
+  onUpdateCompany,
+  onCreateJob
 }: DashboardViewProps) {
   // Local notification for availability status update
   const [showNotification, setShowNotification] = useState<string | null>(null);
+
+  // Live contractor vacancy creation
+  const [showPostJobModal, setShowPostJobModal] = useState(false);
+  const [postingJob, setPostingJob] = useState(false);
+  const [jobError, setJobError] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [jobTrade, setJobTrade] = useState('');
+  const [jobSubcategory, setJobSubcategory] = useState('');
+  const [jobPayRate, setJobPayRate] = useState('');
+  const [jobLocation, setJobLocation] = useState('');
+  const [jobStartDate, setJobStartDate] = useState('');
+  const [jobDuration, setJobDuration] = useState('Ongoing');
+  const [jobEmploymentType, setJobEmploymentType] = useState('CIS Contract');
+  const [jobDescription, setJobDescription] = useState('');
+  const [jobQualifications, setJobQualifications] = useState('');
+  const [jobRequirements, setJobRequirements] = useState('');
+  const [jobBenefits, setJobBenefits] = useState('');
 
   // Resolved profiles for logged-in users
   const loggedInWorker = workers.find(w => w.id === currentUser?.id) || workers[0] || {
@@ -188,6 +207,81 @@ export default function DashboardView({
     setTimeout(() => setShowNotification(null), 3500);
   };
 
+  const resetJobForm = () => {
+    setJobTitle('');
+    setJobTrade('');
+    setJobSubcategory('');
+    setJobPayRate('');
+    setJobLocation('');
+    setJobStartDate('');
+    setJobDuration('Ongoing');
+    setJobEmploymentType('CIS Contract');
+    setJobDescription('');
+    setJobQualifications('');
+    setJobRequirements('');
+    setJobBenefits('');
+    setJobError('');
+  };
+
+  const splitCommaList = (value: string) =>
+    value
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+
+  const handlePostJob = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setJobError('');
+
+    if (!currentUser || userType !== 'employer') {
+      setJobError('You must be signed in as a contractor to post a vacancy.');
+      return;
+    }
+
+    if (!jobTitle.trim() || !jobTrade.trim() || !jobPayRate.trim() || !jobLocation.trim()) {
+      setJobError('Job title, trade, pay rate, and location are required.');
+      return;
+    }
+
+    setPostingJob(true);
+
+    try {
+      await onCreateJob({
+        companyId: loggedInCompany.id,
+        companyName: loggedInCompany.name,
+        companyLogo: loggedInCompany.companyLogoUrl || loggedInCompany.logo || '',
+        companyCover: loggedInCompany.coverImage || '',
+        title: jobTitle.trim(),
+        trade: jobTrade.trim(),
+        subcategory: jobSubcategory.trim(),
+        payRate: jobPayRate.trim(),
+        location: jobLocation.trim(),
+        startDate: jobStartDate,
+        duration: jobDuration.trim() || 'Ongoing',
+        employmentType: jobEmploymentType,
+        qualifications: splitCommaList(jobQualifications),
+        verified: loggedInCompany.verified,
+        description: jobDescription.trim(),
+        benefits: splitCommaList(jobBenefits),
+        requirements: splitCommaList(jobRequirements),
+        companyStats: loggedInCompany.stats || {
+          projects: 0,
+          workers: 0,
+          rating: null
+        }
+      });
+
+      resetJobForm();
+      setShowPostJobModal(false);
+      setShowNotification('Vacancy posted successfully');
+      setTimeout(() => setShowNotification(null), 3500);
+    } catch (error: any) {
+      setJobError(error?.message || 'Could not post the vacancy.');
+    } finally {
+      setPostingJob(false);
+    }
+  };
+
   return (
     <div id="dashboard_view" className="space-y-10 pb-16 px-1 max-w-6xl mx-auto font-sans">
       
@@ -222,8 +316,17 @@ export default function DashboardView({
               <Sparkles className="w-4 h-4 text-zinc-950 group-hover:text-white" />
               {userType === 'employer' ? 'Match With Tradesmen' : 'Match With Contractors'}
             </button>
+            {userType === 'employer' && (
+              <button
+                onClick={() => setShowPostJobModal(true)}
+                className="px-5 py-2.5 text-xs bg-zinc-950 hover:bg-zinc-800 text-white font-mono font-bold uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-4 h-4 text-[#34D399]" />
+                Post a Job
+              </button>
+            )}
             <button 
-              onClick={() => onNavigate(userType === 'employer' ? 'profile' : 'profile')}
+              onClick={() => onNavigate('profile')}
               className="px-5 py-2.5 text-xs bg-white hover:bg-zinc-50 text-zinc-950 border border-zinc-200 font-mono font-bold uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <User className="w-4 h-4 text-[#10B981]" />
@@ -561,16 +664,16 @@ export default function DashboardView({
                   <p className="text-xs text-zinc-500">Live positions actively displayed on the swiper feeds</p>
                 </div>
                 <button 
-                  onClick={() => onNavigate('profile')} // Profile page contains "Post Vacancy" or listings
+                  onClick={() => setShowPostJobModal(true)}
                   className="text-xs font-mono font-black text-[#10B981] hover:text-[#34D399] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer"
                 >
-                  Manage Jobs <ChevronRight className="w-3.5 h-3.5" />
+                  Post a Job <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               {activeVacancies.length === 0 ? (
                 <div className="bg-white border border-zinc-200 border-dashed rounded-xl p-8 text-center text-zinc-500 text-xs">
-                  No active vacancies. Click Manage Jobs or update your profile to list an opening.
+                  No active vacancies yet. Click Post a Job to publish your first live position.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -822,6 +925,203 @@ export default function DashboardView({
 
           </div>
 
+        </div>
+      )}
+
+      {showPostJobModal && userType === 'employer' && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <form
+            onSubmit={handlePostJob}
+            className="bg-white border border-zinc-200 rounded-2xl p-6 max-w-2xl w-full space-y-5 shadow-2xl my-8"
+          >
+            <div className="flex justify-between items-start pb-3 border-b border-zinc-200">
+              <div>
+                <h3 className="text-base font-black text-zinc-900 uppercase font-mono tracking-wider">
+                  Post a Live Vacancy
+                </h3>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Publish a real position to HireUp workers and the swipe deck.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  resetJobForm();
+                  setShowPostJobModal(false);
+                }}
+                className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-lg hover:bg-zinc-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {jobError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-medium">
+                {jobError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Job Title *</span>
+                <input
+                  value={jobTitle}
+                  onChange={event => setJobTitle(event.target.value)}
+                  placeholder="Commercial Electrician"
+                  required
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                />
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Main Trade *</span>
+                <input
+                  value={jobTrade}
+                  onChange={event => setJobTrade(event.target.value)}
+                  placeholder="Electrician"
+                  required
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                />
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Specialism</span>
+                <input
+                  value={jobSubcategory}
+                  onChange={event => setJobSubcategory(event.target.value)}
+                  placeholder="Commercial Installation"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                />
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Pay Rate *</span>
+                <input
+                  value={jobPayRate}
+                  onChange={event => setJobPayRate(event.target.value)}
+                  placeholder="£250/day"
+                  required
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                />
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Location *</span>
+                <input
+                  value={jobLocation}
+                  onChange={event => setJobLocation(event.target.value)}
+                  placeholder="Brighton, East Sussex"
+                  required
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                />
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Start Date</span>
+                <input
+                  type="date"
+                  value={jobStartDate}
+                  onChange={event => setJobStartDate(event.target.value)}
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                />
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Duration</span>
+                <input
+                  value={jobDuration}
+                  onChange={event => setJobDuration(event.target.value)}
+                  placeholder="3 Months or Ongoing"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                />
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Employment Type</span>
+                <select
+                  value={jobEmploymentType}
+                  onChange={event => setJobEmploymentType(event.target.value)}
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                >
+                  <option>CIS Contract</option>
+                  <option>Subcontractor</option>
+                  <option>Full-Time</option>
+                  <option>Part-Time</option>
+                  <option>Temporary</option>
+                  <option>Self-Employed</option>
+                </select>
+              </label>
+            </div>
+
+            <label className="space-y-1 block">
+              <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Job Description</span>
+              <textarea
+                value={jobDescription}
+                onChange={event => setJobDescription(event.target.value)}
+                rows={4}
+                placeholder="Describe the site, duties, shift pattern, and expected experience."
+                className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399] resize-none"
+              />
+            </label>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <label className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Qualifications</span>
+                <input
+                  value={jobQualifications}
+                  onChange={event => setJobQualifications(event.target.value)}
+                  placeholder="CSCS Gold, NVQ Level 3"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-[#34D399]"
+                />
+                <span className="text-[9px] text-zinc-400">Separate with commas</span>
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Requirements</span>
+                <input
+                  value={jobRequirements}
+                  onChange={event => setJobRequirements(event.target.value)}
+                  placeholder="Own tools, Driving licence"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-[#34D399]"
+                />
+                <span className="text-[9px] text-zinc-400">Separate with commas</span>
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Benefits</span>
+                <input
+                  value={jobBenefits}
+                  onChange={event => setJobBenefits(event.target.value)}
+                  placeholder="Weekly pay, Parking"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-[#34D399]"
+                />
+                <span className="text-[9px] text-zinc-400">Separate with commas</span>
+              </label>
+            </div>
+
+            <div className="pt-3 flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  resetJobForm();
+                  setShowPostJobModal(false);
+                }}
+                disabled={postingJob}
+                className="flex-1 py-2.5 border border-zinc-200 text-zinc-600 font-mono font-bold text-xs rounded-lg hover:bg-zinc-50 disabled:opacity-50"
+              >
+                CANCEL
+              </button>
+
+              <button
+                type="submit"
+                disabled={postingJob}
+                className="flex-1 py-2.5 bg-[#34D399] hover:bg-[#10B981] text-white font-mono font-bold text-xs rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                <Briefcase className="w-4 h-4" />
+                {postingJob ? 'POSTING...' : 'PUBLISH VACANCY'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
