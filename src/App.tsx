@@ -924,6 +924,7 @@ export default function App() {
                     messages={messages}
                     workers={workers}
                     jobs={jobs}
+                    companies={companies}
                     onSendMessage={handleSendMessage}
                     onNavigateBack={() => {
                       setCurrentView('matches');

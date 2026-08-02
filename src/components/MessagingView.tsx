@@ -11,7 +11,7 @@ import {
   ShieldAlert, Ban, AlertCircle, FileSpreadsheet, FolderOpen, 
   Play, Pause, MoreVertical, X, Sparkles, Bell
 } from 'lucide-react';
-import { WorkerProfile, JobProfile, Match, Message, UserType } from '../types';
+import { WorkerProfile, JobProfile, Match, Message, UserType, CompanyProfile } from '../types';
 
 interface MessagingViewProps {
   userType: UserType;
@@ -20,6 +20,7 @@ interface MessagingViewProps {
   messages: Message[];
   workers: WorkerProfile[];
   jobs: JobProfile[];
+  companies: CompanyProfile[];
   onSendMessage: (matchId: string, text: string, attachmentType?: 'image' | 'document' | 'voice', attachmentName?: string) => void;
   onNavigateBack: () => void;
   onStartVideoCall?: (matchId: string) => void;
@@ -32,14 +33,13 @@ export default function MessagingView({
   messages,
   workers,
   jobs,
+  companies,
   onSendMessage,
   onNavigateBack,
   onStartVideoCall
 }: MessagingViewProps) {
   const [activeMatchId, setActiveMatchId] = useState<string | null>(selectedMatchId);
   const [inputText, setInputText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [typingUser, setTypingUser] = useState<string>('Foreman');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTab, setCurrentTab] = useState<'all' | 'archived'>('all');
   
@@ -71,11 +71,14 @@ export default function MessagingView({
   // Scroll to bottom when messages or typing states update
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, activeMatchId, isTyping]);
+  }, [messages, activeMatchId]);
 
   const activeMatch = matches.find(m => m.id === activeMatchId);
   const activeWorker = activeMatch ? workers.find(w => w.id === activeMatch.workerId) : null;
-  const activeJob = activeMatch ? jobs.find(j => j.id === activeMatch.jobId) : null;
+  const activeJob = activeMatch?.jobId ? jobs.find(j => j.id === activeMatch.jobId) : null;
+  const activeCompany = activeMatch
+    ? companies.find(c => c.id === (activeMatch.contractorId || activeJob?.companyId))
+    : null;
 
   const currentMatchMessages = messages.filter(msg => msg.matchId === activeMatchId);
 
@@ -112,43 +115,21 @@ export default function MessagingView({
     "Site induction begins at 08:00 sharp."
   ];
 
-  const handleSend = (text: string, attachmentType?: 'image' | 'document' | 'voice', attachmentName?: string) => {
+  const handleSend = (
+    text: string,
+    attachmentType?: 'image' | 'document' | 'voice',
+    attachmentName?: string
+  ) => {
     if (!text.trim() || !activeMatchId) return;
 
     if (blockedMatchIds.includes(activeMatchId)) {
-      triggerToast("Cannot Send", "This conversation is currently blocked.");
+      triggerToast('Cannot Send', 'This conversation is currently blocked.');
       return;
     }
 
     onSendMessage(activeMatchId, text, attachmentType, attachmentName);
     setInputText('');
     setShowAttachmentMenu(false);
-
-    // Only run simulated conversation if it is a local mock match (not a UUID)
-    const isMockMatch = !activeMatchId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-    if (!isMockMatch) return;
-
-    // Simulate subcontractor / site manager typing back and receiving read state!
-    const partnerName = userType === 'employer' ? (activeWorker?.name || 'Tradesman') : (activeJob?.companyName || 'Foreman');
-    setTypingUser(partnerName);
-    
-    setTimeout(() => {
-      setIsTyping(true);
-    }, 1200);
-
-    setTimeout(() => {
-      setIsTyping(false);
-      let replyText = "";
-      if (userType === 'employer') {
-        replyText = `Alright mate, sounds good. I will check the site postcode with the foreman and send it across. Let's look at scheduling an interview slot.`;
-      } else {
-        replyText = `Thanks for sending that over. We have plenty of secure site lock-ups for your tools. I have generated an interview walkthrough on our scheduler. Looking forward to meeting on site!`;
-      }
-      
-      // Send response and trigger in-app push notification toast!
-      onSendMessage(activeMatchId, replyText);
-      triggerToast(`New message from ${partnerName}`, replyText);
-    }, 3500);
   };
 
   const handleArchiveToggle = (matchId: string) => {
@@ -191,20 +172,32 @@ export default function MessagingView({
     { name: "Conduit_Run_Plot12.jpg", type: "image", size: "1.5 MB", desc: "Current Site Conduit Progress Update" }
   ];
 
-  // Helper to resolve partner details
-  const getPartnerDetails = (m: Match) => {
-    const worker = workers.find(w => w.id === m.workerId);
-    const job = jobs.find(j => j.id === m.jobId);
-    
-    // Hardcoded online status mapping for interactive fidelity
-    const isOnline = m.id !== 'm2' && m.id !== 'm3'; 
+  // Resolve the real worker, contractor, and optional job attached to each match.
+  const getPartnerDetails = (match: Match) => {
+    const worker = workers.find(w => w.id === match.workerId);
+    const job = match.jobId ? jobs.find(j => j.id === match.jobId) : undefined;
+    const company = companies.find(
+      c => c.id === (match.contractorId || job?.companyId)
+    );
 
     return {
-      name: userType === 'employer' ? (worker?.name || 'Dave Knyte') : (job?.companyName || 'Apex Build Group'),
-      trade: userType === 'employer' ? (worker?.trade || 'Electrician') : (job?.title || 'Lead Electrician'),
-      avatar: userType === 'employer' ? (worker?.avatar || '') : (job?.companyLogo || ''),
-      isOnline,
-      phone: worker?.phone || '07911 123456'
+      name:
+        userType === 'employer'
+          ? worker?.name || 'Worker'
+          : company?.name || job?.companyName || 'Contractor',
+      trade:
+        userType === 'employer'
+          ? worker?.trade || 'Tradesperson'
+          : job?.title || company?.industry || 'Direct company connection',
+      avatar:
+        userType === 'employer'
+          ? worker?.profilePhotoUrl || worker?.avatar || ''
+          : company?.companyLogoUrl || company?.logo || job?.companyLogo || '',
+      isOnline: false,
+      phone:
+        userType === 'employer'
+          ? worker?.phone || ''
+          : company?.contactPhone || company?.phone || ''
     };
   };
 
@@ -344,7 +337,7 @@ export default function MessagingView({
 
       {/* Main Chats Active Panel */}
       <div className={`flex-grow bg-zinc-50 flex flex-col justify-between ${!activeMatchId ? 'hidden md:flex' : 'flex'}`}>
-        {activeMatch && activeWorker && activeJob ? (
+        {activeMatch && activeWorker && (activeJob || activeCompany) ? (
           <>
             {/* Chat Room Active Header */}
             <div className="p-4 bg-white border-b border-zinc-200 flex items-center justify-between shadow-sm relative">
@@ -362,7 +355,11 @@ export default function MessagingView({
                 <div className="relative">
                   <div className="w-10 h-10 rounded-xl overflow-hidden border border-zinc-200 flex items-center justify-center p-0.5">
                     <img 
-                      src={userType === 'employer' ? activeWorker.avatar : activeJob.companyLogo} 
+                      src={
+                         userType === 'employer'
+                           ? (activeWorker.profilePhotoUrl || activeWorker.avatar)
+                           : (activeCompany?.companyLogoUrl || activeCompany?.logo || activeJob?.companyLogo || '')
+                       } 
                       alt="avatar" 
                       className="w-full h-full object-cover rounded-lg"
                       referrerPolicy="no-referrer"
@@ -373,12 +370,17 @@ export default function MessagingView({
 
                 <div>
                   <h4 className="text-sm font-bold text-zinc-900 font-sans flex items-center gap-1.5">
-                    {userType === 'employer' ? activeWorker.name : activeJob.companyName}
+                    {userType === 'employer'
+                       ? activeWorker.name
+                       : (activeCompany?.name || activeJob?.companyName || 'Contractor')}
                     {activeWorker.verified && <ShieldCheck className="w-4 h-4 text-[#10B981]" />}
                   </h4>
                   <p className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                    {getPartnerDetails(activeMatch).isOnline ? 'ONLINE' : 'OFFLINE'} &bull; {userType === 'employer' ? activeWorker.trade : activeJob.title}
+                    {getPartnerDetails(activeMatch).isOnline ? 'ONLINE' : 'OFFLINE'} &bull;{' '}
+                     {userType === 'employer'
+                       ? activeWorker.trade
+                       : (activeJob?.title || activeCompany?.industry || 'Direct company connection')}
                   </p>
                 </div>
               </div>
@@ -533,18 +535,6 @@ export default function MessagingView({
                   </div>
                 );
               })}
-
-              {/* Dynamic organic Typing Indicator */}
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="bg-white border border-zinc-200 rounded-2xl rounded-bl-none px-4 py-3.5 flex items-center gap-1.5 shadow-sm">
-                    <span className="w-1.5 h-1.5 bg-[#34D399] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 bg-[#34D399] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 bg-[#34D399] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                    <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider ml-1.5">{typingUser} typing...</span>
-                  </div>
-                </div>
-              )}
 
               <div ref={chatEndRef} />
             </div>
