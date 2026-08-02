@@ -22,6 +22,10 @@ import {
   fetchInterviews, 
   fetchMessages,
   fetchMessagesForMatches,
+  fetchNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  AppNotification,
   createNotificationInDb,
   createMatchInDb, 
   sendMessageInDb, 
@@ -84,6 +88,8 @@ export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Database Loading & Sync States
   const [dbLoading, setDbLoading] = useState(false);
@@ -102,13 +108,14 @@ export default function App() {
     setDbSyncError(null);
     try {
       // Query live Supabase tables in parallel
-      const [dbWorkers, dbCompanies, dbJobs, dbMatches, dbInterviews, dbReviews] = await Promise.all([
+      const [dbWorkers, dbCompanies, dbJobs, dbMatches, dbInterviews, dbReviews, dbNotifications] = await Promise.all([
         fetchWorkers(),
         fetchCompanies(),
         fetchJobs(),
         fetchMatches(),
         fetchInterviews(),
         fetchReviewsFromDb(),
+        currentUser ? fetchNotifications(currentUser.id) : Promise.resolve([]),
       ]);
 
       setWorkers(dbWorkers || []);
@@ -117,6 +124,7 @@ export default function App() {
       setMatches(dbMatches || []);
       setInterviews(dbInterviews || []);
       setReviews(dbReviews || []);
+      setNotifications(dbNotifications || []);
 
       if (dbMatches && dbMatches.length > 0) {
         const matchIds = dbMatches.map(m => m.id);
@@ -310,13 +318,82 @@ export default function App() {
       )
       .subscribe();
 
+    // 4. Subscribe to notifications for the authenticated user
+    const notificationChannel = supabase
+      .channel(`live-notifications-${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${currentUser.id}`,
+        },
+        (payload) => {
+          const notification = payload.new as any;
+
+          const mappedNotification: AppNotification = {
+            id: notification.id,
+            userId: notification.user_id,
+            title: notification.title,
+            message: notification.body || notification.message || '',
+            isRead:
+              notification.read !== undefined
+                ? notification.read
+                : notification.is_read || false,
+            createdAt: notification.created_at,
+          };
+
+          setNotifications(prev => {
+            if (prev.some(item => item.id === mappedNotification.id)) return prev;
+            return [mappedNotification, ...prev];
+          });
+        }
+      )
+      .subscribe();
+
     return () => {
       console.log("Cleaning up Supabase Realtime channels");
       supabase.removeChannel(messageChannel);
       supabase.removeChannel(matchChannel);
       supabase.removeChannel(interviewChannel);
+      supabase.removeChannel(notificationChannel);
     };
   }, [currentUser, userType]);
+
+  const unreadNotificationCount = notifications.filter(
+    notification => !notification.isRead
+  ).length;
+
+  const handleOpenNotification = async (notification: AppNotification) => {
+    if (!notification.isRead) {
+      setNotifications(prev =>
+        prev.map(item =>
+          item.id === notification.id ? { ...item, isRead: true } : item
+        )
+      );
+
+      try {
+        await markNotificationAsRead(notification.id);
+      } catch (error: any) {
+        console.error('Could not mark notification as read:', error.message);
+      }
+    }
+  };
+
+  const handleMarkAllNotificationsRead = async () => {
+    if (!currentUser || unreadNotificationCount === 0) return;
+
+    setNotifications(prev =>
+      prev.map(notification => ({ ...notification, isRead: true }))
+    );
+
+    try {
+      await markAllNotificationsAsRead(currentUser.id);
+    } catch (error: any) {
+      console.error('Could not mark all notifications as read:', error.message);
+    }
+  };
 
   // Action: Swipe connection liked and match generated
   const handleMatchCreated = async (workerId: string, jobId: string) => {
@@ -376,17 +453,29 @@ export default function App() {
       // Create live notification record in the notifications table
       const match = matches.find(m => m.id === matchId);
       if (match) {
-        const job = jobs.find(j => j.id === match.jobId);
-        const contractorId = job ? job.companyId : null;
-        const recipientId = userType === 'worker' ? contractorId : match.workerId;
-        const senderName = userType === 'worker' 
-          ? (workers.find(w => w.id === currentUser?.id)?.name || 'Tradesman') 
-          : (companies.find(c => c.id === currentUser?.id)?.name || 'Contractor');
+        const job = match.jobId
+          ? jobs.find(j => j.id === match.jobId)
+          : undefined;
 
-        if (recipientId) {
+        const contractorId =
+          match.contractorId ||
+          job?.companyId ||
+          null;
+
+        const recipientId =
+          userType === 'worker'
+            ? contractorId
+            : match.workerId;
+
+        const senderName =
+          userType === 'worker'
+            ? (workers.find(w => w.id === currentUser?.id)?.name || 'Worker')
+            : (companies.find(c => c.id === currentUser?.id)?.name || 'Contractor');
+
+        if (recipientId && recipientId !== currentUser?.id) {
           await createNotificationInDb(
-            recipientId, 
-            `New Message from ${senderName}`, 
+            recipientId,
+            `New Message from ${senderName}`,
             text
           );
         }
@@ -762,6 +851,7 @@ export default function App() {
                   key={link.id}
                   onClick={() => {
                     setCurrentView(link.id);
+                    setShowNotifications(false);
                     setSelectedMatchId(null);
                   }}
                   className={`w-full px-3 py-2.5 rounded-lg text-xs font-mono font-bold flex items-center gap-3 transition-all cursor-pointer ${isActive ? 'bg-[#34D399] text-white shadow-md shadow-[#34D399]/15' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50'}`}
@@ -825,12 +915,99 @@ export default function App() {
             </div>
           </div>
 
-          {/* Alert Bell indicator */}
+          {/* Live Supabase notification centre */}
           <div className="flex items-center gap-3">
-            <button className="p-2 text-zinc-400 hover:text-zinc-900 rounded-full hover:bg-zinc-100 relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#10B981] rounded-full animate-pulse" />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowNotifications(prev => !prev)}
+                className="p-2 text-zinc-400 hover:text-zinc-900 rounded-full hover:bg-zinc-100 relative cursor-pointer"
+                title="Notifications"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadNotificationCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-red-500 text-white rounded-full text-[9px] font-mono font-black flex items-center justify-center">
+                    {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div className="absolute right-0 top-11 w-[min(24rem,calc(100vw-2rem))] bg-white border border-zinc-200 rounded-2xl shadow-2xl overflow-hidden z-50">
+                  <div className="p-4 border-b border-zinc-200 bg-zinc-50 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider">
+                        Notifications
+                      </h3>
+                      <p className="text-[10px] text-zinc-500 mt-0.5">
+                        {unreadNotificationCount} unread
+                      </p>
+                    </div>
+
+                    {unreadNotificationCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleMarkAllNotificationsRead}
+                        className="text-[10px] font-mono font-black text-[#10B981] hover:text-[#34D399] uppercase cursor-pointer"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <Bell className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
+                        <p className="text-xs font-bold text-zinc-700">
+                          No notifications yet
+                        </p>
+                        <p className="text-[10px] text-zinc-400 mt-1">
+                          Matches, messages, interviews, and reviews will appear here.
+                        </p>
+                      </div>
+                    ) : (
+                      notifications.map(notification => (
+                        <button
+                          key={notification.id}
+                          type="button"
+                          onClick={() => handleOpenNotification(notification)}
+                          className={`w-full p-4 text-left border-b border-zinc-100 last:border-b-0 hover:bg-zinc-50 transition-all cursor-pointer ${
+                            notification.isRead ? 'bg-white' : 'bg-emerald-50/60'
+                          }`}
+                        >
+                          <div className="flex gap-3 items-start">
+                            <span
+                              className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${
+                                notification.isRead ? 'bg-zinc-200' : 'bg-[#10B981]'
+                              }`}
+                            />
+
+                            <div className="min-w-0 flex-grow">
+                              <div className="flex items-start justify-between gap-3">
+                                <p className="text-xs font-black text-zinc-900">
+                                  {notification.title}
+                                </p>
+                                <span className="text-[9px] font-mono text-zinc-400 whitespace-nowrap">
+                                  {new Date(notification.createdAt).toLocaleDateString('en-GB', {
+                                    day: '2-digit',
+                                    month: 'short'
+                                  })}
+                                </span>
+                              </div>
+
+                              <p className="text-[11px] text-zinc-600 mt-1 leading-relaxed">
+                                {notification.message}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-200 hidden md:block bg-white p-0.5">
               <img 
                 src={userType === 'worker' ? loggedInWorker!.avatar : loggedInCompany!.logo} 

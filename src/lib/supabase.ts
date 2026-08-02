@@ -978,6 +978,30 @@ export async function fetchNotifications(userId: string): Promise<AppNotificatio
   }
 }
 
+export async function markNotificationAsRead(notificationId: string): Promise<void> {
+  const { error } = await supabase
+    .from('notifications')
+    .update({
+      read: true,
+      is_read: true
+    })
+    .eq('id', notificationId);
+
+  if (error) throw error;
+}
+
+export async function markAllNotificationsAsRead(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('notifications')
+    .update({
+      read: true,
+      is_read: true
+    })
+    .eq('user_id', userId);
+
+  if (error) throw error;
+}
+
 export async function createNotificationInDb(userId: string, title: string, message: string): Promise<AppNotification | null> {
   try {
     const { data, error } = await supabase
