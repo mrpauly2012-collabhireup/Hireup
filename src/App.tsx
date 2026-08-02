@@ -92,6 +92,7 @@ export default function App() {
   // Selection states for detail overlays
   const [selectedWorker, setSelectedWorker] = useState<WorkerProfile | null>(null);
   const [selectedJob, setSelectedJob] = useState<JobProfile | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<CompanyProfile | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [appLightboxImage, setAppLightboxImage] = useState<string | null>(null);
 
@@ -911,6 +912,7 @@ export default function App() {
                     }}
                     onSelectWorker={(w) => setSelectedWorker(w)}
                     onSelectJob={(j) => setSelectedJob(j)}
+                    onSelectCompany={(c) => setSelectedCompany(c)}
                   />
                 );
               case 'messages':
@@ -1543,6 +1545,198 @@ export default function App() {
       )}
 
 
+
+
+      {/* DETAIL OVERLAY MODAL: Contractor Company Profile */}
+      {selectedCompany && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-end">
+          <div className="bg-white w-full max-w-2xl h-screen overflow-y-auto flex flex-col justify-between shadow-2xl relative font-sans">
+            <div className="p-4 border-b border-zinc-100 bg-zinc-50 sticky top-0 flex justify-between items-center z-10">
+              <span className="text-xs font-mono font-black text-[#10B981] uppercase tracking-wider">
+                🏗️ CONTRACTOR COMPANY PROFILE
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedCompany(null)}
+                className="p-1.5 bg-zinc-200 hover:bg-[#34D399] hover:text-white rounded-full transition-all text-zinc-500 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="flex flex-col sm:flex-row gap-5 items-center bg-zinc-50 border border-zinc-200 p-5 rounded-3xl">
+                <div className="w-24 h-24 rounded-2xl overflow-hidden border border-zinc-200 bg-white flex-shrink-0 flex items-center justify-center p-2">
+                  {selectedCompany.companyLogoUrl || selectedCompany.logo ? (
+                    <img
+                      src={selectedCompany.companyLogoUrl || selectedCompany.logo}
+                      alt={selectedCompany.name}
+                      className="max-w-full max-h-full object-contain"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <HardHat className="w-10 h-10 text-zinc-400" />
+                  )}
+                </div>
+
+                <div className="space-y-1.5 text-center sm:text-left">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <h3 className="text-xl font-bold text-zinc-900">{selectedCompany.name}</h3>
+                    {selectedCompany.verified && (
+                      <span className="px-2 py-0.5 bg-zinc-900 text-[#34D399] rounded text-[8px] font-mono font-bold uppercase flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3" /> VERIFIED
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-sm font-mono font-bold text-[#10B981] uppercase tracking-wide">
+                    {selectedCompany.industry || 'UK Construction Contractor'}
+                  </p>
+
+                  <p className="text-xs text-zinc-500 font-mono flex items-center justify-center sm:justify-start gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+                    {selectedCompany.location || selectedCompany.businessAddress || 'United Kingdom'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4">
+                  <span className="text-[9px] font-mono text-zinc-400 font-bold uppercase tracking-wider block">Active Vacancies</span>
+                  <p className="text-base font-black text-zinc-900 mt-1">
+                    {jobs.filter(job => job.companyId === selectedCompany.id).length}
+                  </p>
+                </div>
+
+                <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4">
+                  <span className="text-[9px] font-mono text-zinc-400 font-bold uppercase tracking-wider block">Company Size</span>
+                  <p className="text-base font-black text-zinc-900 mt-1">
+                    {selectedCompany.companySize || 'Not specified'}
+                  </p>
+                </div>
+
+                <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4">
+                  <span className="text-[9px] font-mono text-zinc-400 font-bold uppercase tracking-wider block">Rating</span>
+                  <p className="text-base font-black text-zinc-900 mt-1 flex items-center gap-1">
+                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                    {selectedCompany.stats?.rating ?? 'New'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
+                  <FileText className="w-4 h-4 text-[#10B981]" /> Company Overview
+                </h4>
+                <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-line">
+                  {selectedCompany.description || 'No company description has been added yet.'}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
+                  <ShieldCheck className="w-4 h-4 text-[#10B981]" /> Compliance & Business Details
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
+                    <span className="text-[9px] font-mono text-zinc-400 uppercase font-bold">Companies House</span>
+                    <p className="font-bold text-zinc-800 mt-1">{selectedCompany.companyHouseNumber || 'Not supplied'}</p>
+                  </div>
+                  <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
+                    <span className="text-[9px] font-mono text-zinc-400 uppercase font-bold">VAT Number</span>
+                    <p className="font-bold text-zinc-800 mt-1">{selectedCompany.vatNumber || 'Not supplied'}</p>
+                  </div>
+                  <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
+                    <span className="text-[9px] font-mono text-zinc-400 uppercase font-bold">Public Liability</span>
+                    <p className="font-bold text-zinc-800 mt-1">{selectedCompany.publicLiabilityInsurance || selectedCompany.insuranceStatus || 'Not supplied'}</p>
+                  </div>
+                  <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
+                    <span className="text-[9px] font-mono text-zinc-400 uppercase font-bold">Contact</span>
+                    <p className="font-bold text-zinc-800 mt-1">{selectedCompany.contactName || selectedCompany.phone || 'Not supplied'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {selectedCompany.requirements && selectedCompany.requirements.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
+                    <ClipboardCheck className="w-4 h-4 text-[#10B981]" /> Hiring Requirements
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedCompany.requirements.map((requirement, index) => (
+                      <span key={index} className="px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-[#10B981] rounded text-[10px] font-mono font-bold uppercase">
+                        {requirement}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <h4 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
+                  <Briefcase className="w-4 h-4 text-[#10B981]" /> Active Opportunities
+                </h4>
+
+                {jobs.filter(job => job.companyId === selectedCompany.id).length > 0 ? (
+                  <div className="space-y-2">
+                    {jobs
+                      .filter(job => job.companyId === selectedCompany.id)
+                      .map(job => (
+                        <button
+                          key={job.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCompany(null);
+                            setSelectedJob(job);
+                          }}
+                          className="w-full text-left p-4 bg-zinc-50 hover:bg-emerald-50 border border-zinc-200 hover:border-emerald-200 rounded-xl transition-all cursor-pointer"
+                        >
+                          <p className="text-sm font-bold text-zinc-900">{job.title}</p>
+                          <p className="text-[10px] font-mono text-zinc-500 uppercase mt-1">
+                            {job.location} • {job.payRate} • {job.duration}
+                          </p>
+                        </button>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-zinc-400 italic">
+                    This contractor currently has no individual job adverts listed.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-zinc-200 bg-zinc-50 flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedCompany(null)}
+                className="flex-1 py-2.5 border border-zinc-200 bg-white hover:bg-zinc-100 text-zinc-700 font-mono text-xs font-bold rounded-xl transition-all cursor-pointer"
+              >
+                CLOSE PROFILE
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const companyMatch = matches.find(
+                    match => match.contractorId === selectedCompany.id &&
+                      match.workerId === currentUser.id
+                  );
+                  setSelectedCompany(null);
+                  if (companyMatch) {
+                    setSelectedMatchId(companyMatch.id);
+                    setCurrentView('messages');
+                  }
+                }}
+                className="flex-1 py-2.5 bg-[#34D399] hover:bg-[#10B981] text-white font-mono text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+              >
+                <MessageSquare className="w-3.5 h-3.5" /> OPEN MATCH CHAT
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FULL-SCREEN ACTIVE VIDEO CALL ROOM OVERLAY */}
       {activeCall && (

@@ -30,6 +30,7 @@ interface MatchesViewProps {
   onNavigate: (view: string, matchId?: string) => void;
   onSelectWorker: (worker: WorkerProfile) => void;
   onSelectJob: (job: JobProfile) => void;
+  onSelectCompany: (company: CompanyProfile) => void;
 }
 
 export default function MatchesView({
@@ -40,7 +41,8 @@ export default function MatchesView({
   companies = [],
   onNavigate,
   onSelectWorker,
-  onSelectJob
+  onSelectJob,
+  onSelectCompany
 }: MatchesViewProps) {
   const resolvedMatches = matches
     .map(match => {
@@ -227,8 +229,8 @@ export default function MatchesView({
                         onSelectWorker(worker);
                       } else if (job) {
                         onSelectJob(job);
-                      } else {
-                        onNavigate('companies');
+                      } else if (company) {
+                        onSelectCompany(company);
                       }
                     }}
                     className="flex-1 py-2 border border-zinc-200 hover:border-zinc-300 text-zinc-700 bg-zinc-50 hover:bg-zinc-100 text-xs font-mono font-bold rounded-lg transition-all cursor-pointer"
