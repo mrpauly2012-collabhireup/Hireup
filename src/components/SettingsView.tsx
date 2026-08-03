@@ -61,12 +61,15 @@ import {
   uploadFileToStorage,
 } from '../lib/supabase';
 import {
+  disableHireUpPushNotifications,
+  enableHireUpPushNotifications,
   getInstallState,
   getNotificationPermission,
+  getPushSubscriptionState,
   promptHireUpInstall,
-  requestHireUpNotificationPermission,
   subscribeToPwaChanges,
   type InstallState,
+  type PushSubscriptionState,
 } from '../lib/pwa';
 
 interface SettingsViewProps {
@@ -638,11 +641,16 @@ export default function SettingsView({
   );
   const [pwaBusy, setPwaBusy] = useState(false);
   const [pwaMessage, setPwaMessage] = useState('');
+  const [pushSubscriptionState, setPushSubscriptionState] =
+    useState<PushSubscriptionState>('disabled');
+
+  const currentProfileId = workerProfile?.id || companyProfile?.id || '';
 
   useEffect(() => {
     const refreshPwaState = () => {
       setInstallState(getInstallState());
       setNotificationPermission(getNotificationPermission());
+      void getPushSubscriptionState().then(setPushSubscriptionState);
     };
 
     refreshPwaState();
@@ -679,22 +687,39 @@ export default function SettingsView({
   };
 
   const handleEnableNotifications = async () => {
+    if (!currentProfileId) {
+      setPwaMessage('Your signed-in profile could not be identified.');
+      return;
+    }
+
     setPwaBusy(true);
     setPwaMessage('');
 
     try {
-      const permission = await requestHireUpNotificationPermission();
-      setNotificationPermission(permission);
-
-      if (permission === 'granted') {
-        setPwaMessage('HireUp notifications are now enabled.');
-      } else if (permission === 'denied') {
-        setPwaMessage(
-          'Notifications are blocked. Enable them from your browser or phone settings.'
-        );
-      } else if (permission === 'unsupported') {
-        setPwaMessage('This browser does not support HireUp notifications.');
+      if (pushSubscriptionState === 'enabled') {
+        const state = await disableHireUpPushNotifications(currentProfileId);
+        setPushSubscriptionState(state);
+        setPwaMessage('Push notifications have been disabled on this device.');
+        return;
       }
+
+      const state = await enableHireUpPushNotifications(currentProfileId);
+      setPushSubscriptionState(state);
+      setNotificationPermission(getNotificationPermission());
+
+      if (state === 'enabled') {
+        setPwaMessage(
+          'Push notifications are enabled and this device is saved to your HireUp account.'
+        );
+      } else if (state === 'blocked') {
+        setPwaMessage(
+          'Notifications are blocked. Enable them in your browser or phone settings.'
+        );
+      } else if (state === 'unsupported') {
+        setPwaMessage('This browser does not support web push notifications.');
+      }
+    } catch (error: any) {
+      setPwaMessage(error.message || 'Push notifications could not be enabled.');
     } finally {
       setPwaBusy(false);
     }
@@ -2267,11 +2292,11 @@ export default function SettingsView({
 
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-black text-zinc-950">
-                  {notificationPermission === 'granted'
-                    ? 'Notifications enabled'
-                    : notificationPermission === 'denied'
+                  {pushSubscriptionState === 'enabled'
+                    ? 'Push notifications enabled'
+                    : pushSubscriptionState === 'blocked'
                     ? 'Notifications blocked'
-                    : notificationPermission === 'unsupported'
+                    : pushSubscriptionState === 'unsupported'
                     ? 'Notifications unsupported'
                     : 'Enable push notifications'}
                 </p>
@@ -2286,15 +2311,14 @@ export default function SettingsView({
                   onClick={handleEnableNotifications}
                   disabled={
                     pwaBusy ||
-                    notificationPermission === 'granted' ||
-                    notificationPermission === 'unsupported'
+                    pushSubscriptionState === 'unsupported'
                   }
                   className="mt-3 px-4 py-2.5 rounded-xl bg-[#34D399] text-zinc-950 text-[10px] font-mono font-black uppercase disabled:opacity-50 flex items-center gap-2"
                 >
                   <Bell className="w-4 h-4" />
-                  {notificationPermission === 'granted'
-                    ? 'Notifications on'
-                    : notificationPermission === 'denied'
+                  {pushSubscriptionState === 'enabled'
+                    ? 'Disable on this device'
+                    : pushSubscriptionState === 'blocked'
                     ? 'Open device settings'
                     : 'Enable notifications'}
                 </button>
