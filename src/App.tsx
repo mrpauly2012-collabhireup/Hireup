@@ -1392,15 +1392,13 @@ export default function App() {
       <aside className="w-64 bg-white text-zinc-800 border-r border-zinc-200 flex-shrink-0 flex-col justify-between hidden md:flex sticky top-0 h-screen select-none z-20">
         <div className="flex flex-col">
           {/* Logo Brand */}
-          <div className="p-6 border-b border-zinc-100 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#34D399] flex items-center justify-center text-white font-mono font-black text-lg shadow-md shadow-[#34D399]/20">
-              HU
-            </div>
-            <div>
-              <span className="text-sm font-black font-sans uppercase tracking-wider text-zinc-900">Hire<span className="text-[#10B981]">Up</span></span>
-              <p className="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-widest">TRADES RECRUITMENT</p>
-            </div>
-          </div>
+<div className="px-5 py-4 border-b border-zinc-100 flex items-center">
+  <img
+    src="/hireup-logo.png"
+    alt="HireUp Trades Recruitment"
+    className="w-40 h-14 object-contain object-left"
+  />
+</div>
 
           {/* Navigation Links */}
           <nav className="p-4 space-y-1">
@@ -1475,18 +1473,15 @@ export default function App() {
           <aside className="absolute left-0 top-0 h-full w-[88%] max-w-[340px] bg-white shadow-2xl flex flex-col animate-fade-in">
             <div className="p-5 border-b border-zinc-200 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-11 h-11 rounded-xl bg-[#34D399] flex items-center justify-center text-white font-mono font-black text-base shadow-sm">
-                  HU
-                </div>
+                <img
+                  src="/hireup-logo.png"
+                  alt="HireUp"
+                  className="w-36 h-14 object-contain object-left flex-shrink-0"
+                />
 
-                <div className="min-w-0">
-                  <h2 className="text-lg font-black uppercase tracking-wider text-zinc-950">
-                    Hire<span className="text-[#10B981]">Up</span>
-                  </h2>
-                  <p className="text-[10px] font-mono font-black uppercase tracking-wider text-[#10B981]">
-                    {userType === 'worker' ? 'Worker account' : 'Contractor account'}
-                  </p>
-                </div>
+                <p className="text-[10px] font-mono font-black uppercase tracking-wider text-[#10B981] truncate">
+                  {userType === 'worker' ? 'Worker account' : 'Contractor account'}
+                </p>
               </div>
 
               <button
