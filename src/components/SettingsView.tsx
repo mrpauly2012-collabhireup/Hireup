@@ -60,6 +60,14 @@ import {
   supabase,
   uploadFileToStorage,
 } from '../lib/supabase';
+import {
+  getInstallState,
+  getNotificationPermission,
+  promptHireUpInstall,
+  requestHireUpNotificationPermission,
+  subscribeToPwaChanges,
+  type InstallState,
+} from '../lib/pwa';
 
 interface SettingsViewProps {
   userType: UserType;
@@ -617,6 +625,80 @@ export default function SettingsView({
   onSignOut,
 }: SettingsViewProps) {
   const isWorker = userType === 'worker';
+
+  const [installState, setInstallState] = useState<InstallState>(() =>
+    typeof window === 'undefined' ? 'loading' : getInstallState()
+  );
+  const [notificationPermission, setNotificationPermission] = useState<
+    NotificationPermission | 'unsupported'
+  >(() =>
+    typeof window === 'undefined'
+      ? 'unsupported'
+      : getNotificationPermission()
+  );
+  const [pwaBusy, setPwaBusy] = useState(false);
+  const [pwaMessage, setPwaMessage] = useState('');
+
+  useEffect(() => {
+    const refreshPwaState = () => {
+      setInstallState(getInstallState());
+      setNotificationPermission(getNotificationPermission());
+    };
+
+    refreshPwaState();
+    return subscribeToPwaChanges(refreshPwaState);
+  }, []);
+
+  const handleInstallHireUp = async () => {
+    setPwaBusy(true);
+    setPwaMessage('');
+
+    try {
+      if (installState === 'ios') {
+        setPwaMessage(
+          'On iPhone: tap Share in Safari, then choose “Add to Home Screen”.'
+        );
+        return;
+      }
+
+      const result = await promptHireUpInstall();
+
+      if (result.outcome === 'accepted') {
+        setPwaMessage('HireUp is being installed on this device.');
+      } else if (result.outcome === 'dismissed') {
+        setPwaMessage('Installation was cancelled. You can try again anytime.');
+      } else {
+        setPwaMessage(
+          'Open HireUp in Chrome, Edge or Safari to install it on this device.'
+        );
+      }
+    } finally {
+      setPwaBusy(false);
+      setInstallState(getInstallState());
+    }
+  };
+
+  const handleEnableNotifications = async () => {
+    setPwaBusy(true);
+    setPwaMessage('');
+
+    try {
+      const permission = await requestHireUpNotificationPermission();
+      setNotificationPermission(permission);
+
+      if (permission === 'granted') {
+        setPwaMessage('HireUp notifications are now enabled.');
+      } else if (permission === 'denied') {
+        setPwaMessage(
+          'Notifications are blocked. Enable them from your browser or phone settings.'
+        );
+      } else if (permission === 'unsupported') {
+        setPwaMessage('This browser does not support HireUp notifications.');
+      }
+    } finally {
+      setPwaBusy(false);
+    }
+  };
 
   const [accountForm, setAccountForm] = useState<AccountFormState>({
     firstName: '',
@@ -2113,6 +2195,120 @@ export default function SettingsView({
           </section>
         </div>
       </div>
+
+
+      <section className="bg-white border border-emerald-200 rounded-2xl overflow-hidden shadow-sm">
+        <div className="p-5 border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-white">
+          <div className="flex items-center gap-2">
+            <Smartphone className="w-5 h-5 text-[#10B981]" />
+            <p className="text-xs font-mono font-black uppercase tracking-wider text-[#10B981]">
+              HireUp mobile app
+            </p>
+          </div>
+
+          <h3 className="text-lg font-black text-zinc-950 mt-2">
+            Install HireUp on this phone
+          </h3>
+
+          <p className="text-xs text-zinc-700 mt-1 max-w-3xl">
+            Add HireUp to your home screen and open it like a normal mobile
+            app. Installation is free for workers and contractors.
+          </p>
+        </div>
+
+        <div className="p-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+            <div className="flex items-start gap-3">
+              <span className="w-10 h-10 rounded-xl bg-white border border-zinc-200 text-[#10B981] flex items-center justify-center flex-shrink-0">
+                <Download className="w-5 h-5" />
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black text-zinc-950">
+                  {installState === 'installed'
+                    ? 'HireUp is installed'
+                    : installState === 'ready'
+                    ? 'Ready to install'
+                    : installState === 'ios'
+                    ? 'Install on iPhone or iPad'
+                    : 'Install HireUp'}
+                </p>
+
+                <p className="text-xs text-zinc-700 mt-1">
+                  {installState === 'installed'
+                    ? 'You are already using the installed HireUp app.'
+                    : installState === 'ios'
+                    ? 'Use Safari, tap Share, then select Add to Home Screen.'
+                    : 'Get a full-screen HireUp icon on your phone or computer.'}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleInstallHireUp}
+                  disabled={pwaBusy || installState === 'installed'}
+                  className="mt-3 px-4 py-2.5 rounded-xl bg-zinc-950 text-white text-[10px] font-mono font-black uppercase disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  {installState === 'installed'
+                    ? 'Already installed'
+                    : installState === 'ios'
+                    ? 'Show iPhone steps'
+                    : 'Install HireUp app'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+            <div className="flex items-start gap-3">
+              <span className="w-10 h-10 rounded-xl bg-white border border-zinc-200 text-[#10B981] flex items-center justify-center flex-shrink-0">
+                <Bell className="w-5 h-5" />
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black text-zinc-950">
+                  {notificationPermission === 'granted'
+                    ? 'Notifications enabled'
+                    : notificationPermission === 'denied'
+                    ? 'Notifications blocked'
+                    : notificationPermission === 'unsupported'
+                    ? 'Notifications unsupported'
+                    : 'Enable push notifications'}
+                </p>
+
+                <p className="text-xs text-zinc-700 mt-1">
+                  Receive HireUp alerts for new messages, matches,
+                  applications and interview updates.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleEnableNotifications}
+                  disabled={
+                    pwaBusy ||
+                    notificationPermission === 'granted' ||
+                    notificationPermission === 'unsupported'
+                  }
+                  className="mt-3 px-4 py-2.5 rounded-xl bg-[#34D399] text-zinc-950 text-[10px] font-mono font-black uppercase disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Bell className="w-4 h-4" />
+                  {notificationPermission === 'granted'
+                    ? 'Notifications on'
+                    : notificationPermission === 'denied'
+                    ? 'Open device settings'
+                    : 'Enable notifications'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {pwaMessage && (
+          <div className="mx-5 mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
+            {pwaMessage}
+          </div>
+        )}
+      </section>
 
       <section className="bg-white border border-red-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="p-5 border-b border-red-100">
