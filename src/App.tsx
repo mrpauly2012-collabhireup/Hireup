@@ -8,11 +8,10 @@ import {
   Activity, Briefcase, Heart, MessageSquare, Calendar, Star, 
   Bell, Users, TrendingUp, Settings, User, HardHat, Wrench, 
   ShieldCheck, MapPin, Award, Clock, ArrowRight, X, ChevronRight, LogOut,
-  Video, UserCheck, FileText, CheckCircle2, ExternalLink, Image as ImageIcon, ClipboardCheck,
-  Mail, CalendarCheck, BadgeCheck, Menu, Crown, CircleHelp, Home, Scale
+  Video, UserCheck, FileText, CheckCircle2, ExternalLink, Image as ImageIcon, ClipboardCheck
 } from 'lucide-react';
 import { 
-  WorkerProfile, JobProfile, CompanyProfile, Match, Message, Interview, UserType, JobApplication, ApplicationStatus 
+  WorkerProfile, JobProfile, CompanyProfile, Match, Message, Interview, UserType 
 } from './types';
 import { 
   supabase, 
@@ -23,10 +22,6 @@ import {
   fetchInterviews, 
   fetchMessages,
   fetchMessagesForMatches,
-  fetchNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
-  AppNotification,
   createNotificationInDb,
   createMatchInDb, 
   sendMessageInDb, 
@@ -40,20 +35,7 @@ import {
   createReviewInDb,
   reportReviewInDb,
   moderateReviewInDb,
-  isValidUploadUrl,
-  fetchAdminUser,
-  fetchAdminDashboardStats,
-  AdminUser,
-  AdminDashboardStats,
-  AdminManagedUser,
-  AdminManagedUserType,
-  AdminAccountStatus,
-  AdminVerificationStatus,
-  fetchAdminManagedUsers,
-  updateAdminAccountStatus,
-  updateAdminVerificationStatus,
-  fetchApplications,
-  updateApplicationStatusInDb
+  isValidUploadUrl
 } from './lib/supabase';
 
 import DashboardView from './components/DashboardView';
@@ -68,12 +50,6 @@ import SettingsView from './components/SettingsView';
 import ProfileView from './components/ProfileView';
 import AuthView from './components/AuthView';
 import VideoInterviewRoom from './components/VideoInterviewRoom';
-import AdminDashboard from './components/AdminDashboard';
-import InformationCentre from './components/InformationCentre';
-import ApplicationsView from './components/ApplicationsView';
-import { HIREUP_LOGO } from './constants';
-import PublicJobsView from './components/PublicJobsView';
-import { showHireUpNotification } from './lib/pwa';
 
 export default function App() {
   // Core User Session State
@@ -81,14 +57,6 @@ export default function App() {
 
   // Core Persona State
   const [userType, setUserType] = useState<UserType>('worker');
-
-  // Dedicated Admin Portal state
-  const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null);
-  const [adminStats, setAdminStats] = useState<AdminDashboardStats | null>(null);
-  const [adminUsers, setAdminUsers] = useState<AdminManagedUser[]>([]);
-  const [adminLoading, setAdminLoading] = useState(false);
-  const [adminActionLoadingId, setAdminActionLoadingId] = useState<string | null>(null);
-  const [adminError, setAdminError] = useState<string | null>(null);
 
   // Current view route
   const [currentView, setCurrentView] = useState('dashboard');
@@ -113,14 +81,9 @@ export default function App() {
   const [jobs, setJobs] = useState<JobProfile[]>([]);
   const [companies, setCompanies] = useState<CompanyProfile[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
-  const [applications, setApplications] = useState<JobApplication[]>([]);
-  const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   // Database Loading & Sync States
   const [dbLoading, setDbLoading] = useState(false);
@@ -129,7 +92,6 @@ export default function App() {
   // Selection states for detail overlays
   const [selectedWorker, setSelectedWorker] = useState<WorkerProfile | null>(null);
   const [selectedJob, setSelectedJob] = useState<JobProfile | null>(null);
-  const [selectedCompany, setSelectedCompany] = useState<CompanyProfile | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [appLightboxImage, setAppLightboxImage] = useState<string | null>(null);
 
@@ -139,36 +101,21 @@ export default function App() {
     setDbSyncError(null);
     try {
       // Query live Supabase tables in parallel
-      const [
-        dbWorkers,
-        dbCompanies,
-        dbJobs,
-        dbMatches,
-        dbInterviews,
-        dbReviews,
-        dbNotifications,
-        dbApplications,
-      ] = await Promise.all([
+      const [dbWorkers, dbCompanies, dbJobs, dbMatches, dbInterviews, dbReviews] = await Promise.all([
         fetchWorkers(),
         fetchCompanies(),
         fetchJobs(),
         fetchMatches(),
         fetchInterviews(),
         fetchReviewsFromDb(),
-        currentUser ? fetchNotifications(currentUser.id) : Promise.resolve([]),
-        currentUser
-          ? fetchApplications(currentUser.id, currentUser.userType)
-          : Promise.resolve([]),
       ]);
 
       setWorkers(dbWorkers || []);
       setCompanies(dbCompanies || []);
       setJobs(dbJobs || []);
       setMatches(dbMatches || []);
-      setApplications(dbApplications || []);
       setInterviews(dbInterviews || []);
       setReviews(dbReviews || []);
-      setNotifications(dbNotifications || []);
 
       if (dbMatches && dbMatches.length > 0) {
         const matchIds = dbMatches.map(m => m.id);
@@ -184,141 +131,51 @@ export default function App() {
     }
   };
 
-  const loadAdminDashboard = async () => {
-    setAdminLoading(true);
-    setAdminError(null);
-
-    try {
-      const [stats, managedUsers] = await Promise.all([
-        fetchAdminDashboardStats(),
-        fetchAdminManagedUsers(),
-      ]);
-
-      setAdminStats(stats);
-      setAdminUsers(managedUsers);
-    } catch (error: any) {
-      console.error('Could not load admin dashboard:', error.message);
-      setAdminError(error.message || String(error));
-    } finally {
-      setAdminLoading(false);
-    }
-  };
-
-  const handleAdminAccountStatus = async (
-    userId: string,
-    managedUserType: AdminManagedUserType,
-    status: AdminAccountStatus
-  ) => {
-    setAdminActionLoadingId(userId);
-    setAdminError(null);
-
-    try {
-      await updateAdminAccountStatus(userId, managedUserType, status);
-      await loadAdminDashboard();
-    } catch (error: any) {
-      console.error('Could not update account status:', error.message);
-      setAdminError(error.message || String(error));
-    } finally {
-      setAdminActionLoadingId(null);
-    }
-  };
-
-  const handleAdminVerificationStatus = async (
-    userId: string,
-    managedUserType: AdminManagedUserType,
-    status: AdminVerificationStatus
-  ) => {
-    setAdminActionLoadingId(userId);
-    setAdminError(null);
-
-    try {
-      await updateAdminVerificationStatus(userId, managedUserType, status);
-      await loadAdminDashboard();
-    } catch (error: any) {
-      console.error('Could not update verification status:', error.message);
-      setAdminError(error.message || String(error));
-    } finally {
-      setAdminActionLoadingId(null);
-    }
-  };
-
-  const resolveAuthenticatedSession = async (session: any) => {
-    if (!session?.user) {
-      setCurrentUser(null);
-      setCurrentAdmin(null);
-      setAdminStats(null);
-      setAdminUsers([]);
-      return;
-    }
-
-    try {
-      const admin = await fetchAdminUser(session.user.id);
-
-      if (admin) {
-        setCurrentAdmin(admin);
-        setCurrentUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          // UserType does not include admin yet; this value is never used for
-          // rendering because the admin branch is handled first.
-          userType: 'employer',
-        });
-        setUserType('employer');
-        setCurrentView('admin');
-        return;
-      }
-
-      setCurrentAdmin(null);
-
-      const { data: isWorker } = await supabase
-        .from('worker_profiles')
-        .select('id')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      const type: UserType = isWorker ? 'worker' : 'employer';
-
-      setCurrentUser({
-        id: session.user.id,
-        email: session.user.email || '',
-        userType: type,
-      });
-      setUserType(type);
-      setCurrentView('dashboard');
-    } catch (error: any) {
-      console.error('Could not resolve authenticated account:', error.message);
-      setDbSyncError(error.message || String(error));
-      setCurrentUser(null);
-      setCurrentAdmin(null);
-    }
-  };
-
   // Auth Listener to persist session
   useEffect(() => {
+    // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      resolveAuthenticatedSession(session);
+      if (session && session.user) {
+        // Look up profile to determine user role
+        supabase.from('worker_profiles').select('id').eq('id', session.user.id).maybeSingle().then(({ data: isWorker }) => {
+          const type: UserType = isWorker ? 'worker' : 'employer';
+          setCurrentUser({
+            id: session.user.id,
+            email: session.user.email!,
+            userType: type
+          });
+          setUserType(type);
+        });
+      } else {
+        setCurrentUser(null);
+      }
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      resolveAuthenticatedSession(session);
+    // Monitor auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session && session.user) {
+        const { data: isWorker } = await supabase.from('worker_profiles').select('id').eq('id', session.user.id).maybeSingle();
+        const type: UserType = isWorker ? 'worker' : 'employer';
+        setCurrentUser({
+          id: session.user.id,
+          email: session.user.email!,
+          userType: type
+        });
+        setUserType(type);
+      } else {
+        setCurrentUser(null);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch the correct data set whenever an account logs in
+  // Fetch Supabase data whenever currentUser logs in
   useEffect(() => {
-    if (!currentUser) return;
-
-    if (currentAdmin) {
-      loadAdminDashboard();
-      return;
+    if (currentUser) {
+      loadAllDataFromSupabase();
     }
-
-    loadAllDataFromSupabase();
-  }, [currentUser?.id, currentAdmin?.userId]);
+  }, [currentUser]);
 
   // Load chats dynamically when selectedMatchId changes
   useEffect(() => {
@@ -336,7 +193,7 @@ export default function App() {
 
   // Setup Supabase Realtime Subscriptions for live messaging and notifications
   useEffect(() => {
-    if (!currentUser || currentAdmin) return;
+    if (!currentUser) return;
 
     console.log("Setting up Supabase Realtime channel for user:", currentUser.id);
 
@@ -439,7 +296,6 @@ export default function App() {
             date: newInt.date,
             time: newInt.time,
             location: newInt.location,
-            meetingLink: newInt.meeting_link || '',
             status: newInt.status,
             ppeRequired: newInt.ppe_required || ['Hard Hat', 'Steel Toe Boots', 'Hi-Vis Vest'],
             notes: newInt.notes || '',
@@ -453,309 +309,13 @@ export default function App() {
       )
       .subscribe();
 
-    // 4. Subscribe to notifications for the authenticated user
-    const notificationChannel = supabase
-      .channel(`live-notifications-${currentUser.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${currentUser.id}`,
-        },
-        (payload) => {
-          const notification = payload.new as any;
-
-          const mappedNotification: AppNotification = {
-            id: notification.id,
-            userId: notification.user_id,
-            title: notification.title,
-            message: notification.body || notification.message || '',
-            isRead:
-              notification.read !== undefined
-                ? notification.read
-                : notification.is_read || false,
-            createdAt: notification.created_at,
-          };
-
-          setNotifications(prev => {
-            if (prev.some(item => item.id === mappedNotification.id)) return prev;
-            return [mappedNotification, ...prev];
-          });
-
-          void showHireUpNotification(mappedNotification.title, {
-            body: mappedNotification.message,
-            tag: `hireup-${mappedNotification.id}`,
-            data: {
-              url: '/',
-              notificationId: mappedNotification.id,
-            },
-          });
-        }
-      )
-      .subscribe();
-
-    // 5. Keep interview status changes live across both accounts
-    const interviewUpdateChannel = supabase
-      .channel(`live-interview-updates-${currentUser.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'interviews',
-        },
-        async () => {
-          try {
-            const updatedInterviews = await fetchInterviews();
-            setInterviews(updatedInterviews || []);
-          } catch (error: any) {
-            console.error('Realtime interview refresh failed:', error.message);
-          }
-        }
-      )
-      .subscribe();
-
-    // 6. Keep jobs live when contractors create, edit, or remove vacancies
-    const jobsChannel = supabase
-      .channel(`live-jobs-${currentUser.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'jobs',
-        },
-        async () => {
-          try {
-            const updatedJobs = await fetchJobs();
-            setJobs(updatedJobs || []);
-          } catch (error: any) {
-            console.error('Realtime jobs refresh failed:', error.message);
-          }
-        }
-      )
-      .subscribe();
-
-    // 7. Keep reviews, ratings, and profile reputation live
-    const reviewsChannel = supabase
-      .channel(`live-reviews-${currentUser.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'reviews',
-        },
-        async () => {
-          try {
-            const [updatedReviews, updatedWorkers, updatedCompanies] =
-              await Promise.all([
-                fetchReviewsFromDb(),
-                fetchWorkers(),
-                fetchCompanies(),
-              ]);
-
-            setReviews(updatedReviews || []);
-            setWorkers(updatedWorkers || []);
-            setCompanies(updatedCompanies || []);
-          } catch (error: any) {
-            console.error('Realtime reviews refresh failed:', error.message);
-          }
-        }
-      )
-      .subscribe();
-
-    // 8. Keep worker profile edits live across discovery, search, and dashboards
-    const workerProfilesChannel = supabase
-      .channel(`live-worker-profiles-${currentUser.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'worker_profiles',
-        },
-        async () => {
-          try {
-            const updatedWorkers = await fetchWorkers();
-            setWorkers(updatedWorkers || []);
-          } catch (error: any) {
-            console.error('Realtime worker profile refresh failed:', error.message);
-          }
-        }
-      )
-      .subscribe();
-
-    // 9. Keep contractor profile edits live across company pages and vacancies
-    const contractorProfilesChannel = supabase
-      .channel(`live-contractor-profiles-${currentUser.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'contractor_profiles',
-        },
-        async () => {
-          try {
-            const updatedCompanies = await fetchCompanies();
-            setCompanies(updatedCompanies || []);
-          } catch (error: any) {
-            console.error('Realtime contractor profile refresh failed:', error.message);
-          }
-        }
-      )
-      .subscribe();
-
-    const applicationsChannel = supabase
-      .channel(`live-job-applications-${currentUser.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'job_applications',
-        },
-        async () => {
-          try {
-            const updatedApplications = await fetchApplications(
-              currentUser.id,
-              currentUser.userType
-            );
-            setApplications(updatedApplications);
-          } catch (error: any) {
-            console.error(
-              'Realtime application refresh failed:',
-              error.message
-            );
-          }
-        }
-      )
-      .subscribe();
-
     return () => {
       console.log("Cleaning up Supabase Realtime channels");
       supabase.removeChannel(messageChannel);
       supabase.removeChannel(matchChannel);
       supabase.removeChannel(interviewChannel);
-      supabase.removeChannel(notificationChannel);
-      supabase.removeChannel(interviewUpdateChannel);
-      supabase.removeChannel(jobsChannel);
-      supabase.removeChannel(reviewsChannel);
-      supabase.removeChannel(workerProfilesChannel);
-      supabase.removeChannel(contractorProfilesChannel);
-      supabase.removeChannel(applicationsChannel);
     };
-  }, [currentUser, userType, currentAdmin]);
-
-  const getRelativeTime = (createdAt: string) => {
-    const created = new Date(createdAt).getTime();
-    const now = Date.now();
-    const differenceSeconds = Math.max(0, Math.floor((now - created) / 1000));
-
-    if (differenceSeconds < 60) return 'Just now';
-
-    const minutes = Math.floor(differenceSeconds / 60);
-    if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
-
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
-
-    return new Date(createdAt).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-
-  const getNotificationCategory = (notification: AppNotification) => {
-    const combinedText = `${notification.title} ${notification.message}`.toLowerCase();
-
-    if (combinedText.includes('message')) return 'message';
-    if (combinedText.includes('match')) return 'match';
-
-    if (
-      combinedText.includes('interview') ||
-      combinedText.includes('walkthrough') ||
-      combinedText.includes('induction')
-    ) {
-      return 'interview';
-    }
-
-    if (combinedText.includes('review') || combinedText.includes('rating')) {
-      return 'review';
-    }
-
-    return 'general';
-  };
-
-  const getNotificationTargetView = (notification: AppNotification) => {
-    const category = getNotificationCategory(notification);
-
-    if (category === 'message') return 'messages';
-    if (category === 'match') return 'matches';
-    if (category === 'interview') return 'interviews';
-    if (category === 'review') return 'profile';
-
-    return 'dashboard';
-  };
-
-  const getNotificationIcon = (notification: AppNotification) => {
-    const category = getNotificationCategory(notification);
-
-    if (category === 'message') return <Mail className="w-4 h-4" />;
-    if (category === 'match') return <Heart className="w-4 h-4 fill-current" />;
-    if (category === 'interview') return <CalendarCheck className="w-4 h-4" />;
-    if (category === 'review') return <Star className="w-4 h-4 fill-current" />;
-
-    return <BadgeCheck className="w-4 h-4" />;
-  };
-
-  const unreadMessageCount = messages.filter(
-    message => !message.isRead && message.sender !== userType
-  ).length;
-
-  const unreadNotificationCount = notifications.filter(
-    notification => !notification.isRead
-  ).length;
-
-  const handleOpenNotification = async (notification: AppNotification) => {
-    if (!notification.isRead) {
-      setNotifications(prev =>
-        prev.map(item =>
-          item.id === notification.id ? { ...item, isRead: true } : item
-        )
-      );
-
-      try {
-        await markNotificationAsRead(notification.id);
-      } catch (error: any) {
-        console.error('Could not mark notification as read:', error.message);
-      }
-    }
-
-    setCurrentView(getNotificationTargetView(notification));
-    setShowNotifications(false);
-  };
-
-  const handleMarkAllNotificationsRead = async () => {
-    if (!currentUser || unreadNotificationCount === 0) return;
-
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, isRead: true }))
-    );
-
-    try {
-      await markAllNotificationsAsRead(currentUser.id);
-    } catch (error: any) {
-      console.error('Could not mark all notifications as read:', error.message);
-    }
-  };
+  }, [currentUser, userType]);
 
   // Action: Swipe connection liked and match generated
   const handleMatchCreated = async (workerId: string, jobId: string) => {
@@ -815,29 +375,17 @@ export default function App() {
       // Create live notification record in the notifications table
       const match = matches.find(m => m.id === matchId);
       if (match) {
-        const job = match.jobId
-          ? jobs.find(j => j.id === match.jobId)
-          : undefined;
+        const job = jobs.find(j => j.id === match.jobId);
+        const contractorId = job ? job.companyId : null;
+        const recipientId = userType === 'worker' ? contractorId : match.workerId;
+        const senderName = userType === 'worker' 
+          ? (workers.find(w => w.id === currentUser?.id)?.name || 'Tradesman') 
+          : (companies.find(c => c.id === currentUser?.id)?.name || 'Contractor');
 
-        const contractorId =
-          match.contractorId ||
-          job?.companyId ||
-          null;
-
-        const recipientId =
-          userType === 'worker'
-            ? contractorId
-            : match.workerId;
-
-        const senderName =
-          userType === 'worker'
-            ? (workers.find(w => w.id === currentUser?.id)?.name || 'Worker')
-            : (companies.find(c => c.id === currentUser?.id)?.name || 'Contractor');
-
-        if (recipientId && recipientId !== currentUser?.id) {
+        if (recipientId) {
           await createNotificationInDb(
-            recipientId,
-            `New Message from ${senderName}`,
+            recipientId, 
+            `New Message from ${senderName}`, 
             text
           );
         }
@@ -916,20 +464,8 @@ export default function App() {
       throw new Error("Invalid review: The reviewed contractor is not associated with this job.");
     }
 
-    // Accept either a job-specific match or an existing direct worker-contractor match.
-    // Direct matches created before a vacancy is attached can legitimately have no job_id.
-    const matchExists = matches.some(match => {
-      const matchesWorker = match.workerId === workerId;
-      const matchesContractor =
-        match.contractorId === contractorId ||
-        jobs.find(jobItem => jobItem.id === match.jobId)?.companyId === contractorId;
-
-      const matchesThisJob = match.jobId === jobId;
-      const isDirectMatch = !match.jobId;
-
-      return matchesWorker && matchesContractor && (matchesThisJob || isDirectMatch);
-    });
-
+    // Check if match exists
+    const matchExists = matches.some(m => m.jobId === jobId && m.workerId === workerId);
     if (!matchExists) {
       throw new Error("Reviews are only allowed if a match exists between both parties on HireUp.");
     }
@@ -1086,51 +622,14 @@ export default function App() {
     }
   };
 
-  const handleApplicationStatusUpdate = async (
-    applicationId: string,
-    status: ApplicationStatus
-  ) => {
-    if (!currentUser) return;
-
-    setApplicationsLoading(true);
-    try {
-      const updated = await updateApplicationStatusInDb(
-        applicationId,
-        status
-      );
-
-      setApplications(previous =>
-        previous.map(application =>
-          application.id === updated.id ? updated : application
-        )
-      );
-
-      const refreshed = await fetchApplications(
-        currentUser.id,
-        currentUser.userType
-      );
-      setApplications(refreshed);
-    } catch (error: any) {
-      console.error('Could not update application status:', error.message);
-      window.alert(
-        `Application status could not be updated: ${
-          error.message || error
-        }`
-      );
-    } finally {
-      setApplicationsLoading(false);
-    }
-  };
-
   // Sidebar Desktop Navigation Links
   const sidebarLinks = [
     { id: 'dashboard', label: 'Dashboard', icon: <Activity className="w-4 h-4" /> },
     { id: 'swipe', label: userType === 'employer' ? 'Find Workers' : 'Find Jobs', icon: userType === 'employer' ? <Wrench className="w-4 h-4" /> : <Briefcase className="w-4 h-4" /> },
     { id: 'matches', label: 'Matches', icon: <Heart className="w-4 h-4" /> },
-    { id: 'applications', label: userType === 'worker' ? 'My Applications' : 'Applicant Pipeline', icon: <ClipboardCheck className="w-4 h-4" /> },
     { id: 'messages', label: 'Messages', icon: <MessageSquare className="w-4 h-4" /> },
     { id: 'interviews', label: 'Interviews', icon: <Calendar className="w-4 h-4" /> },
-    { id: 'companies', label: userType === 'employer' ? 'Verified Workers' : 'Featured Jobs', icon: userType === 'employer' ? <Users className="w-4 h-4" /> : <Star className="w-4 h-4" /> },
+    { id: 'companies', label: 'Companies', icon: <Users className="w-4 h-4" /> },
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="w-4 h-4" /> },
     { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
     { id: 'profile', label: 'My Profile', icon: <User className="w-4 h-4" /> },
@@ -1138,142 +637,16 @@ export default function App() {
 
   // Mobile Bottom Tab Links
   const mobileTabs = [
-    {
-      id: 'dashboard',
-      label: 'Home',
-      icon: <Home className="w-5 h-5" />,
+    { id: 'dashboard', label: 'Home', icon: <Activity className="w-5 h-5" /> },
+    { id: 'messages', label: 'Messages', icon: <MessageSquare className="w-5 h-5" /> },
+    { 
+      id: 'swipe', 
+      label: userType === 'employer' ? 'Find Lads' : 'Job Search', 
+      icon: userType === 'employer' ? <Wrench className="w-5 h-5" /> : <Briefcase className="w-5 h-5" /> 
     },
-    {
-      id: 'swipe',
-      label: userType === 'employer' ? 'Find Workers' : 'Find Jobs',
-      icon:
-        userType === 'employer' ? (
-          <Wrench className="w-5 h-5" />
-        ) : (
-          <Briefcase className="w-5 h-5" />
-        ),
-    },
-    {
-      id: 'messages',
-      label: 'Messages',
-      icon: <MessageSquare className="w-5 h-5" />,
-    },
-    {
-      id: 'matches',
-      label: 'Matches',
-      icon: <Heart className="w-5 h-5" />,
-    },
+    { id: 'matches', label: 'Matches', icon: <Heart className="w-5 h-5" /> },
+    { id: 'profile', label: 'Profile', icon: <User className="w-5 h-5" /> },
   ];
-
-  const mobileDrawerLinks =
-    userType === 'worker'
-      ? [
-          {
-            id: 'dashboard',
-            label: 'Home',
-            icon: <Home className="w-5 h-5" />,
-          },
-          {
-            id: 'swipe',
-            label: 'Find Jobs',
-            icon: <Briefcase className="w-5 h-5" />,
-          },
-          {
-            id: 'matches',
-            label: 'Matches',
-            icon: <Heart className="w-5 h-5" />,
-          },
-          {
-            id: 'applications',
-            label: 'Applicant Pipeline',
-            icon: <ClipboardCheck className="w-5 h-5" />,
-          },
-          {
-            id: 'applications',
-            label: 'My Applications',
-            icon: <ClipboardCheck className="w-5 h-5" />,
-          },
-          {
-            id: 'messages',
-            label: 'Messages',
-            icon: <MessageSquare className="w-5 h-5" />,
-          },
-          {
-            id: 'interviews',
-            label: 'Interviews',
-            icon: <Calendar className="w-5 h-5" />,
-          },
-          {
-            id: 'companies',
-            label: 'Featured Jobs',
-            icon: <Star className="w-5 h-5" />,
-            badge: 'NEW',
-          },
-          {
-            id: 'analytics',
-            label: 'Analytics',
-            icon: <TrendingUp className="w-5 h-5" />,
-          },
-          {
-            id: 'profile',
-            label: 'My Profile',
-            icon: <User className="w-5 h-5" />,
-            dividerBefore: true,
-          },
-          {
-            id: 'settings',
-            label: 'Settings',
-            icon: <Settings className="w-5 h-5" />,
-          },
-        ]
-      : [
-          {
-            id: 'dashboard',
-            label: 'Home',
-            icon: <Home className="w-5 h-5" />,
-          },
-          {
-            id: 'swipe',
-            label: 'Find Workers',
-            icon: <Wrench className="w-5 h-5" />,
-          },
-          {
-            id: 'matches',
-            label: 'Matches',
-            icon: <Heart className="w-5 h-5" />,
-          },
-          {
-            id: 'messages',
-            label: 'Messages',
-            icon: <MessageSquare className="w-5 h-5" />,
-          },
-          {
-            id: 'interviews',
-            label: 'Interviews',
-            icon: <Calendar className="w-5 h-5" />,
-          },
-          {
-            id: 'companies',
-            label: 'Verified Workers',
-            icon: <Users className="w-5 h-5" />,
-          },
-          {
-            id: 'analytics',
-            label: 'Analytics',
-            icon: <TrendingUp className="w-5 h-5" />,
-          },
-          {
-            id: 'profile',
-            label: 'Company Profile',
-            icon: <User className="w-5 h-5" />,
-            dividerBefore: true,
-          },
-          {
-            id: 'settings',
-            label: 'Settings',
-            icon: <Settings className="w-5 h-5" />,
-          },
-        ];
 
   // Action: Add custom worker
   const handleAddWorker = (w: WorkerProfile) => {
@@ -1286,7 +659,7 @@ export default function App() {
   };
 
   // Action: Add custom job vacancy
-  const handleAddJob = async (j: Omit<JobProfile, 'id'>) => {
+  const handleAddJob = async (j: JobProfile) => {
     try {
       const created = await createJobInDb(j);
       setJobs(prev => [created, ...prev]);
@@ -1297,22 +670,7 @@ export default function App() {
   };
 
   // Action: Handle registration or login
-  const handleAuthSuccess = async (session: { id: string; email: string; userType: UserType }) => {
-    try {
-      const admin = await fetchAdminUser(session.id);
-
-      if (admin) {
-        setCurrentAdmin(admin);
-        setCurrentUser(session);
-        setUserType('employer');
-        setCurrentView('admin');
-        return;
-      }
-    } catch (error: any) {
-      console.error('Could not check admin access after login:', error.message);
-    }
-
-    setCurrentAdmin(null);
+  const handleAuthSuccess = (session: { id: string; email: string; userType: UserType }) => {
     setCurrentUser(session);
     setUserType(session.userType);
     setCurrentView('dashboard');
@@ -1326,10 +684,6 @@ export default function App() {
       console.error("Supabase sign out error:", err);
     }
     setCurrentUser(null);
-    setCurrentAdmin(null);
-    setAdminStats(null);
-    setAdminUsers([]);
-    setAdminError(null);
     setCurrentView('dashboard');
   };
 
@@ -1342,22 +696,6 @@ export default function App() {
     ? companies.find(c => c.id === currentUser.id) || null
     : null;
 
-  const isPublicJobsRoute =
-    window.location.pathname === '/jobs' ||
-    window.location.pathname.startsWith('/jobs/');
-
-  if (isPublicJobsRoute) {
-    return (
-      <PublicJobsView
-        onOpenApp={() => {
-          window.history.pushState({}, '', '/');
-          window.dispatchEvent(new PopStateEvent('popstate'));
-          window.location.reload();
-        }}
-      />
-    );
-  }
-
   if (!currentUser) {
     return (
       <AuthView 
@@ -1367,23 +705,6 @@ export default function App() {
         onAddWorker={handleAddWorker}
         onAddCompany={handleAddCompany}
         onAddJob={handleAddJob}
-      />
-    );
-  }
-
-  if (currentAdmin) {
-    return (
-      <AdminDashboard
-        admin={currentAdmin}
-        stats={adminStats}
-        users={adminUsers}
-        loading={adminLoading}
-        actionLoadingId={adminActionLoadingId}
-        error={adminError}
-        onRefresh={loadAdminDashboard}
-        onSignOut={handleSignOut}
-        onUpdateAccountStatus={handleAdminAccountStatus}
-        onUpdateVerificationStatus={handleAdminVerificationStatus}
       />
     );
   }
@@ -1421,13 +742,15 @@ export default function App() {
       <aside className="w-64 bg-white text-zinc-800 border-r border-zinc-200 flex-shrink-0 flex-col justify-between hidden md:flex sticky top-0 h-screen select-none z-20">
         <div className="flex flex-col">
           {/* Logo Brand */}
-<div className="px-5 py-4 border-b border-zinc-100 flex items-center">
-  <img
-    src={HIREUP_LOGO}
-    alt="HireUp Trades Recruitment"
-    className="w-56 h-20 object-contain object-left"
-  />
-</div>
+          <div className="p-6 border-b border-zinc-100 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#34D399] flex items-center justify-center text-white font-mono font-black text-lg shadow-md shadow-[#34D399]/20">
+              HU
+            </div>
+            <div>
+              <span className="text-sm font-black font-sans uppercase tracking-wider text-zinc-900">Hire<span className="text-[#10B981]">Up</span></span>
+              <p className="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-widest">TRADES RECRUITMENT</p>
+            </div>
+          </div>
 
           {/* Navigation Links */}
           <nav className="p-4 space-y-1">
@@ -1438,22 +761,12 @@ export default function App() {
                   key={link.id}
                   onClick={() => {
                     setCurrentView(link.id);
-                    setShowNotifications(false);
                     setSelectedMatchId(null);
                   }}
                   className={`w-full px-3 py-2.5 rounded-lg text-xs font-mono font-bold flex items-center gap-3 transition-all cursor-pointer ${isActive ? 'bg-[#34D399] text-white shadow-md shadow-[#34D399]/15' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50'}`}
                 >
                   {link.icon}
-                  <span className="uppercase tracking-wide flex-grow text-left">{link.label}</span>
-                  {link.id === 'messages' && unreadMessageCount > 0 && (
-                    <span className={`min-w-5 h-5 px-1 rounded-full text-[9px] flex items-center justify-center ${
-                      isActive
-                        ? 'bg-white text-[#10B981]'
-                        : 'bg-red-500 text-white'
-                    }`}>
-                      {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
-                    </span>
-                  )}
+                  <span className="uppercase tracking-wide">{link.label}</span>
                 </button>
               );
             })}
@@ -1489,217 +802,17 @@ export default function App() {
         </div>
       </aside>
 
-      {/* Mobile Slide-Out Navigation */}
-      {showMobileMenu && (
-        <div className="fixed inset-0 z-[100] md:hidden">
-          <button
-            type="button"
-            aria-label="Close navigation menu"
-            onClick={() => setShowMobileMenu(false)}
-            className="absolute inset-0 bg-black/45"
-          />
-
-          <aside className="absolute left-0 top-0 h-full w-[88%] max-w-[340px] bg-white shadow-2xl flex flex-col animate-fade-in">
-            <div className="p-5 border-b border-zinc-200 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <img
-                  src={HIREUP_LOGO}
-                  alt="HireUp"
-                  className="w-48 h-20 object-contain object-left flex-shrink-0"
-                />
-
-                <p className="text-[10px] font-mono font-black uppercase tracking-wider text-[#10B981] truncate">
-                  {userType === 'worker' ? 'Worker account' : 'Contractor account'}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowMobileMenu(false)}
-                className="w-10 h-10 rounded-xl bg-zinc-100 text-zinc-900 flex items-center justify-center"
-                aria-label="Close navigation menu"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4">
-              <nav className="space-y-1">
-                {mobileDrawerLinks.map(link => {
-                  const isActive =
-                    currentView === link.id ||
-                    (link.id === 'swipe' && currentView === 'search');
-
-                  return (
-                    <React.Fragment key={link.id}>
-                      {link.dividerBefore && (
-                        <div className="border-t border-zinc-200 my-4" />
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCurrentView(link.id);
-                          setShowMobileMenu(false);
-                          setShowNotifications(false);
-                          setSelectedMatchId(null);
-                        }}
-                        className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl transition-all ${
-                          isActive
-                            ? 'bg-[#34D399] text-zinc-950 shadow-sm'
-                            : 'text-zinc-950 hover:bg-zinc-100'
-                        }`}
-                      >
-                        <span className="flex items-center gap-4 min-w-0">
-                          <span
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                              isActive
-                                ? 'bg-white/40'
-                                : 'bg-zinc-100 text-zinc-700'
-                            }`}
-                          >
-                            {link.icon}
-                          </span>
-
-                          <span className="text-sm font-bold text-left">
-                            {link.label}
-                          </span>
-                        </span>
-
-                        <span className="flex items-center gap-2">
-                          {link.id === 'messages' &&
-                            unreadMessageCount > 0 && (
-                              <span className="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[9px] font-mono font-black flex items-center justify-center">
-                                {unreadMessageCount > 9
-                                  ? '9+'
-                                  : unreadMessageCount}
-                              </span>
-                            )}
-
-                          {'badge' in link && link.badge && (
-                            <span className="px-2 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[8px] font-mono font-black uppercase">
-                              {link.badge}
-                            </span>
-                          )}
-
-                          <ChevronRight className="w-4 h-4 opacity-50" />
-                        </span>
-                      </button>
-                    </React.Fragment>
-                  );
-                })}
-
-                <div className="border-t border-zinc-200 my-4" />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCurrentView('settings');
-                    setShowMobileMenu(false);
-                  }}
-                  className="w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl text-zinc-950 hover:bg-zinc-100"
-                >
-                  <span className="flex items-center gap-4">
-                    <span className="w-8 h-8 rounded-lg bg-zinc-100 text-zinc-700 flex items-center justify-center">
-                      <CircleHelp className="w-5 h-5" />
-                    </span>
-                    <span className="text-sm font-bold">Help & Support</span>
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-zinc-400" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMobileMenu(false);
-                    handleSignOut();
-                  }}
-                  className="w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl text-red-600 hover:bg-red-50"
-                >
-                  <span className="flex items-center gap-4">
-                    <span className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
-                      <LogOut className="w-5 h-5" />
-                    </span>
-                    <span className="text-sm font-bold">Log Out</span>
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-red-300" />
-                </button>
-              </nav>
-            </div>
-
-            <div className="p-4 border-t border-zinc-200 bg-white">
-              <div className="rounded-2xl bg-gradient-to-r from-emerald-50 to-white border border-emerald-200 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-[#34D399] text-white flex items-center justify-center flex-shrink-0">
-                    <Crown className="w-5 h-5" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <h4 className="text-sm font-black text-zinc-950">
-                      HireUp Pro
-                    </h4>
-                    <p className="text-[10px] text-zinc-700 mt-0.5">
-                      Premium tools and profile boosts are coming soon.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 mt-3 px-1">
-                <div className="w-9 h-9 rounded-lg overflow-hidden border border-zinc-200 bg-white p-0.5 flex-shrink-0">
-                  <img
-                    src={
-                      userType === 'worker'
-                        ? loggedInWorker!.avatar
-                        : loggedInCompany!.logo
-                    }
-                    alt="Account"
-                    className="w-full h-full object-cover rounded"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-zinc-950 truncate">
-                    {userType === 'worker'
-                      ? loggedInWorker!.name
-                      : loggedInCompany!.name}
-                  </p>
-                  <p className="text-[9px] font-mono uppercase text-zinc-600 truncate">
-                    {userType === 'worker'
-                      ? loggedInWorker!.trade
-                      : 'Contractor'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </aside>
-        </div>
-      )}
-
       {/* Main Container wrapper */}
       <div className="flex-grow flex flex-col min-w-0 min-h-screen">
         
         {/* Top Branding and Persona Header */}
         <header className="bg-white border-b border-zinc-200 sticky top-0 z-30 px-4 py-3 flex items-center justify-between shadow-xs">
-          {/* Mobile Menu and Logo Brand */}
+          {/* Mobile Logo Brand */}
           <div className="flex items-center gap-2 md:hidden">
-            <button
-              type="button"
-              onClick={() => setShowMobileMenu(true)}
-              className="w-9 h-9 rounded-lg border border-zinc-200 bg-white flex items-center justify-center text-zinc-900"
-              aria-label="Open navigation menu"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            <div className="w-28 h-10 flex items-center">
-              <img
-                src={HIREUP_LOGO}
-                alt="HireUp"
-                className="w-full h-full object-contain object-left"
-              />
+            <div className="w-8 h-8 rounded-lg bg-[#34D399] flex items-center justify-center text-white font-mono font-black text-sm">
+              HU
             </div>
+            <span className="text-sm font-black uppercase tracking-wider text-zinc-900">Hire<span className="text-[#10B981]">Up</span></span>
           </div>
 
           {/* Authenticated account role */}
@@ -1711,110 +824,12 @@ export default function App() {
             </div>
           </div>
 
-          {/* Live Supabase notification centre */}
+          {/* Alert Bell indicator */}
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowNotifications(prev => !prev)}
-                className="p-2 text-zinc-400 hover:text-zinc-900 rounded-full hover:bg-zinc-100 relative cursor-pointer"
-                title="Notifications"
-              >
-                <Bell className="w-5 h-5" />
-                {unreadNotificationCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-red-500 text-white rounded-full text-[9px] font-mono font-black flex items-center justify-center">
-                    {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-                  </span>
-                )}
-              </button>
-
-              {showNotifications && (
-                <div className="absolute right-0 top-11 w-[min(24rem,calc(100vw-2rem))] bg-white border border-zinc-200 rounded-2xl shadow-2xl overflow-hidden z-50">
-                  <div className="p-4 border-b border-zinc-200 bg-zinc-50 flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider">
-                        Notifications
-                      </h3>
-                      <p className="text-[10px] text-zinc-500 mt-0.5">
-                        {unreadNotificationCount} unread
-                      </p>
-                    </div>
-
-                    {unreadNotificationCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleMarkAllNotificationsRead}
-                        className="text-[10px] font-mono font-black text-[#10B981] hover:text-[#34D399] uppercase cursor-pointer"
-                      >
-                        Mark all read
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="max-h-96 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <div className="p-8 text-center">
-                        <Bell className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
-                        <p className="text-xs font-bold text-zinc-700">
-                          No notifications yet
-                        </p>
-                        <p className="text-[10px] text-zinc-400 mt-1">
-                          Matches, messages, interviews, and reviews will appear here.
-                        </p>
-                      </div>
-                    ) : (
-                      notifications.map(notification => (
-                        <button
-                          key={notification.id}
-                          type="button"
-                          onClick={() => handleOpenNotification(notification)}
-                          className={`w-full p-4 text-left border-b border-zinc-100 last:border-b-0 hover:bg-zinc-50 transition-all cursor-pointer ${
-                            notification.isRead ? 'bg-white' : 'bg-emerald-50/60'
-                          }`}
-                        >
-                          <div className="flex gap-3 items-start">
-                            <span
-                              className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                                notification.isRead
-                                  ? 'bg-zinc-100 text-zinc-400'
-                                  : 'bg-emerald-100 text-[#10B981]'
-                              }`}
-                            >
-                              {getNotificationIcon(notification)}
-                            </span>
-
-                            <div className="min-w-0 flex-grow">
-                              <div className="flex items-start justify-between gap-3">
-                                <p className="text-xs font-black text-zinc-900">
-                                  {notification.title}
-                                </p>
-
-                                {!notification.isRead && (
-                                  <span className="mt-1 w-2 h-2 bg-[#10B981] rounded-full flex-shrink-0" />
-                                )}
-                              </div>
-
-                              <p className="text-[11px] text-zinc-600 mt-1 leading-relaxed">
-                                {notification.message}
-                              </p>
-
-                              <div className="flex items-center justify-between mt-2">
-                                <span className="text-[9px] font-mono font-bold text-zinc-400">
-                                  {getRelativeTime(notification.createdAt)}
-                                </span>
-                                <span className="text-[9px] font-mono font-black text-[#10B981] uppercase">
-                                  Open
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            <button className="p-2 text-zinc-400 hover:text-zinc-900 rounded-full hover:bg-zinc-100 relative">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#10B981] rounded-full animate-pulse" />
+            </button>
             <div className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-200 hidden md:block bg-white p-0.5">
               <img 
                 src={userType === 'worker' ? loggedInWorker!.avatar : loggedInCompany!.logo} 
@@ -1853,7 +868,6 @@ export default function App() {
                     onSelectJob={(j) => setSelectedJob(j)}
                     onUpdateWorker={handleUpdateWorker}
                     onUpdateCompany={handleUpdateCompany}
-                    onCreateJob={handleAddJob}
                   />
                 );
               case 'swipe':
@@ -1878,26 +892,9 @@ export default function App() {
                     userType={userType}
                     workers={workers}
                     jobs={jobs}
-                    currentUser={currentUser}
                     onSelectWorker={(w) => setSelectedWorker(w)}
                     onSelectJob={(j) => setSelectedJob(j)}
                     onNavigate={(v) => setCurrentView(v)}
-                  />
-                );
-              case 'applications':
-                return (
-                  <ApplicationsView
-                    userType={userType}
-                    applications={applications}
-                    jobs={jobs}
-                    workers={workers}
-                    companies={companies}
-                    currentUserId={currentUser.id}
-                    loading={applicationsLoading}
-                    onUpdateStatus={handleApplicationStatusUpdate}
-                    onSelectJob={job => setSelectedJob(job)}
-                    onSelectWorker={worker => setSelectedWorker(worker)}
-                    onNavigate={view => setCurrentView(view)}
                   />
                 );
               case 'matches':
@@ -1914,7 +911,6 @@ export default function App() {
                     }}
                     onSelectWorker={(w) => setSelectedWorker(w)}
                     onSelectJob={(j) => setSelectedJob(j)}
-                    onSelectCompany={(c) => setSelectedCompany(c)}
                   />
                 );
               case 'messages':
@@ -1926,7 +922,6 @@ export default function App() {
                     messages={messages}
                     workers={workers}
                     jobs={jobs}
-                    companies={companies}
                     onSendMessage={handleSendMessage}
                     onNavigateBack={() => {
                       setCurrentView('matches');
@@ -1966,45 +961,22 @@ export default function App() {
               case 'companies':
                 return (
                   <CompaniesView 
-                    userType={userType}
-                    currentUserId={currentUser?.id}
                     companies={companies}
-                    workers={workers}
                     jobs={jobs}
                     onSelectJob={(j) => setSelectedJob(j)}
-                    onSelectWorker={(w) => setSelectedWorker(w)}
                   />
                 );
               case 'analytics':
                 return (
                   <AnalyticsView 
                     userType={userType}
-                    currentUserId={currentUser?.id}
-                    workers={workers}
-                    jobs={jobs}
-                    matches={matches}
-                    interviews={interviews}
-                    companies={companies}
-                  />
-                );
-              case 'information':
-                return (
-                  <InformationCentre
-                    onBack={() => setCurrentView('settings')}
                   />
                 );
               case 'settings':
                 return (
-                  <SettingsView
+                  <SettingsView 
                     userType={userType}
-                    currentUserEmail={currentUser?.email || ''}
-                    workerProfile={loggedInWorker}
-                    companyProfile={loggedInCompany}
-                    onUpdateWorker={handleUpdateWorker}
-                    onUpdateCompany={handleUpdateCompany}
-                    onOpenInformationCentre={() =>
-                      setCurrentView('information')
-                    }
+                    onChangeUserType={(t) => setUserType(t)}
                     onSignOut={handleSignOut}
                   />
                 );
@@ -2040,7 +1012,6 @@ export default function App() {
                     onSelectJob={(j) => setSelectedJob(j)}
                     onUpdateWorker={handleUpdateWorker}
                     onUpdateCompany={handleUpdateCompany}
-                    onCreateJob={handleAddJob}
                   />
                 );
             }
@@ -2048,73 +1019,29 @@ export default function App() {
         </main>
 
         {/* Mobile Bottom Navigation Bar Panel */}
-        <nav className="bg-white text-zinc-800 border-t border-zinc-200 md:hidden grid grid-cols-5 py-2 sticky bottom-0 z-40 select-none">
-          {mobileTabs.map(tab => {
-            const isActive =
-              currentView === tab.id ||
-              (tab.id === 'swipe' && currentView === 'search');
-
+        <nav className="bg-white text-zinc-800 border-t border-zinc-200 md:hidden flex justify-around py-2 sticky bottom-0 z-20 select-none">
+          {mobileTabs.map((tab) => {
+            const isActive = currentView === tab.id || (tab.id === 'swipe' && currentView === 'search');
             return (
               <button
                 key={tab.id}
-                type="button"
                 onClick={() => {
                   setCurrentView(tab.id);
-                  setShowNotifications(false);
                   setSelectedMatchId(null);
                 }}
-                className={`flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-lg transition-all ${
-                  isActive
-                    ? 'text-[#10B981]'
-                    : 'text-zinc-500 hover:text-zinc-950'
-                }`}
+                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg transition-all cursor-pointer ${isActive ? 'text-[#34D399]' : 'text-zinc-400 hover:text-zinc-900'}`}
               >
-                <div className="relative">
-                  <span
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      isActive ? 'bg-emerald-50' : ''
-                    }`}
-                  >
+                {isActive ? (
+                  <div className="p-1 bg-[#34D399]/10 rounded-full text-[#34D399]">
                     {tab.icon}
-                  </span>
-
-                  {tab.id === 'messages' &&
-                    unreadMessageCount > 0 && (
-                      <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-red-500 text-white rounded-full text-[8px] font-mono font-black flex items-center justify-center">
-                        {unreadMessageCount > 9
-                          ? '9+'
-                          : unreadMessageCount}
-                      </span>
-                    )}
-                </div>
-
-                <span className="text-[9px] font-mono font-black uppercase truncate max-w-full">
-                  {tab.label}
-                </span>
+                  </div>
+                ) : (
+                  tab.icon
+                )}
+                <span className="text-[9px] font-mono font-bold uppercase tracking-wider">{tab.label}</span>
               </button>
             );
           })}
-
-          <button
-            type="button"
-            onClick={() => setShowMobileMenu(true)}
-            className={`flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-lg transition-all ${
-              showMobileMenu
-                ? 'text-[#10B981]'
-                : 'text-zinc-500 hover:text-zinc-950'
-            }`}
-          >
-            <span
-              className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                showMobileMenu ? 'bg-emerald-50' : ''
-              }`}
-            >
-              <Menu className="w-5 h-5" />
-            </span>
-            <span className="text-[9px] font-mono font-black uppercase">
-              Menu
-            </span>
-          </button>
         </nav>
       </div>
 
@@ -2617,198 +1544,6 @@ export default function App() {
 
 
 
-
-      {/* DETAIL OVERLAY MODAL: Contractor Company Profile */}
-      {selectedCompany && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-end">
-          <div className="bg-white w-full max-w-2xl h-screen overflow-y-auto flex flex-col justify-between shadow-2xl relative font-sans">
-            <div className="p-4 border-b border-zinc-100 bg-zinc-50 sticky top-0 flex justify-between items-center z-10">
-              <span className="text-xs font-mono font-black text-[#10B981] uppercase tracking-wider">
-                🏗️ CONTRACTOR COMPANY PROFILE
-              </span>
-              <button
-                type="button"
-                onClick={() => setSelectedCompany(null)}
-                className="p-1.5 bg-zinc-200 hover:bg-[#34D399] hover:text-white rounded-full transition-all text-zinc-500 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <div className="flex flex-col sm:flex-row gap-5 items-center bg-zinc-50 border border-zinc-200 p-5 rounded-3xl">
-                <div className="w-24 h-24 rounded-2xl overflow-hidden border border-zinc-200 bg-white flex-shrink-0 flex items-center justify-center p-2">
-                  {selectedCompany.companyLogoUrl || selectedCompany.logo ? (
-                    <img
-                      src={selectedCompany.companyLogoUrl || selectedCompany.logo}
-                      alt={selectedCompany.name}
-                      className="max-w-full max-h-full object-contain"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <HardHat className="w-10 h-10 text-zinc-400" />
-                  )}
-                </div>
-
-                <div className="space-y-1.5 text-center sm:text-left">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <h3 className="text-xl font-bold text-zinc-900">{selectedCompany.name}</h3>
-                    {selectedCompany.verified && (
-                      <span className="px-2 py-0.5 bg-zinc-900 text-[#34D399] rounded text-[8px] font-mono font-bold uppercase flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3" /> VERIFIED
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-sm font-mono font-bold text-[#10B981] uppercase tracking-wide">
-                    {selectedCompany.industry || 'UK Construction Contractor'}
-                  </p>
-
-                  <p className="text-xs text-zinc-500 font-mono flex items-center justify-center sm:justify-start gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-                    {selectedCompany.location || selectedCompany.businessAddress || 'United Kingdom'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4">
-                  <span className="text-[9px] font-mono text-zinc-400 font-bold uppercase tracking-wider block">Active Vacancies</span>
-                  <p className="text-base font-black text-zinc-900 mt-1">
-                    {jobs.filter(job => job.companyId === selectedCompany.id).length}
-                  </p>
-                </div>
-
-                <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4">
-                  <span className="text-[9px] font-mono text-zinc-400 font-bold uppercase tracking-wider block">Company Size</span>
-                  <p className="text-base font-black text-zinc-900 mt-1">
-                    {selectedCompany.companySize || 'Not specified'}
-                  </p>
-                </div>
-
-                <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4">
-                  <span className="text-[9px] font-mono text-zinc-400 font-bold uppercase tracking-wider block">Rating</span>
-                  <p className="text-base font-black text-zinc-900 mt-1 flex items-center gap-1">
-                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                    {selectedCompany.stats?.rating ?? 'New'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
-                  <FileText className="w-4 h-4 text-[#10B981]" /> Company Overview
-                </h4>
-                <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-line">
-                  {selectedCompany.description || 'No company description has been added yet.'}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
-                  <ShieldCheck className="w-4 h-4 text-[#10B981]" /> Compliance & Business Details
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
-                    <span className="text-[9px] font-mono text-zinc-400 uppercase font-bold">Companies House</span>
-                    <p className="font-bold text-zinc-800 mt-1">{selectedCompany.companyHouseNumber || 'Not supplied'}</p>
-                  </div>
-                  <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
-                    <span className="text-[9px] font-mono text-zinc-400 uppercase font-bold">VAT Number</span>
-                    <p className="font-bold text-zinc-800 mt-1">{selectedCompany.vatNumber || 'Not supplied'}</p>
-                  </div>
-                  <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
-                    <span className="text-[9px] font-mono text-zinc-400 uppercase font-bold">Public Liability</span>
-                    <p className="font-bold text-zinc-800 mt-1">{selectedCompany.publicLiabilityInsurance || selectedCompany.insuranceStatus || 'Not supplied'}</p>
-                  </div>
-                  <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
-                    <span className="text-[9px] font-mono text-zinc-400 uppercase font-bold">Contact</span>
-                    <p className="font-bold text-zinc-800 mt-1">{selectedCompany.contactName || selectedCompany.phone || 'Not supplied'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {selectedCompany.requirements && selectedCompany.requirements.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
-                    <ClipboardCheck className="w-4 h-4 text-[#10B981]" /> Hiring Requirements
-                  </h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedCompany.requirements.map((requirement, index) => (
-                      <span key={index} className="px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-[#10B981] rounded text-[10px] font-mono font-bold uppercase">
-                        {requirement}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <h4 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
-                  <Briefcase className="w-4 h-4 text-[#10B981]" /> Active Opportunities
-                </h4>
-
-                {jobs.filter(job => job.companyId === selectedCompany.id).length > 0 ? (
-                  <div className="space-y-2">
-                    {jobs
-                      .filter(job => job.companyId === selectedCompany.id)
-                      .map(job => (
-                        <button
-                          key={job.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedCompany(null);
-                            setSelectedJob(job);
-                          }}
-                          className="w-full text-left p-4 bg-zinc-50 hover:bg-emerald-50 border border-zinc-200 hover:border-emerald-200 rounded-xl transition-all cursor-pointer"
-                        >
-                          <p className="text-sm font-bold text-zinc-900">{job.title}</p>
-                          <p className="text-[10px] font-mono text-zinc-500 uppercase mt-1">
-                            {job.location} • {job.payRate} • {job.duration}
-                          </p>
-                        </button>
-                      ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-zinc-400 italic">
-                    This contractor currently has no individual job adverts listed.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="p-4 border-t border-zinc-200 bg-zinc-50 flex flex-col sm:flex-row gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedCompany(null)}
-                className="flex-1 py-2.5 border border-zinc-200 bg-white hover:bg-zinc-100 text-zinc-700 font-mono text-xs font-bold rounded-xl transition-all cursor-pointer"
-              >
-                CLOSE PROFILE
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const companyMatch = matches.find(
-                    match => match.contractorId === selectedCompany.id &&
-                      match.workerId === currentUser.id
-                  );
-                  setSelectedCompany(null);
-                  if (companyMatch) {
-                    setSelectedMatchId(companyMatch.id);
-                    setCurrentView('messages');
-                  }
-                }}
-                className="flex-1 py-2.5 bg-[#34D399] hover:bg-[#10B981] text-white font-mono text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
-              >
-                <MessageSquare className="w-3.5 h-3.5" /> OPEN MATCH CHAT
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* FULL-SCREEN ACTIVE VIDEO CALL ROOM OVERLAY */}
       {activeCall && (
         <div className="fixed inset-0 z-[70]">
@@ -2847,4 +1582,4 @@ export default function App() {
 
     </div>
   );
-}s
+}
