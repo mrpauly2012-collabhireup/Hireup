@@ -188,6 +188,28 @@ export default function CompaniesView({
     [companies]
   );
 
+  const featuredJobs = useMemo(
+    () =>
+      jobs.filter(job => {
+        const item = job as JobProfile & {
+          featured?: boolean;
+          isFeatured?: boolean;
+          is_featured?: boolean;
+          featured_status?: boolean | string;
+        };
+
+        return (
+          item.featured === true ||
+          item.isFeatured === true ||
+          item.is_featured === true ||
+          item.featured_status === true ||
+          item.featured_status === 'featured' ||
+          item.featured_status === 'active'
+        );
+      }),
+    [jobs]
+  );
+
   const availableTrades = useMemo(() => {
     const source =
       userType === 'employer'
@@ -201,10 +223,10 @@ export default function CompaniesView({
     const source =
       userType === 'employer'
         ? verifiedWorkers.map(worker => worker.location)
-        : verifiedCompanies.map(company => company.location);
+        : featuredJobs.map(job => job.location);
 
     return Array.from(new Set(source.filter(Boolean))).sort();
-  }, [userType, verifiedWorkers, verifiedCompanies]);
+  }, [userType, verifiedWorkers, featuredJobs]);
 
   const toggleSaved = (id: string) => {
     setSavedIds(current =>
@@ -402,6 +424,66 @@ export default function CompaniesView({
     loggedInWorker,
   ]);
 
+  const filteredFeaturedJobs = useMemo(() => {
+    const query = normalise(searchQuery);
+
+    return featuredJobs
+      .filter(job => {
+        if (
+          query &&
+          ![
+            job.title,
+            job.companyName,
+            job.trade,
+            job.subcategory,
+            job.location,
+            job.employmentType,
+            job.description,
+            ...(job.qualifications || []),
+            ...(job.requirements || []),
+          ].some(value => normalise(value).includes(query))
+        ) {
+          return false;
+        }
+
+        if (tradeFilter !== 'all' && job.trade !== tradeFilter) return false;
+        if (locationFilter !== 'all' && job.location !== locationFilter) return false;
+
+        if (minimumRating !== 'all') {
+          const company = companies.find(item => item.id === job.companyId);
+          if (Number(company?.stats?.rating || 0) < Number(minimumRating)) {
+            return false;
+          }
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (!loggedInWorker) return 0;
+        return (
+          scoreWorkerForJob(loggedInWorker, b).score -
+          scoreWorkerForJob(loggedInWorker, a).score
+        );
+      });
+  }, [
+    featuredJobs,
+    searchQuery,
+    tradeFilter,
+    locationFilter,
+    minimumRating,
+    companies,
+    loggedInWorker,
+  ]);
+
+  const featuredJobMatch = (job: JobProfile) =>
+    loggedInWorker
+      ? scoreWorkerForJob(loggedInWorker, job)
+      : {
+          score: 0,
+          label: 'Profile required',
+          reasons: ['Complete your worker profile to calculate a match.'],
+        };
+
   const isContractorView = userType === 'employer';
   const immediatelyAvailableWorkers = filteredWorkers.filter(worker => {
     const availability = normalise(worker.availability);
@@ -429,30 +511,30 @@ export default function CompaniesView({
               {isContractorView ? (
                 <Wrench className="w-5 h-5 text-[#34D399]" />
               ) : (
-                <Building2 className="w-5 h-5 text-[#34D399]" />
+                <Star className="w-5 h-5 text-amber-400 fill-current" />
               )}
               <p className="text-[10px] font-mono font-black text-[#34D399] uppercase tracking-wider">
-                Verified HireUp Network
+                {isContractorView ? 'Verified HireUp Network' : 'Promoted HireUp Vacancies'}
               </p>
             </div>
             <h2 className="text-2xl md:text-3xl font-black mt-2">
-              {isContractorView ? 'Verified Workers' : 'Verified Businesses'}
+              {isContractorView ? 'Verified Workers' : 'Featured Jobs'}
             </h2>
             <p className="text-sm text-zinc-400 mt-2 max-w-2xl">
               {isContractorView
                 ? 'Discover approved tradespeople ranked against your active vacancies.'
-                : 'Discover approved contractors, live vacancies and employers matched to your worker profile.'}
+                : 'Discover vacancies selected and promoted by the HireUp admin team, ranked against your worker profile.'}
             </p>
           </div>
 
           <div className="bg-white/5 border border-white/10 rounded-xl p-4 min-w-48">
             <p className="text-[9px] font-mono uppercase text-zinc-400">
-              Verified profiles
+              {isContractorView ? 'Verified profiles' : 'Featured vacancies'}
             </p>
             <p className="text-3xl font-black mt-1">
               {isContractorView
                 ? verifiedWorkers.length
-                : verifiedCompanies.length}
+                : featuredJobs.length}
             </p>
           </div>
         </div>
@@ -476,7 +558,7 @@ export default function CompaniesView({
               placeholder={
                 isContractorView
                   ? 'Search trade, skill, licence or location...'
-                  : 'Search company, trade or location...'
+                  : 'Search job title, company, trade or location...'
               }
               className="w-full pl-9 pr-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-[#34D399]"
             />
@@ -546,26 +628,10 @@ export default function CompaniesView({
               ))}
             </>
           ) : (
-            <>
-              {[
-                ['all', 'All businesses'],
-                ['hiring', 'Hiring now'],
-                ['not_hiring', 'No open roles'],
-              ].map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setHiringFilter(value as HiringFilter)}
-                  className={`px-3 py-2 rounded-lg text-[10px] font-mono font-black uppercase border ${
-                    hiringFilter === value
-                      ? 'bg-[#34D399] border-[#34D399] text-zinc-950'
-                      : 'bg-white border-zinc-200 text-zinc-500'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </>
+            <span className="px-3 py-2 rounded-lg text-[10px] font-mono font-black uppercase border bg-amber-50 border-amber-200 text-zinc-950 flex items-center gap-1.5">
+              <Star className="w-3.5 h-3.5 text-amber-500 fill-current" />
+              Admin featured only
+            </span>
           )}
         </div>
       </section>
@@ -1078,330 +1144,172 @@ export default function CompaniesView({
         </section>
       ) : (
         <section className="space-y-5">
-          {filteredCompanies.length === 0 ? (
+          {filteredFeaturedJobs.length === 0 ? (
             <div className="bg-white border border-zinc-200 border-dashed rounded-2xl p-10 text-center">
-              <Building2 className="w-8 h-8 text-zinc-300 mx-auto" />
-              <h3 className="font-black mt-3">No verified businesses found</h3>
-              <p className="text-xs text-zinc-500 mt-1">
-                Try clearing or widening your filters.
+              <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto">
+                <Star className="w-6 h-6 text-amber-500" />
+              </div>
+              <h3 className="font-black text-zinc-950 mt-3">No featured jobs found</h3>
+              <p className="text-xs text-zinc-700 mt-1">
+                Jobs marked as featured in the Admin Dashboard will appear here.
               </p>
             </div>
           ) : (
-            filteredCompanies.map(company => {
-              const companyVacancies = jobs.filter(
-                job => job.companyId === company.id
-              );
-              const match = companyMatch(company);
-              const isSaved = savedIds.includes(company.id);
-              const isExpanded = expandedCompanyId === company.id;
-              const hiringTrades = Array.from(
-                new Set(companyVacancies.map(job => job.trade))
-              );
-              const payRates = companyVacancies
-                .map(job => job.payRate)
-                .filter(Boolean)
-                .slice(0, 3);
-              const topReview = (company.reviews || [])[0];
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+              {filteredFeaturedJobs.map(job => {
+                const match = featuredJobMatch(job);
+                const company = companies.find(item => item.id === job.companyId);
+                const isSaved = savedIds.includes(job.id);
 
-              return (
-                <article
-                  key={company.id}
-                  className="bg-white border border-zinc-200 rounded-2xl overflow-hidden hover:border-[#34D399] transition-all"
-                >
-                  <div className="relative h-32 bg-zinc-950">
-                    <img
-                      src={company.coverImage}
-                      alt={company.name}
-                      className="w-full h-full object-cover opacity-55"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 to-transparent" />
-
-                    <div className="absolute top-3 right-3 flex flex-wrap justify-end gap-2">
-                      <span className="px-2.5 py-1 bg-zinc-950/85 text-[#34D399] border border-[#34D399]/30 rounded-full text-[9px] font-mono font-black uppercase flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3" />
-                        Verified business
-                      </span>
-                      {companyVacancies.length > 0 && (
-                        <span className="px-2.5 py-1 bg-amber-400 text-zinc-950 rounded-full text-[9px] font-mono font-black uppercase">
-                          Hiring now
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="absolute bottom-3 right-3 px-3 py-2 bg-zinc-950/90 text-white rounded-xl">
-                      <p className="text-[8px] font-mono text-[#34D399] uppercase">
-                        AI company match
-                      </p>
-                      <p className="text-xl font-black">{match.score}%</p>
-                    </div>
-                  </div>
-
-                  <div className="p-5 relative">
-                    <div className="absolute -top-10 left-5 border-4 border-white rounded-2xl overflow-hidden w-20 h-20 bg-white shadow-sm flex items-center justify-center p-2">
-                      <img
-                        src={company.companyLogoUrl || company.logo}
-                        alt={company.name}
-                        className="max-w-full max-h-full object-contain"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-
-                    <div className="pt-10 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
-                      <div className="space-y-4 min-w-0">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-lg font-black">
-                              {company.name}
-                            </h3>
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[9px] font-mono font-black uppercase">
-                              <CheckCircle2 className="w-3 h-3" />
-                              Approved
-                            </span>
-                            {companyVacancies.length >= 3 && (
-                              <span className="px-2 py-1 bg-violet-50 text-violet-700 rounded-full text-[9px] font-mono font-black uppercase">
-                                Top employer
-                              </span>
+                return (
+                  <article
+                    key={job.id}
+                    className="bg-white border border-zinc-200 rounded-2xl overflow-hidden hover:border-[#34D399] hover:shadow-md transition-all"
+                  >
+                    <div className="h-1.5 bg-[#34D399]" />
+                    <div className="p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className="w-14 h-14 rounded-xl bg-zinc-50 border border-zinc-200 p-2 flex-shrink-0 flex items-center justify-center">
+                            {job.companyLogo ? (
+                              <img
+                                src={job.companyLogo}
+                                alt={job.companyName}
+                                className="max-w-full max-h-full object-contain"
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <Briefcase className="w-6 h-6 text-zinc-950" />
                             )}
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 mt-2">
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3.5 h-3.5" />
-                              {company.location || 'Location not listed'}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Users className="w-3.5 h-3.5" />
-                              {company.companySize || `${company.stats?.workers || 0} staff`}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Star className="w-3.5 h-3.5 text-amber-500 fill-current" />
-                              {formatRating(company.stats?.rating)}
-                            </span>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 border border-amber-200 text-zinc-950 rounded-full text-[8px] font-mono font-black uppercase">
+                                <Star className="w-3 h-3 text-amber-500 fill-current" />
+                                Featured
+                              </span>
+                              {(job.verified || company?.verified) && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 border border-emerald-200 text-zinc-950 rounded-full text-[8px] font-mono font-black uppercase">
+                                  <ShieldCheck className="w-3 h-3 text-[#10B981]" />
+                                  Verified contractor
+                                </span>
+                              )}
+                            </div>
+
+                            <h3 className="text-lg font-black text-zinc-950 mt-2 leading-tight">
+                              {job.title}
+                            </h3>
+                            <p className="text-xs font-bold text-zinc-950 mt-1">
+                              {job.companyName}
+                            </p>
                           </div>
                         </div>
 
-                        <p className="text-sm text-zinc-600 leading-relaxed">
-                          {company.description}
-                        </p>
-
-                        <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
-                          <div className="flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-[#10B981]" />
-                            <p className="text-[10px] font-mono font-black text-emerald-700 uppercase">
-                              Why HireUp recommends this business
-                            </p>
-                          </div>
-                          <p className="text-xs text-emerald-800 mt-2">
-                            {match.reasons[0] || match.label}
+                        <div className="bg-zinc-950 text-white rounded-xl px-3 py-2 text-center flex-shrink-0">
+                          <p className="text-[7px] font-mono font-black text-[#34D399] uppercase">
+                            AI match
                           </p>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
-                            <p className="text-[9px] font-mono font-black text-zinc-400 uppercase">
-                              Hiring trades
-                            </p>
-                            <p className="text-xs font-bold mt-1">
-                              {hiringTrades.slice(0, 3).join(', ') ||
-                                'No active roles'}
-                            </p>
-                          </div>
-                          <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
-                            <p className="text-[9px] font-mono font-black text-zinc-400 uppercase">
-                              Typical rates
-                            </p>
-                            <p className="text-xs font-bold mt-1">
-                              {payRates.join(', ') || 'Not currently listed'}
-                            </p>
-                          </div>
-                          <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
-                            <p className="text-[9px] font-mono font-black text-zinc-400 uppercase">
-                              Active vacancies
-                            </p>
-                            <p className="text-xs font-bold mt-1">
-                              {companyVacancies.length} open
-                            </p>
-                          </div>
+                          <p className="text-xl font-black mt-1">{match.score}%</p>
                         </div>
                       </div>
 
-                      <aside className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 space-y-4">
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                          <div>
-                            <p className="text-[8px] font-mono font-black text-zinc-400 uppercase">
-                              Projects
-                            </p>
-                            <p className="font-black mt-1">
-                              {company.stats?.projects || 0}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[8px] font-mono font-black text-zinc-400 uppercase">
-                              Staff
-                            </p>
-                            <p className="font-black mt-1">
-                              {company.stats?.workers || 0}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[8px] font-mono font-black text-zinc-400 uppercase">
-                              Rating
-                            </p>
-                            <p className="font-black mt-1">
-                              {formatRating(company.stats?.rating)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="border-t border-zinc-200 pt-3 space-y-2">
-                          <p className="text-[9px] font-mono font-black text-zinc-400 uppercase">
-                            Compliance
-                          </p>
-                          <p className="text-xs">
-                            Companies House:{' '}
-                            <strong>
-                              {company.companyHouseNumber || 'Not provided'}
-                            </strong>
-                          </p>
-                          <p className="text-xs">
-                            VAT:{' '}
-                            <strong>
-                              {company.vatNumber || 'Not registered'}
-                            </strong>
-                          </p>
-                          <p className="text-xs text-emerald-700">
-                            Insurance:{' '}
-                            <strong>
-                              {company.insuranceStatus ||
-                                company.publicLiabilityInsurance ||
-                                'Verified'}
-                            </strong>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-5">
+                        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                          <p className="text-[8px] font-mono font-black text-zinc-700 uppercase">Pay</p>
+                          <p className="text-sm font-black text-zinc-950 mt-1">
+                            {job.payRate || 'Competitive'}
                           </p>
                         </div>
-
-                        {topReview && (
-                          <div className="border-t border-zinc-200 pt-3">
-                            <p className="text-[9px] font-mono font-black text-zinc-400 uppercase">
-                              Worker review
-                            </p>
-                            <p className="text-xs text-zinc-600 italic mt-1 line-clamp-3">
-                              “{topReview.text}”
-                            </p>
-                            <p className="text-[10px] font-bold mt-2">
-                              {topReview.reviewer}
-                            </p>
-                          </div>
-                        )}
-                      </aside>
-                    </div>
-
-                    {(company.companyGalleryImages || []).length > 0 && (
-                      <div className="mt-5 pt-5 border-t border-zinc-100">
-                        <p className="text-[10px] font-mono font-black text-zinc-400 uppercase mb-3">
-                          Recent projects
-                        </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          {(company.companyGalleryImages || [])
-                            .slice(0, 4)
-                            .map((imageUrl, index) => (
-                              <div
-                                key={`${company.id}-${index}`}
-                                className="h-28 rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100"
-                              >
-                                <img
-                                  src={imageUrl}
-                                  alt={`${company.name} project ${index + 1}`}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            ))}
+                        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                          <p className="text-[8px] font-mono font-black text-zinc-700 uppercase">Start</p>
+                          <p className="text-xs font-black text-zinc-950 mt-1">
+                            {job.startDate || 'Immediate'}
+                          </p>
+                        </div>
+                        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                          <p className="text-[8px] font-mono font-black text-zinc-700 uppercase">Duration</p>
+                          <p className="text-xs font-black text-zinc-950 mt-1">
+                            {job.duration || 'Ongoing'}
+                          </p>
+                        </div>
+                        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                          <p className="text-[8px] font-mono font-black text-zinc-700 uppercase">Rating</p>
+                          <p className="text-xs font-black text-zinc-950 mt-1 flex items-center gap-1">
+                            <Star className="w-3 h-3 text-amber-500 fill-current" />
+                            {formatRating(company?.stats?.rating)}
+                          </p>
                         </div>
                       </div>
-                    )}
 
-                    {isExpanded && companyVacancies.length > 0 && (
-                      <div className="mt-5 pt-5 border-t border-zinc-100">
-                        <p className="text-[10px] font-mono font-black text-zinc-400 uppercase mb-3">
-                          Available vacancies
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {companyVacancies.map(vacancy => (
-                            <button
-                              type="button"
-                              key={vacancy.id}
-                              onClick={() => onSelectJob(vacancy)}
-                              className="p-4 bg-zinc-50 border border-zinc-200 hover:border-[#34D399] rounded-xl text-left flex items-center justify-between gap-3"
-                            >
-                              <div>
-                                <p className="text-sm font-black">
-                                  {vacancy.title}
-                                </p>
-                                <p className="text-[10px] font-mono text-zinc-500 uppercase mt-1">
-                                  {vacancy.trade} · {vacancy.location} ·{' '}
-                                  {vacancy.payRate}
-                                </p>
-                              </div>
-                              <ChevronRight className="w-4 h-4 text-[#10B981]" />
-                            </button>
-                          ))}
-                        </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-xs text-zinc-950">
+                        <span className="flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5" />
+                          {job.location}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Wrench className="w-3.5 h-3.5" />
+                          {job.trade}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Briefcase className="w-3.5 h-3.5" />
+                          {job.employmentType}
+                        </span>
                       </div>
-                    )}
 
-                    <div className="mt-5 pt-4 border-t border-zinc-100 flex flex-col sm:flex-row justify-between gap-3">
-                      <div className="flex flex-wrap gap-2">
-                        {company.website && (
-                          <a
-                            href={safeWebsiteUrl(company.website)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-3 py-2 border border-zinc-200 rounded-xl text-[10px] font-mono font-black uppercase flex items-center gap-1"
-                          >
-                            <Globe className="w-3.5 h-3.5" />
-                            Website
-                          </a>
-                        )}
+                      {job.description && (
+                        <p className="text-sm text-zinc-800 leading-relaxed mt-4 line-clamp-3">
+                          {job.description}
+                        </p>
+                      )}
+
+                      {match.reasons?.[0] && (
+                        <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                          <div className="flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-[#10B981]" />
+                            <p className="text-[9px] font-mono font-black text-zinc-950 uppercase">
+                              Why this matches
+                            </p>
+                          </div>
+                          <p className="text-xs text-zinc-950 mt-1">{match.reasons[0]}</p>
+                        </div>
+                      )}
+
+                      <div className="mt-5 pt-4 border-t border-zinc-200 flex flex-col sm:flex-row gap-2">
                         <button
                           type="button"
-                          onClick={() => toggleSaved(company.id)}
-                          className={`px-3 py-2 rounded-xl border text-[10px] font-mono font-black uppercase flex items-center gap-1 ${
+                          onClick={() => toggleSaved(job.id)}
+                          className={`px-4 py-2.5 rounded-xl border text-[10px] font-mono font-black uppercase flex items-center justify-center gap-1.5 ${
                             isSaved
-                              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                              : 'bg-white border-zinc-200 text-zinc-600'
+                              ? 'bg-emerald-50 border-emerald-200 text-zinc-950'
+                              : 'bg-white border-zinc-300 text-zinc-950'
                           }`}
                         >
-                          <Bookmark
-                            className={`w-3.5 h-3.5 ${
-                              isSaved ? 'fill-current' : ''
-                            }`}
-                          />
-                          {isSaved ? 'Saved' : 'Save business'}
+                          <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} />
+                          {isSaved ? 'Saved' : 'Save job'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onSelectJob(job)}
+                          className="flex-1 px-4 py-2.5 border border-zinc-300 text-zinc-950 rounded-xl text-[10px] font-mono font-black uppercase flex items-center justify-center gap-1.5 hover:bg-zinc-50"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          View job
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onSelectJob(job)}
+                          className="flex-1 px-4 py-2.5 bg-[#34D399] text-zinc-950 rounded-xl text-[10px] font-mono font-black uppercase flex items-center justify-center gap-1.5 hover:bg-[#10B981]"
+                        >
+                          <Briefcase className="w-3.5 h-3.5" />
+                          Apply
                         </button>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedCompanyId(isExpanded ? null : company.id)
-                        }
-                        disabled={companyVacancies.length === 0}
-                        className="px-4 py-2 bg-zinc-950 disabled:bg-zinc-200 disabled:text-zinc-400 text-white rounded-xl text-[10px] font-mono font-black uppercase flex items-center justify-center gap-1"
-                      >
-                        <Briefcase className="w-3.5 h-3.5" />
-                        {companyVacancies.length === 0
-                          ? 'No open jobs'
-                          : isExpanded
-                          ? 'Hide open jobs'
-                          : `View ${companyVacancies.length} open job${
-                              companyVacancies.length === 1 ? '' : 's'
-                            }`}
-                      </button>
                     </div>
-                  </div>
-                </article>
-              );
-            })
+                  </article>
+                );
+              })}
+            </div>
           )}
         </section>
       )}
