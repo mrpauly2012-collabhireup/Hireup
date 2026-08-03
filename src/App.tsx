@@ -1669,13 +1669,13 @@ export default function App() {
               <Menu className="w-5 h-5" />
             </button>
 
-            <div className="w-8 h-8 rounded-lg bg-[#34D399] flex items-center justify-center text-white font-mono font-black text-sm">
-              HU
+            <div className="w-28 h-10 flex items-center">
+              <img
+                src="/hireup-logo.png"
+                alt="HireUp"
+                className="w-full h-full object-contain object-left"
+              />
             </div>
-
-            <span className="text-sm font-black uppercase tracking-wider text-zinc-900">
-              Hire<span className="text-[#10B981]">Up</span>
-            </span>
           </div>
 
           {/* Authenticated account role */}
