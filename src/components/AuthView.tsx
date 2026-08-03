@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// HireUp AuthView deploy version: 2026-08-03
 import React, { useEffect, useRef, useState } from 'react';
 import { 
   Wrench, HardHat, ShieldCheck, Mail, Phone, Lock, ArrowRight, 
@@ -198,16 +197,14 @@ export default function AuthView({
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      const workerInProgress = view === 'signup_worker' && !workerLaunchSuccess;
-      const contractorInProgress = view === 'signup_contractor' && !contractorLaunchSuccess;
-      if (!workerInProgress && !contractorInProgress) return;
+      if (view !== 'signup_worker' || workerLaunchSuccess) return;
       event.preventDefault();
       event.returnValue = '';
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [view, workerLaunchSuccess, contractorLaunchSuccess]);
+  }, [view, workerLaunchSuccess]);
 
   const workerCompletedSections = [
     Boolean(workerName.trim() && email.trim() && password.length >= 8 && workerPhone.trim()),
