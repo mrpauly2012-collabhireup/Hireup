@@ -78,6 +78,8 @@ export default function AuthView({
   const [workerTools, setWorkerTools] = useState<string[]>(['Own Hand Tools', 'Full Power Tools']);
   const [workerProfilePhotoUrl, setWorkerProfilePhotoUrl] = useState('');
   const [workerGalleryImages, setWorkerGalleryImages] = useState<string[]>([]);
+  const [workerSignupStep, setWorkerSignupStep] = useState(0);
+  const workerSignupTotalSteps = 6;
 
   // Contractor Signup states
   const [companyName, setCompanyName] = useState('');
@@ -198,8 +200,24 @@ export default function AuthView({
     setErrorMsg(null);
     setIsSubmitting(true);
 
-    if (!workerName || !email || !password) {
-      setErrorMsg('Please complete your name, email, and choose a secure password.');
+    if (
+      !workerName.trim() ||
+      !email.trim() ||
+      !password.trim() ||
+      !workerPhone.trim() ||
+      !workerRate.trim() ||
+      !workerExp ||
+      !workerMainTrade ||
+      !workerSubcategory ||
+      !workerLocation ||
+      !workerAvailability ||
+      !workerType ||
+      workerPrefs.length === 0 ||
+      workerTools.length === 0
+    ) {
+      setErrorMsg(
+        'Please complete every required section. Qualifications and licences are optional.'
+      );
       setIsSubmitting(false);
       return;
     }
@@ -1063,364 +1081,529 @@ export default function AuthView({
 
         {/* WORKER SIGN UP SUB-VIEW */}
         {view === 'signup_worker' && (
-          <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6 animate-fade-in">
-            <div className="flex justify-between items-center border-b border-zinc-100 pb-4">
-              <div>
-                <span className="px-2.5 py-1 bg-zinc-950 text-white rounded-lg text-[9px] font-mono font-black uppercase tracking-wider">Tradesman Desk</span>
-                <h2 className="text-xl font-bold text-zinc-900 font-sans mt-2">Tradesman Digital CV Onboarding</h2>
-              </div>
-              <button
-                onClick={() => setView('landing')}
-                className="text-xs font-mono font-black text-zinc-400 hover:text-zinc-900 uppercase"
-              >
-                ← Back
-              </button>
+          <div className="relative overflow-hidden rounded-[32px] border border-zinc-200 bg-white shadow-xl animate-fade-in">
+            <div className="absolute inset-x-0 top-0 h-1 bg-zinc-100">
+              <div
+                className="h-full bg-[#34D399] transition-all duration-500 ease-out"
+                style={{
+                  width: `${Math.round(((workerSignupStep + 1) / workerSignupTotalSteps) * 100)}%`,
+                }}
+              />
             </div>
 
-            <form onSubmit={handleWorkerSignUp} className="space-y-6">
-              
-              {/* Profile Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">FULL NAME</label>
-                  <input
-                    type="text"
-                    required
-                    value={workerName}
-                    onChange={(e) => setWorkerName(e.target.value)}
-                    placeholder="e.g. Liam Fletcher"
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399]"
-                  />
-                </div>
+            <div className="grid min-h-[720px] grid-cols-1 lg:grid-cols-[1fr_340px]">
+              <div className="p-5 sm:p-8 lg:p-10">
+                <div className="mb-8 flex items-start justify-between gap-4">
+                  <div>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-[10px] font-mono font-black uppercase tracking-widest text-[#10B981]">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Profile {Math.round(((workerSignupStep + 1) / workerSignupTotalSteps) * 100)}% complete
+                    </span>
+                    <h2 className="mt-4 text-3xl font-black tracking-tight text-zinc-950 sm:text-4xl">
+                      {workerSignupStep === 0 && 'Start with the essentials.'}
+                      {workerSignupStep === 1 && 'Tell us what you do.'}
+                      {workerSignupStep === 2 && 'What work suits you best?'}
+                      {workerSignupStep === 3 && 'What can you bring to site?'}
+                      {workerSignupStep === 4 && 'Add anything that strengthens your profile.'}
+                      {workerSignupStep === 5 && 'Your profile is ready to launch.'}
+                    </h2>
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-500">
+                      {workerSignupStep === 0 && 'Create your secure account and tell contractors how to contact you.'}
+                      {workerSignupStep === 1 && 'Your trade, experience and location help us show you relevant work.'}
+                      {workerSignupStep === 2 && 'Set your availability, rate and preferred type of position.'}
+                      {workerSignupStep === 3 && 'Select at least one tools or transport option that applies to you.'}
+                      {workerSignupStep === 4 && 'Qualifications and licences are optional. Photos help your profile stand out.'}
+                      {workerSignupStep === 5 && 'Check your details, then create your HireUp Digital CV.'}
+                    </p>
+                  </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">EMAIL ADDRESS</label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="liam@fletcher-trades.co.uk"
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">CHOOSE PASSWORD</label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">MOBILE PHONE</label>
-                  <input
-                    type="text"
-                    value={workerPhone}
-                    onChange={(e) => setWorkerPhone(e.target.value)}
-                    placeholder="07711 900222"
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">EXPECTED DAY RATE</label>
-                  <input
-                    type="text"
-                    value={workerRate}
-                    onChange={(e) => setWorkerRate(e.target.value)}
-                    placeholder="£220"
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">YEARS OF SITE EXPERIENCE</label>
-                  <select
-                    value={workerExp}
-                    onChange={(e) => setWorkerExp(e.target.value)}
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] cursor-pointer"
-                  >
-                    <option value="2 Years">2 Years</option>
-                    <option value="5 Years">5 Years</option>
-                    <option value="8 Years">8 Years</option>
-                    <option value="12 Years">12 Years</option>
-                    <option value="15+ Years">15+ Years</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">PRIMARY TRADE CATEGORY</label>
-                  <select
-                    value={workerMainTrade}
-                    onChange={(e) => {
-                      const selectedMain = e.target.value;
-                      setWorkerMainTrade(selectedMain);
-                      const subcategories = TRADE_SUBCATEGORIES_MAP[selectedMain] || [];
-                      if (subcategories.length > 0) {
-                        setWorkerSubcategory(subcategories[0]);
-                      } else {
-                        setWorkerSubcategory('');
-                      }
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWorkerSignupStep(0);
+                      setErrorMsg(null);
+                      setView('landing');
                     }}
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] cursor-pointer"
+                    className="shrink-0 rounded-xl border border-zinc-200 px-3 py-2 text-[10px] font-mono font-black uppercase text-zinc-500 hover:border-zinc-400 hover:text-zinc-900"
                   >
-                    {TRADES_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
+                    Exit
+                  </button>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">TRADE SUBCATEGORY</label>
-                  <select
-                    value={workerSubcategory}
-                    onChange={(e) => setWorkerSubcategory(e.target.value)}
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] cursor-pointer"
-                  >
-                    {(TRADE_SUBCATEGORIES_MAP[workerMainTrade] || []).map((sub) => (
-                      <option key={sub} value={sub}>{sub}</option>
-                    ))}
-                  </select>
-                </div>
+                <form onSubmit={handleWorkerSignUp}>
+                  <div className="transition-all duration-300">
+                    {workerSignupStep === 0 && (
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <label className="space-y-2 sm:col-span-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Full name *</span>
+                          <input
+                            type="text"
+                            required
+                            value={workerName}
+                            onChange={event => setWorkerName(event.target.value)}
+                            placeholder="e.g. Liam Fletcher"
+                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
+                          />
+                        </label>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">AVAILABILITY STATUS</label>
-                  <select
-                    value={workerAvailability}
-                    onChange={(e) => setWorkerAvailability(e.target.value)}
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] cursor-pointer"
-                  >
-                    <option value="Immediate">Immediate / Available Now</option>
-                    <option value="In 1 Week">In 1 Week</option>
-                    <option value="In 2 Weeks">In 2 Weeks</option>
-                    <option value="In 1 Month">In 1 Month</option>
-                  </select>
-                </div>
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Email address *</span>
+                          <input
+                            type="email"
+                            required
+                            value={email}
+                            onChange={event => setEmail(event.target.value)}
+                            placeholder="you@example.co.uk"
+                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
+                          />
+                        </label>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">WORK / EMPLOYMENT PREFERENCE</label>
-                  <select
-                    value={workerType}
-                    onChange={(e) => setWorkerType(e.target.value)}
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] cursor-pointer"
-                  >
-                    <option value="CIS Subcontract">CIS Subcontract (Self-Employed)</option>
-                    <option value="PAYE Agency">PAYE Agency (Timesheets)</option>
-                    <option value="Permanent Contract">Permanent Contract</option>
-                  </select>
-                </div>
-              </div>
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Mobile number *</span>
+                          <input
+                            type="tel"
+                            required
+                            value={workerPhone}
+                            onChange={event => setWorkerPhone(event.target.value)}
+                            placeholder="07711 900222"
+                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
+                          />
+                        </label>
 
-              {/* Searchable Dropdowns using dataset lists */}
-              <div className="space-y-4 border-t border-zinc-100 pt-5">
-                <h3 className="text-xs font-mono font-black text-zinc-400 uppercase tracking-wider">CSV Dataset Dropdown Configuration</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <SearchableDropdown
-                    id="signup-worker-hometown"
-                    label="Hometown / Location"
-                    options={HOMETOWNS}
-                    selected={workerLocation}
-                    onChange={setWorkerLocation}
-                    multiple={false}
-                    placeholder="Select Hometown..."
-                  />
-
-                  <SearchableDropdown
-                    id="signup-worker-quals"
-                    label="Qualifications"
-                    options={GRADES}
-                    selected={workerQualifications}
-                    onChange={setWorkerQualifications}
-                    multiple={true}
-                    placeholder="Search and select qualifications..."
-                  />
-
-                  <SearchableDropdown
-                    id="signup-worker-licences"
-                    label="Licences and Certifications"
-                    options={LICENCES}
-                    selected={workerLicences}
-                    onChange={setWorkerLicences}
-                    multiple={true}
-                    placeholder="Search and select licences..."
-                  />
-
-                  <SearchableDropdown
-                    id="signup-worker-prefs"
-                    label="Employment Preferences & Position Length"
-                    options={POSITION_LENGTHS}
-                    selected={workerPrefs}
-                    onChange={setWorkerPrefs}
-                    multiple={true}
-                    placeholder="Select preferred position types..."
-                  />
-                </div>
-
-                {/* Checklist Tools transport */}
-                <div className="space-y-2 pt-2">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">TOOLS AND TRANSPORT OPTIONS</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono font-bold">
-                    {['Own Hand Tools', 'Full Power Tools', 'Own Commercial Van', 'UK Clean Driving Licence'].map((tool) => {
-                      const isChecked = workerTools.includes(tool);
-                      return (
-                        <button
-                          key={tool}
-                          type="button"
-                          onClick={() => {
-                            if (isChecked) {
-                              setWorkerTools(prev => prev.filter(t => t !== tool));
-                            } else {
-                              setWorkerTools(prev => [...prev, tool]);
-                            }
-                          }}
-                          className={`p-3 border rounded-xl flex items-center justify-between gap-1.5 transition-all text-left cursor-pointer ${isChecked ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-zinc-200 text-zinc-500 hover:bg-zinc-50'}`}
-                        >
-                          <span className="truncate">{tool}</span>
-                          {isChecked ? <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> : <div className="w-3.5 h-3.5 rounded border border-zinc-300 flex-shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Optional Media Uploads */}
-              <div className="space-y-4 border-t border-zinc-100 pt-5">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#34D399]" />
-                  <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider">OPTIONAL MEDIA UPLOADS</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Profile Picture */}
-                  <div className="space-y-2">
-                    <label className="block text-xs font-mono font-black text-zinc-400 uppercase">PROFILE PICTURE (RECOMMENDED)</label>
-                    <div className="border border-zinc-200 rounded-2xl p-4 bg-zinc-50/50 hover:bg-zinc-50 transition-all flex flex-col items-center justify-center gap-3 relative cursor-pointer min-h-[120px] group">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={(e) => handleSignupFileUpload(e, 'profile-pictures', 'avatar')} 
-                        className="absolute inset-0 opacity-0 cursor-pointer z-10" 
-                      />
-                      {workerProfilePhotoUrl ? (
-                        <div className="flex items-center gap-3 z-20">
-                          <img src={workerProfilePhotoUrl} alt="Signup Avatar Preview" className="w-12 h-12 rounded-full object-cover border border-zinc-200" referrerPolicy="no-referrer" />
-                          <div className="text-left">
-                            <p className="text-xs font-bold text-zinc-900">Picture Uploaded</p>
-                            <span className="text-[10px] font-mono text-zinc-400">Click to replace photo</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <ImageIcon className="w-8 h-8 text-zinc-300 group-hover:text-emerald-500 transition-all" />
-                          <div className="text-center">
-                            <p className="text-xs font-bold text-zinc-750">Click to upload photo</p>
-                            <span className="text-[10px] font-mono text-zinc-400">profile-pictures bucket</span>
-                          </div>
-                        </>
-                      )}
-                      {signupUploading === 'avatar' && (
-                        <div className="absolute inset-0 bg-white/90 rounded-2xl flex items-center justify-center gap-2 font-mono text-xs font-bold text-emerald-600 z-30">
-                          <Clock className="w-4 h-4 animate-spin" /> UPLOADING...
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Work Gallery */}
-                  <div className="space-y-2">
-                    <label className="block text-xs font-mono font-black text-zinc-400 uppercase">WORK GALLERY (MULTIPLE)</label>
-                    <div className="border border-zinc-200 rounded-2xl p-4 bg-zinc-50/50 hover:bg-zinc-50 transition-all flex flex-col items-center justify-center gap-3 relative cursor-pointer min-h-[120px] group">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={(e) => handleSignupFileUpload(e, 'work-gallery', 'gallery')} 
-                        className="absolute inset-0 opacity-0 cursor-pointer z-10" 
-                      />
-                      <ImageIcon className="w-8 h-8 text-zinc-300 group-hover:text-emerald-500 transition-all" />
-                      <div className="text-center">
-                        <p className="text-xs font-bold text-zinc-750">Click to add gallery image</p>
-                        <span className="text-[10px] font-mono text-zinc-400">work-gallery bucket</span>
-                      </div>
-                      {signupUploading === 'gallery' && (
-                        <div className="absolute inset-0 bg-white/90 rounded-2xl flex items-center justify-center gap-2 font-mono text-xs font-bold text-emerald-600 z-30">
-                          <Clock className="w-4 h-4 animate-spin" /> UPLOADING...
-                        </div>
-                      )}
-                    </div>
-                    {workerGalleryImages.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        {workerGalleryImages.map((img, i) => (
-                          <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-zinc-200">
-                            <img src={img} alt="Gallery item" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                            <button 
-                              type="button" 
-                              onClick={() => handleRemoveSignupFile(img, 'gallery')}
-                              className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center text-white text-[10px] font-bold"
+                        <label className="space-y-2 sm:col-span-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Create password *</span>
+                          <div className="relative">
+                            <input
+                              type={showPassword ? 'text' : 'password'}
+                              required
+                              minLength={8}
+                              value={password}
+                              onChange={event => setPassword(event.target.value)}
+                              placeholder="At least 8 characters"
+                              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 pr-12 text-sm font-semibold outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(current => !current)}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
                             >
-                              REMOVE
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                           </div>
-                        ))}
+                        </label>
+                      </div>
+                    )}
+
+                    {workerSignupStep === 1 && (
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Primary trade *</span>
+                          <select
+                            value={workerMainTrade}
+                            onChange={event => {
+                              const selectedMain = event.target.value;
+                              setWorkerMainTrade(selectedMain);
+                              setWorkerSubcategory((TRADE_SUBCATEGORIES_MAP[selectedMain] || [])[0] || '');
+                            }}
+                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                          >
+                            {TRADES_CATEGORIES.map(category => (
+                              <option key={category} value={category}>{category}</option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Trade specialism *</span>
+                          <select
+                            value={workerSubcategory}
+                            onChange={event => setWorkerSubcategory(event.target.value)}
+                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                          >
+                            {(TRADE_SUBCATEGORIES_MAP[workerMainTrade] || []).map(subcategory => (
+                              <option key={subcategory} value={subcategory}>{subcategory}</option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Site experience *</span>
+                          <select
+                            value={workerExp}
+                            onChange={event => setWorkerExp(event.target.value)}
+                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                          >
+                            <option value="Less than 1 Year">Less than 1 Year</option>
+                            <option value="2 Years">2 Years</option>
+                            <option value="5 Years">5 Years</option>
+                            <option value="8 Years">8 Years</option>
+                            <option value="12 Years">12 Years</option>
+                            <option value="15+ Years">15+ Years</option>
+                          </select>
+                        </label>
+
+                        <div>
+                          <SearchableDropdown
+                            id="signup-worker-hometown"
+                            label="Hometown / Location *"
+                            options={HOMETOWNS}
+                            selected={workerLocation}
+                            onChange={setWorkerLocation}
+                            multiple={false}
+                            placeholder="Search your town..."
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {workerSignupStep === 2 && (
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Expected day rate *</span>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-zinc-500">£</span>
+                            <input
+                              type="text"
+                              required
+                              value={workerRate.replace(/^£/, '')}
+                              onChange={event => setWorkerRate(event.target.value.replace(/[^0-9.]/g, ''))}
+                              placeholder="220"
+                              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-4 pl-9 pr-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                            />
+                          </div>
+                        </label>
+
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Available from *</span>
+                          <select
+                            value={workerAvailability}
+                            onChange={event => setWorkerAvailability(event.target.value)}
+                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                          >
+                            <option value="Immediate">Available immediately</option>
+                            <option value="In 1 Week">Within 1 week</option>
+                            <option value="In 2 Weeks">Within 2 weeks</option>
+                            <option value="In 1 Month">Within 1 month</option>
+                          </select>
+                        </label>
+
+                        <label className="space-y-2 sm:col-span-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Preferred employment type *</span>
+                          <select
+                            value={workerType}
+                            onChange={event => setWorkerType(event.target.value)}
+                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                          >
+                            <option value="CIS Subcontract">CIS subcontract</option>
+                            <option value="PAYE Agency">PAYE agency</option>
+                            <option value="Permanent Contract">Permanent contract</option>
+                          </select>
+                        </label>
+
+                        <div className="sm:col-span-2">
+                          <SearchableDropdown
+                            id="signup-worker-prefs"
+                            label="Position length preferences *"
+                            options={POSITION_LENGTHS}
+                            selected={workerPrefs}
+                            onChange={setWorkerPrefs}
+                            multiple={true}
+                            placeholder="Choose at least one position type..."
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {workerSignupStep === 3 && (
+                      <div>
+                        <p className="mb-5 text-sm font-semibold text-zinc-700">Choose every option that applies. Select at least one.</p>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          {[
+                            ['Own Hand Tools', '🧰', 'Ready for day-to-day site work'],
+                            ['Full Power Tools', '⚙️', 'Professional power tool kit'],
+                            ['Own Commercial Van', '🚐', 'Independent site travel'],
+                            ['UK Clean Driving Licence', '🪪', 'Full UK driving licence'],
+                          ].map(([tool, emoji, description]) => {
+                            const selected = workerTools.includes(tool);
+                            return (
+                              <button
+                                key={tool}
+                                type="button"
+                                onClick={() => setWorkerTools(current =>
+                                  selected ? current.filter(item => item !== tool) : [...current, tool]
+                                )}
+                                className={`rounded-2xl border p-5 text-left transition-all ${selected
+                                  ? 'border-[#34D399] bg-emerald-50 shadow-sm'
+                                  : 'border-zinc-200 bg-white hover:border-zinc-400 hover:bg-zinc-50'
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <span className="text-3xl">{emoji}</span>
+                                  <span className={`flex h-7 w-7 items-center justify-center rounded-full border ${selected
+                                    ? 'border-[#34D399] bg-[#34D399] text-zinc-950'
+                                    : 'border-zinc-300 text-transparent'
+                                  }`}>
+                                    <Check className="h-4 w-4" />
+                                  </span>
+                                </div>
+                                <p className="mt-4 font-black text-zinc-950">{tool}</p>
+                                <p className="mt-1 text-xs text-zinc-500">{description}</p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {workerSignupStep === 4 && (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                          <SearchableDropdown
+                            id="signup-worker-quals"
+                            label="Qualifications (optional)"
+                            options={GRADES}
+                            selected={workerQualifications}
+                            onChange={setWorkerQualifications}
+                            multiple={true}
+                            placeholder="Search qualifications..."
+                          />
+
+                          <SearchableDropdown
+                            id="signup-worker-licences"
+                            label="Licences (optional)"
+                            options={LICENCES}
+                            selected={workerLicences}
+                            onChange={setWorkerLicences}
+                            multiple={true}
+                            placeholder="Search licences..."
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                          <label className="group relative min-h-[170px] cursor-pointer overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 hover:border-[#34D399] hover:bg-emerald-50/40">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={event => handleSignupFileUpload(event, 'profile-pictures', 'avatar')}
+                              className="absolute inset-0 z-10 cursor-pointer opacity-0"
+                            />
+                            {workerProfilePhotoUrl ? (
+                              <div className="flex h-full flex-col items-center justify-center text-center">
+                                <img src={workerProfilePhotoUrl} alt="Profile preview" className="h-20 w-20 rounded-2xl object-cover shadow-sm" />
+                                <p className="mt-3 text-xs font-black text-zinc-900">Profile photo selected</p>
+                                <p className="text-[10px] text-zinc-500">Tap to replace</p>
+                              </div>
+                            ) : (
+                              <div className="flex h-full flex-col items-center justify-center text-center">
+                                <ImageIcon className="h-9 w-9 text-zinc-300 group-hover:text-[#10B981]" />
+                                <p className="mt-3 text-xs font-black text-zinc-900">Add profile photo</p>
+                                <p className="mt-1 text-[10px] text-zinc-500">Optional, but recommended</p>
+                              </div>
+                            )}
+                          </label>
+
+                          <label className="group relative min-h-[170px] cursor-pointer overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 hover:border-[#34D399] hover:bg-emerald-50/40">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={event => handleSignupFileUpload(event, 'work-gallery', 'gallery')}
+                              className="absolute inset-0 z-10 cursor-pointer opacity-0"
+                            />
+                            <div className="flex h-full flex-col items-center justify-center text-center">
+                              <Layers className="h-9 w-9 text-zinc-300 group-hover:text-[#10B981]" />
+                              <p className="mt-3 text-xs font-black text-zinc-900">Add work photos</p>
+                              <p className="mt-1 text-[10px] text-zinc-500">{workerGalleryImages.length} image(s) selected</p>
+                            </div>
+                          </label>
+                        </div>
+
+                        {workerGalleryImages.length > 0 && (
+                          <div className="flex flex-wrap gap-3">
+                            {workerGalleryImages.map((image, index) => (
+                              <div key={`${image}-${index}`} className="group relative h-20 w-20 overflow-hidden rounded-xl border border-zinc-200">
+                                <img src={image} alt={`Work preview ${index + 1}`} className="h-full w-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveSignupFile(image, 'gallery')}
+                                  className="absolute inset-0 bg-zinc-950/70 text-[9px] font-black uppercase text-white opacity-0 transition group-hover:opacity-100"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {workerSignupStep === 5 && (
+                      <div className="space-y-5">
+                        <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#34D399] text-zinc-950">
+                              <CheckCircle2 className="h-6 w-6" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-black text-zinc-950">Everything required is complete.</h3>
+                              <p className="mt-1 text-sm text-zinc-600">Your qualifications and licences can be updated later from your profile.</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          {[
+                            ['Name', workerName],
+                            ['Location', workerLocation],
+                            ['Trade', `${workerMainTrade} • ${workerSubcategory}`],
+                            ['Experience', workerExp],
+                            ['Availability', workerAvailability],
+                            ['Rate', workerRate.startsWith('£') ? workerRate : `£${workerRate}/day`],
+                            ['Position types', workerPrefs.join(', ')],
+                            ['Site equipment', workerTools.join(', ')],
+                          ].map(([label, value]) => (
+                            <div key={label} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                              <p className="text-[9px] font-mono font-black uppercase tracking-wider text-zinc-400">{label}</p>
+                              <p className="mt-1 text-sm font-bold text-zinc-900">{value || 'Not completed'}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
-                </div>
-                {debugLogs.length > 0 && (
-                  <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl font-mono text-[11px] text-zinc-300 space-y-2 shadow-inner mt-4">
-                    <div className="flex items-center justify-between border-b border-zinc-800 pb-2 mb-2 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                      <span>⚙️ Onboarding Process Console</span>
-                      <span className="animate-pulse flex items-center gap-1 text-emerald-400">
-                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span> LIVE STREAM
-                      </span>
+
+                  {errorMsg && view === 'signup_worker' && (
+                    <div className="mt-6 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                      {errorMsg}
                     </div>
-                    <div className="max-h-48 overflow-y-auto space-y-1.5 scrollbar-thin font-mono">
-                      {debugLogs.map((log, i) => (
-                        <div key={i} className={`flex items-start gap-1.5 leading-relaxed ${
-                          log.status === 'success' ? 'text-emerald-400 font-bold' :
-                          log.status === 'error' ? 'text-rose-400 font-bold' :
-                          log.status === 'pending' ? 'text-amber-400' : 'text-zinc-400'
-                        }`}>
-                          <span className="flex-shrink-0">
-                            {log.status === 'success' ? '✔' :
-                             log.status === 'error' ? '✘' :
-                             log.status === 'pending' ? '⏳' : 'ℹ'}
-                          </span>
-                          <p className="flex-1">{log.message}</p>
-                        </div>
-                      ))}
-                    </div>
+                  )}
+
+                  <div className="mt-8 flex items-center justify-between gap-3 border-t border-zinc-100 pt-6">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setErrorMsg(null);
+                        setWorkerSignupStep(current => Math.max(0, current - 1));
+                      }}
+                      disabled={workerSignupStep === 0}
+                      className="rounded-2xl border border-zinc-200 px-5 py-3.5 text-xs font-mono font-black uppercase text-zinc-600 disabled:invisible"
+                    >
+                      ← Back
+                    </button>
+
+                    {workerSignupStep < workerSignupTotalSteps - 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setErrorMsg(null);
+
+                          const valid =
+                            workerSignupStep === 0
+                              ? Boolean(workerName.trim() && email.trim() && password.length >= 8 && workerPhone.trim())
+                              : workerSignupStep === 1
+                              ? Boolean(workerMainTrade && workerSubcategory && workerExp && workerLocation)
+                              : workerSignupStep === 2
+                              ? Boolean(workerRate.trim() && workerAvailability && workerType && workerPrefs.length > 0)
+                              : workerSignupStep === 3
+                              ? workerTools.length > 0
+                              : true;
+
+                          if (!valid) {
+                            setErrorMsg(
+                              workerSignupStep === 0
+                                ? 'Complete your name, email, phone number and an 8-character password.'
+                                : workerSignupStep === 1
+                                ? 'Complete your trade, specialism, experience and location.'
+                                : workerSignupStep === 2
+                                ? 'Complete your rate, availability, employment type and position preferences.'
+                                : 'Select at least one tools or transport option.'
+                            );
+                            return;
+                          }
+
+                          setWorkerSignupStep(current => Math.min(workerSignupTotalSteps - 1, current + 1));
+                        }}
+                        className="ml-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[#34D399] px-6 py-3.5 text-xs font-mono font-black uppercase text-zinc-950 shadow-lg shadow-emerald-500/15 transition hover:bg-[#10B981] hover:text-white active:scale-[0.98]"
+                      >
+                        Continue <ArrowRight className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="ml-auto inline-flex min-w-[220px] items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-6 py-4 text-xs font-mono font-black uppercase text-white shadow-xl disabled:opacity-50"
+                      >
+                        {isSubmitting ? (
+                          <>Creating profile <Clock className="h-4 w-4 animate-spin text-[#34D399]" /></>
+                        ) : (
+                          <>Launch my HireUp profile <ArrowRight className="h-4 w-4 text-[#34D399]" /></>
+                        )}
+                      </button>
+                    )}
                   </div>
-                )}
-                {signupUploadError && (
-                  <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-mono font-bold text-rose-600 flex items-center gap-2 mt-4">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    {signupUploadError}
-                  </div>
-                )}
+                </form>
               </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-4 bg-zinc-900 hover:bg-zinc-850 disabled:bg-zinc-400 text-white rounded-xl font-mono text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg mt-8"
-              >
-                {signupUploading === 'onboarding_files' ? (
-                  <>UPLOADING SECURE PROFILE MEDIA... <Clock className="w-4 h-4 animate-spin text-[#34D399]" /></>
-                ) : isSubmitting ? (
-                  <>CREATING YOUR ACCOUNT... <Clock className="w-4 h-4 animate-spin" /></>
-                ) : (
-                  <>CREATE MY DIGITAL CV & LAUNCH <ArrowRight className="w-4 h-4 text-[#34D399]" /></>
-                )}
-              </button>
-            </form>
+              <aside className="hidden border-l border-zinc-200 bg-zinc-950 p-7 text-white lg:block">
+                <div className="sticky top-7">
+                  <p className="text-[9px] font-mono font-black uppercase tracking-[0.22em] text-[#34D399]">Live profile preview</p>
+
+                  <div className="mt-6 overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl">
+                    <div className="h-28 bg-gradient-to-br from-[#34D399] via-emerald-500 to-zinc-950" />
+                    <div className="px-5 pb-5">
+                      <div className="-mt-10 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border-4 border-zinc-950 bg-zinc-800 text-2xl font-black">
+                        {workerProfilePhotoUrl ? (
+                          <img src={workerProfilePhotoUrl} alt="Live worker preview" className="h-full w-full object-cover" />
+                        ) : (
+                          workerName.trim().charAt(0).toUpperCase() || 'HU'
+                        )}
+                      </div>
+
+                      <h3 className="mt-4 text-xl font-black">{workerName || 'Your name'}</h3>
+                      <p className="mt-1 text-sm font-bold text-[#34D399]">{workerMainTrade || 'Your trade'}</p>
+                      <p className="mt-1 flex items-center gap-1.5 text-xs text-zinc-400">
+                        <MapPin className="h-3.5 w-3.5" /> {workerLocation || 'Your location'}
+                      </p>
+
+                      <div className="mt-5 grid grid-cols-2 gap-2">
+                        <div className="rounded-xl bg-white/5 p-3">
+                          <p className="text-[8px] font-mono font-black uppercase text-zinc-500">Experience</p>
+                          <p className="mt-1 text-xs font-bold">{workerExp}</p>
+                        </div>
+                        <div className="rounded-xl bg-white/5 p-3">
+                          <p className="text-[8px] font-mono font-black uppercase text-zinc-500">Day rate</p>
+                          <p className="mt-1 text-xs font-bold text-[#34D399]">{workerRate.startsWith('£') ? workerRate : `£${workerRate}`}</p>
+                        </div>
+                      </div>
+
+                      {workerTools.length > 0 && (
+                        <div className="mt-4 flex flex-wrap gap-1.5">
+                          {workerTools.slice(0, 4).map(tool => (
+                            <span key={tool} className="rounded-full bg-white/10 px-2.5 py-1 text-[8px] font-mono font-black uppercase text-zinc-300">
+                              {tool}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-6 space-y-3">
+                    {['Account', 'Trade', 'Work', 'Equipment', 'Credentials', 'Review'].map((label, index) => (
+                      <div key={label} className="flex items-center gap-3">
+                        <span className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-black ${index <= workerSignupStep
+                          ? 'bg-[#34D399] text-zinc-950'
+                          : 'bg-white/10 text-zinc-500'
+                        }`}>
+                          {index < workerSignupStep ? <Check className="h-3.5 w-3.5" /> : index + 1}
+                        </span>
+                        <span className={`text-xs font-bold ${index <= workerSignupStep ? 'text-white' : 'text-zinc-600'}`}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </aside>
+            </div>
           </div>
         )}
 
