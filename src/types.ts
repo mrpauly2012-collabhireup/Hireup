@@ -111,12 +111,15 @@ export interface JobProfile {
   subcategory?: string;
   payRate: string;
   location: string;
+  postcode?: string;
   startDate: string;
   duration: string;
   employmentType: string;
   qualifications: string[];
   verified: boolean;
   featured?: boolean;
+  urgent?: boolean;
+  createdAt?: string;
   description: string;
   benefits: string[];
   requirements: string[];

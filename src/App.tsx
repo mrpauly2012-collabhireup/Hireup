@@ -72,6 +72,7 @@ import AdminDashboard from './components/AdminDashboard';
 import InformationCentre from './components/InformationCentre';
 import ApplicationsView from './components/ApplicationsView';
 import { HIREUP_LOGO } from './constants';
+import PublicJobsView from './components/PublicJobsView';
 
 export default function App() {
   // Core User Session State
@@ -1329,6 +1330,22 @@ export default function App() {
   const loggedInCompany = currentUser?.userType === 'employer'
     ? companies.find(c => c.id === currentUser.id) || null
     : null;
+
+  const isPublicJobsRoute =
+    window.location.pathname === '/jobs' ||
+    window.location.pathname.startsWith('/jobs/');
+
+  if (isPublicJobsRoute) {
+    return (
+      <PublicJobsView
+        onOpenApp={() => {
+          window.history.pushState({}, '', '/');
+          window.dispatchEvent(new PopStateEvent('popstate'));
+          window.location.reload();
+        }}
+      />
+    );
+  }
 
   if (!currentUser) {
     return (

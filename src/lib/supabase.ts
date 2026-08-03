@@ -464,11 +464,14 @@ export function mapJobFromDb(j: any): JobProfile {
     subcategory: j.subcategory || j.trade_subcategory || '',
     payRate: j.pay_rate || j.day_rate || j.hourly_rate || '£200/day',
     location: j.location || '',
+    postcode: j.postcode || '',
     startDate: j.start_date || '',
     duration: j.duration || 'Ongoing',
     employmentType: j.employment_type || 'Contract',
     qualifications: j.qualifications || [],
     verified: Boolean(j.verified),
+    urgent: Boolean(j.urgent),
+    createdAt: j.created_at || '',
 
     // This value is set from the Admin Dashboard.
     // Keeping it on the mapped job allows Featured Jobs to display it.
@@ -772,6 +775,44 @@ export async function fetchJobs(): Promise<JobProfile[]> {
     return [];
   }
   return (data || []).map(mapJobFromDb);
+}
+
+
+export function createJobSeoSlug(job: JobProfile): string {
+  const base = `${job.title}-${job.location}`
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return base || `construction-job-${job.id.slice(0, 8)}`;
+}
+
+export async function fetchPublicJobs(): Promise<JobProfile[]> {
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('*')
+    .order('featured', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.warn('Could not load public jobs from Supabase:', error.message);
+    return [];
+  }
+
+  return (data || []).map(mapJobFromDb);
+}
+
+export async function fetchPublicJobBySlug(
+  slug: string
+): Promise<JobProfile | null> {
+  const jobs = await fetchPublicJobs();
+
+  return (
+    jobs.find(job => createJobSeoSlug(job) === slug) ||
+    jobs.find(job => job.id === slug) ||
+    null
+  );
 }
 
 export function mapApplicationFromDb(application: any): JobApplication {
