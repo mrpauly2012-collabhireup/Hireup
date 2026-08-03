@@ -180,7 +180,7 @@ export default function ProfileView({
   // Storage / Uploading / Preview States
   const [isUploading, setIsUploading] = useState<string | null>(null);
   const [workerAvatar, setWorkerAvatar] = useState(workerProfile.avatar);
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState(workerProfile.profilePhotoUrl || '');
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState(workerProfile.profilePhotoUrl || workerProfile.avatar || '');
   const [galleryImages, setGalleryImages] = useState<string[]>(workerProfile.galleryImages || workerProfile.portfolio || []);
   const [cvUrl, setCvUrl] = useState(workerProfile.cvUrl || '');
   const [certificateFiles, setCertificateFiles] = useState<string[]>(workerProfile.certificateFiles || []);
@@ -204,7 +204,7 @@ export default function ProfileView({
     setWorkerLicences(workerProfile.licences || []);
     setWorkerPositionLengths(workerProfile.positionLengths || []);
     setWorkerAvatar(workerProfile.avatar);
-    setProfilePhotoUrl(workerProfile.profilePhotoUrl || '');
+    setProfilePhotoUrl(workerProfile.profilePhotoUrl || workerProfile.avatar || '');
     setGalleryImages(workerProfile.galleryImages || workerProfile.portfolio || []);
     setCvUrl(workerProfile.cvUrl || '');
     setCertificateFiles(workerProfile.certificateFiles || []);
@@ -688,7 +688,7 @@ export default function ProfileView({
           <div className="w-28 h-28 md:w-32 md:h-32 rounded-3xl overflow-hidden border border-zinc-200 bg-zinc-50 relative group flex items-center justify-center flex-shrink-0 shadow-inner">
             <img 
               src={userType === 'worker' 
-                ? (profilePhotoUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80') 
+                ? (profilePhotoUrl || workerAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80') 
                 : (companyLogoUrl || 'https://images.unsplash.com/photo-1516880711640-ef7db81be3e1?w=200&auto=format&fit=crop&q=80')
               } 
               alt="Profile avatar" 
