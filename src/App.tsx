@@ -53,7 +53,8 @@ import {
   updateAdminAccountStatus,
   updateAdminVerificationStatus,
   fetchApplications,
-  updateApplicationStatusInDb
+  updateApplicationStatusInDb,
+  markMessagesAsReadForUser
 } from './lib/supabase';
 
 import DashboardView from './components/DashboardView';
@@ -333,6 +334,26 @@ export default function App() {
       });
     }
   }, [selectedMatchId]);
+
+  // Permanently mark received messages as read when the user opens Messages.
+  useEffect(() => {
+    if (!currentUser || currentAdmin || currentView !== 'messages') return;
+
+    setMessages(previous =>
+      previous.map(message =>
+        message.sender !== userType
+          ? { ...message, isRead: true }
+          : message
+      )
+    );
+
+    void markMessagesAsReadForUser(currentUser.id).catch((error: any) => {
+      console.error(
+        'Could not mark received messages as read:',
+        error.message || String(error)
+      );
+    });
+  }, [currentView, currentUser?.id, currentAdmin, userType]);
 
   // Setup Supabase Realtime Subscriptions for live messaging and notifications
   useEffect(() => {
@@ -2847,4 +2868,4 @@ export default function App() {
 
     </div>
   );
-}
+}s
