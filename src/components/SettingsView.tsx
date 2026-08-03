@@ -53,7 +53,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { CompanyProfile, UserType, WorkerProfile } from '../types';
-import { supabase } from '../lib/supabase';
+import { supabase, uploadFileToStorage } from '../lib/supabase';
 
 interface SettingsViewProps {
   userType: UserType;
@@ -513,11 +513,13 @@ function FileUploadRow({
   title,
   description,
   file,
+  existingUrl,
   onChange,
 }: {
   title: string;
   description: string;
   file: File | null;
+  existingUrl?: string;
   onChange: (file: File | null) => void;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -532,9 +534,23 @@ function FileUploadRow({
         <div>
           <p className="text-sm font-bold text-zinc-950">{title}</p>
           <p className="text-xs text-zinc-700 mt-0.5">{description}</p>
-          {file && (
+          {file ? (
             <p className="text-[10px] font-mono font-bold text-[#10B981] mt-1">
-              Selected: {file.name}
+              Ready to upload: {file.name}
+            </p>
+          ) : existingUrl ? (
+            <a
+              href={existingUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[10px] font-mono font-bold text-[#10B981] mt-1 inline-flex items-center gap-1 hover:underline"
+            >
+              <ExternalLink className="w-3 h-3" />
+              View uploaded document
+            </a>
+          ) : (
+            <p className="text-[10px] font-mono text-zinc-500 mt-1">
+              No document uploaded
             </p>
           )}
         </div>
@@ -546,7 +562,17 @@ function FileUploadRow({
           type="file"
           className="hidden"
           accept=".pdf,.png,.jpg,.jpeg,.webp"
-          onChange={event => onChange(event.target.files?.[0] || null)}
+          onChange={event => {
+            const selectedFile = event.target.files?.[0] || null;
+
+            if (selectedFile && selectedFile.size > 10 * 1024 * 1024) {
+              window.alert('Please choose a file smaller than 10MB.');
+              event.target.value = '';
+              return;
+            }
+
+            onChange(selectedFile);
+          }}
         />
 
         {file && (
@@ -610,6 +636,62 @@ export default function SettingsView({
       : accountForm.county === 'West Sussex'
       ? WEST_SUSSEX_TOWNS
       : [];
+
+  const existingVerificationUrls = useMemo(() => {
+    if (isWorker && workerProfile) {
+      return {
+        identity: workerProfile.certificateFiles?.[0] || '',
+        qualifications: workerProfile.certificateFiles?.[1] || '',
+        cscs: workerProfile.licenceImages?.[0] || '',
+        insurance: workerProfile.certificateFiles?.[2] || '',
+      };
+    }
+
+    const documents = companyProfile?.verificationDocuments || [];
+    return {
+      identity: documents[0] || '',
+      qualifications: documents[1] || '',
+      cscs: documents[2] || '',
+      insurance: documents[3] || '',
+    };
+  }, [isWorker, workerProfile, companyProfile]);
+
+  const sanitiseFileName = (name: string) =>
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9.]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+
+  const uploadSelectedVerificationFiles = async (
+    profileId: string
+  ): Promise<{
+    identity: string;
+    qualifications: string;
+    cscs: string;
+    insurance: string;
+  }> => {
+    const result = { ...existingVerificationUrls };
+    const entries = Object.entries(verificationFiles) as Array<
+      [keyof VerificationFiles, File | null]
+    >;
+
+    for (const [documentType, file] of entries) {
+      if (!file) continue;
+
+      const filePath = `${profileId}/${documentType}/${Date.now()}-${sanitiseFileName(
+        file.name
+      )}`;
+
+      result[documentType] = await uploadFileToStorage(
+        'verification-documents',
+        filePath,
+        file
+      );
+    }
+
+    return result;
+  };
 
   const [securityForm, setSecurityForm] = useState<SecurityFormState>({
     currentPassword: '',
@@ -780,7 +862,17 @@ export default function SettingsView({
       }
 
       const fullName = `${accountForm.firstName} ${accountForm.lastName}`.trim();
-      const profileId = workerProfile?.id || companyProfile?.id || 'account';
+      const profileId = workerProfile?.id || companyProfile?.id;
+
+      if (!profileId) {
+        throw new Error('Your account profile could not be loaded.');
+      }
+
+      const uploadedDocuments =
+        Object.values(verificationFiles).some(Boolean)
+          ? await uploadSelectedVerificationFiles(profileId)
+          : existingVerificationUrls;
+
       const storageKey = `hireup-settings-${profileId}`;
 
       window.localStorage.setItem(
@@ -834,6 +926,14 @@ export default function SettingsView({
           positionLengths: accountForm.travelDistance
             ? [...withoutDistance, accountForm.travelDistance]
             : withoutDistance,
+          certificateFiles: [
+            uploadedDocuments.identity,
+            uploadedDocuments.qualifications,
+            uploadedDocuments.insurance,
+          ].filter(Boolean),
+          licenceImages: uploadedDocuments.cscs
+            ? [uploadedDocuments.cscs]
+            : workerProfile.licenceImages || [],
         });
       } else {
         if (!companyProfile) {
@@ -853,11 +953,27 @@ export default function SettingsView({
           contactName: fullName,
           contactPhone: accountForm.phone,
           contactEmail: accountForm.email || currentUserEmail,
+          verificationDocuments: [
+            uploadedDocuments.identity,
+            uploadedDocuments.qualifications,
+            uploadedDocuments.cscs,
+            uploadedDocuments.insurance,
+          ].filter(Boolean),
         });
       }
 
+      setVerificationFiles({
+        identity: null,
+        qualifications: null,
+        cscs: null,
+        insurance: null,
+      });
       setSavedSuccess(true);
-      setSaveMessage('Your account information has been saved.');
+      setSaveMessage(
+        Object.values(verificationFiles).some(Boolean)
+          ? 'Your account information and verification documents have been saved.'
+          : 'Your account information has been saved.'
+      );
       window.setTimeout(() => setSavedSuccess(false), 2200);
     } catch (error: any) {
       setSaveMessage(error.message || 'Settings could not be saved.');
@@ -1487,8 +1603,8 @@ export default function SettingsView({
                 Upload verification files
               </h3>
               <p className="text-xs text-zinc-700 mt-1">
-                Files are selected locally for now and can later be connected to
-                Supabase Storage.
+                Select your documents, then press Save Changes. Files are securely
+                uploaded to Supabase Storage and remain available after refresh.
               </p>
             </div>
 
@@ -1497,6 +1613,7 @@ export default function SettingsView({
                 title="Identity document"
                 description="Passport, driving licence or accepted photo ID."
                 file={verificationFiles.identity}
+                existingUrl={existingVerificationUrls.identity}
                 onChange={file =>
                   setVerificationFiles(current => ({
                     ...current,
@@ -1512,6 +1629,7 @@ export default function SettingsView({
                     : 'Upload Companies House or registration documentation.'
                 }
                 file={verificationFiles.qualifications}
+                existingUrl={existingVerificationUrls.qualifications}
                 onChange={file =>
                   setVerificationFiles(current => ({
                     ...current,
@@ -1527,6 +1645,7 @@ export default function SettingsView({
                     : 'Upload public or employers liability documentation.'
                 }
                 file={verificationFiles.cscs}
+                existingUrl={existingVerificationUrls.cscs}
                 onChange={file =>
                   setVerificationFiles(current => ({
                     ...current,
@@ -1538,6 +1657,7 @@ export default function SettingsView({
                 title="Additional verification"
                 description="Upload any supporting verification document."
                 file={verificationFiles.insurance}
+                existingUrl={existingVerificationUrls.insurance}
                 onChange={file =>
                   setVerificationFiles(current => ({
                     ...current,
