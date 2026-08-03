@@ -1058,19 +1058,39 @@ export default function App() {
 
   // Action: Update worker detail fields
   const handleUpdateWorker = async (updated: WorkerProfile) => {
+    // Update the screen immediately so a newly uploaded photo is not replaced
+    // by stale profile state while Supabase is saving.
+    setWorkers(previous =>
+      previous.map(worker => (worker.id === updated.id ? updated : worker))
+    );
+
     try {
-      // Always persist the current profile photo URL when saving the worker profile.
-      // This ensures newly uploaded Supabase Storage images survive refreshes.
       await updateWorkerProfileInDb(updated.id, updated, true);
 
-      // Re-fetch the saved database profiles so the UI uses Supabase as the source of truth.
+      // Reload from Supabase after the save so refreshes use the persisted record.
       const dbWorkers = await fetchWorkers();
-      setWorkers(dbWorkers || []);
+
+      setWorkers(
+        dbWorkers && dbWorkers.length > 0
+          ? dbWorkers
+          : previousWorkersFallback(updated)
+      );
     } catch (err: any) {
       console.error("Worker update error:", err.message);
       alert(`Profile update failed: ${err.message || err}`);
+
+      // Restore the latest database state if the save failed.
+      const dbWorkers = await fetchWorkers();
+      if (dbWorkers) setWorkers(dbWorkers);
     }
   };
+
+  const previousWorkersFallback = (updatedWorker: WorkerProfile) =>
+    workers.some(worker => worker.id === updatedWorker.id)
+      ? workers.map(worker =>
+          worker.id === updatedWorker.id ? updatedWorker : worker
+        )
+      : [...workers, updatedWorker];
 
   // Action: Update company detail fields
   const handleUpdateCompany = async (updated: CompanyProfile) => {
