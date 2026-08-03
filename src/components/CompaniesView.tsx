@@ -1206,11 +1206,11 @@ export default function CompaniesView({
                           </div>
                         </div>
 
-                        <div className="bg-zinc-950 text-white rounded-xl px-3 py-2 text-center flex-shrink-0">
-                          <p className="text-[7px] font-mono font-black text-[#34D399] uppercase">
+                        <div className="bg-zinc-50 border border-zinc-200 text-black rounded-xl px-3 py-2 text-center flex-shrink-0">
+                          <p className="text-[7px] font-mono font-black text-black uppercase">
                             AI match
                           </p>
-                          <p className="text-xl font-black mt-1">{match.score}%</p>
+                          <p className="text-xl font-black text-black mt-1">{match.score}%</p>
                         </div>
                       </div>
 
