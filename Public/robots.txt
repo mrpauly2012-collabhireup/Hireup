@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hireupapp.netlify.app/sitemap.xml
