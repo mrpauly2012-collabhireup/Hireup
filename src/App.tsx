@@ -12,7 +12,7 @@ import {
   Mail, CalendarCheck, BadgeCheck, Menu, Crown, CircleHelp, Home, Scale
 } from 'lucide-react';
 import { 
-  WorkerProfile, JobProfile, CompanyProfile, Match, Message, Interview, UserType 
+  WorkerProfile, JobProfile, CompanyProfile, Match, Message, Interview, UserType, JobApplication, ApplicationStatus 
 } from './types';
 import { 
   supabase, 
@@ -51,7 +51,9 @@ import {
   AdminVerificationStatus,
   fetchAdminManagedUsers,
   updateAdminAccountStatus,
-  updateAdminVerificationStatus
+  updateAdminVerificationStatus,
+  fetchApplications,
+  updateApplicationStatusInDb
 } from './lib/supabase';
 
 import DashboardView from './components/DashboardView';
@@ -68,6 +70,7 @@ import AuthView from './components/AuthView';
 import VideoInterviewRoom from './components/VideoInterviewRoom';
 import AdminDashboard from './components/AdminDashboard';
 import InformationCentre from './components/InformationCentre';
+import ApplicationsView from './components/ApplicationsView';
 
 export default function App() {
   // Core User Session State
@@ -107,6 +110,8 @@ export default function App() {
   const [jobs, setJobs] = useState<JobProfile[]>([]);
   const [companies, setCompanies] = useState<CompanyProfile[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [applications, setApplications] = useState<JobApplication[]>([]);
+  const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -131,7 +136,16 @@ export default function App() {
     setDbSyncError(null);
     try {
       // Query live Supabase tables in parallel
-      const [dbWorkers, dbCompanies, dbJobs, dbMatches, dbInterviews, dbReviews, dbNotifications] = await Promise.all([
+      const [
+        dbWorkers,
+        dbCompanies,
+        dbJobs,
+        dbMatches,
+        dbInterviews,
+        dbReviews,
+        dbNotifications,
+        dbApplications,
+      ] = await Promise.all([
         fetchWorkers(),
         fetchCompanies(),
         fetchJobs(),
@@ -139,12 +153,16 @@ export default function App() {
         fetchInterviews(),
         fetchReviewsFromDb(),
         currentUser ? fetchNotifications(currentUser.id) : Promise.resolve([]),
+        currentUser
+          ? fetchApplications(currentUser.id, currentUser.userType)
+          : Promise.resolve([]),
       ]);
 
       setWorkers(dbWorkers || []);
       setCompanies(dbCompanies || []);
       setJobs(dbJobs || []);
       setMatches(dbMatches || []);
+      setApplications(dbApplications || []);
       setInterviews(dbInterviews || []);
       setReviews(dbReviews || []);
       setNotifications(dbNotifications || []);
@@ -578,6 +596,32 @@ export default function App() {
       )
       .subscribe();
 
+    const applicationsChannel = supabase
+      .channel(`live-job-applications-${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'job_applications',
+        },
+        async () => {
+          try {
+            const updatedApplications = await fetchApplications(
+              currentUser.id,
+              currentUser.userType
+            );
+            setApplications(updatedApplications);
+          } catch (error: any) {
+            console.error(
+              'Realtime application refresh failed:',
+              error.message
+            );
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       console.log("Cleaning up Supabase Realtime channels");
       supabase.removeChannel(messageChannel);
@@ -589,6 +633,7 @@ export default function App() {
       supabase.removeChannel(reviewsChannel);
       supabase.removeChannel(workerProfilesChannel);
       supabase.removeChannel(contractorProfilesChannel);
+      supabase.removeChannel(applicationsChannel);
     };
   }, [currentUser, userType, currentAdmin]);
 
@@ -1028,11 +1073,48 @@ export default function App() {
     }
   };
 
+  const handleApplicationStatusUpdate = async (
+    applicationId: string,
+    status: ApplicationStatus
+  ) => {
+    if (!currentUser) return;
+
+    setApplicationsLoading(true);
+    try {
+      const updated = await updateApplicationStatusInDb(
+        applicationId,
+        status
+      );
+
+      setApplications(previous =>
+        previous.map(application =>
+          application.id === updated.id ? updated : application
+        )
+      );
+
+      const refreshed = await fetchApplications(
+        currentUser.id,
+        currentUser.userType
+      );
+      setApplications(refreshed);
+    } catch (error: any) {
+      console.error('Could not update application status:', error.message);
+      window.alert(
+        `Application status could not be updated: ${
+          error.message || error
+        }`
+      );
+    } finally {
+      setApplicationsLoading(false);
+    }
+  };
+
   // Sidebar Desktop Navigation Links
   const sidebarLinks = [
     { id: 'dashboard', label: 'Dashboard', icon: <Activity className="w-4 h-4" /> },
     { id: 'swipe', label: userType === 'employer' ? 'Find Workers' : 'Find Jobs', icon: userType === 'employer' ? <Wrench className="w-4 h-4" /> : <Briefcase className="w-4 h-4" /> },
     { id: 'matches', label: 'Matches', icon: <Heart className="w-4 h-4" /> },
+    { id: 'applications', label: userType === 'worker' ? 'My Applications' : 'Applicant Pipeline', icon: <ClipboardCheck className="w-4 h-4" /> },
     { id: 'messages', label: 'Messages', icon: <MessageSquare className="w-4 h-4" /> },
     { id: 'interviews', label: 'Interviews', icon: <Calendar className="w-4 h-4" /> },
     { id: 'companies', label: userType === 'employer' ? 'Verified Workers' : 'Featured Jobs', icon: userType === 'employer' ? <Users className="w-4 h-4" /> : <Star className="w-4 h-4" /> },
@@ -1087,6 +1169,16 @@ export default function App() {
             id: 'matches',
             label: 'Matches',
             icon: <Heart className="w-5 h-5" />,
+          },
+          {
+            id: 'applications',
+            label: 'Applicant Pipeline',
+            icon: <ClipboardCheck className="w-5 h-5" />,
+          },
+          {
+            id: 'applications',
+            label: 'My Applications',
+            icon: <ClipboardCheck className="w-5 h-5" />,
           },
           {
             id: 'messages',
@@ -1766,6 +1858,22 @@ export default function App() {
                     onSelectWorker={(w) => setSelectedWorker(w)}
                     onSelectJob={(j) => setSelectedJob(j)}
                     onNavigate={(v) => setCurrentView(v)}
+                  />
+                );
+              case 'applications':
+                return (
+                  <ApplicationsView
+                    userType={userType}
+                    applications={applications}
+                    jobs={jobs}
+                    workers={workers}
+                    companies={companies}
+                    currentUserId={currentUser.id}
+                    loading={applicationsLoading}
+                    onUpdateStatus={handleApplicationStatusUpdate}
+                    onSelectJob={job => setSelectedJob(job)}
+                    onSelectWorker={worker => setSelectedWorker(worker)}
+                    onNavigate={view => setCurrentView(view)}
                   />
                 );
               case 'matches':

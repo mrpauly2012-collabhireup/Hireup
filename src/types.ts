@@ -34,25 +34,25 @@ export interface WorkerProfile {
   name: string;
   trade: string;
   subcategory?: string;
-  experience: string; // e.g. "12 Years"
-  qualifications: string[]; // e.g. ["CSCS Gold Card", "NVQ Level 3", "NICEIC Certified"]
-  location: string; // e.g. "Manchester"
-  availability: string; // e.g. "Immediate", "In 1 Week"
-  payRate: string; // e.g. "£220/day"
+  experience: string;
+  qualifications: string[];
+  location: string;
+  availability: string;
+  payRate: string;
   rating: number | null;
   reviewsCount: number;
   verified: boolean;
-  verifiedBadges: string[]; // e.g. ["Checkatrade Approved", "CSCS Verified"]
-  portfolio: string[]; // titles or image references
+  verifiedBadges: string[];
+  portfolio: string[];
   workHistory: WorkHistoryItem[];
-  toolsAndTransport: string[]; // e.g. ["Own Van", "Full Hand Tools", "Power Tools"]
+  toolsAndTransport: string[];
   about: string;
   reviews: ReviewItem[];
   references: ReferenceItem[];
   phone: string;
   email: string;
-  avatar: string; // visual representation identifier
-  coverImage: string; // visual cover banner style
+  avatar: string;
+  coverImage: string;
   licences?: string[];
   positionLengths?: string[];
   profilePhotoUrl?: string;
@@ -109,17 +109,41 @@ export interface JobProfile {
   title: string;
   trade: string;
   subcategory?: string;
-  payRate: string; // e.g. "£250/day" or "£28/hour"
+  payRate: string;
   location: string;
   startDate: string;
-  duration: string; // e.g. "3 Months", "Ongoing"
-  employmentType: string; // e.g. "Subcontractor", "CIS Contract", "Full-Time"
+  duration: string;
+  employmentType: string;
   qualifications: string[];
   verified: boolean;
+  featured?: boolean;
   description: string;
   benefits: string[];
   requirements: string[];
   companyStats: CompanyStats;
+}
+
+export type ApplicationStatus =
+  | 'applied'
+  | 'viewed'
+  | 'shortlisted'
+  | 'interview'
+  | 'offered'
+  | 'hired'
+  | 'rejected'
+  | 'withdrawn';
+
+export interface JobApplication {
+  id: string;
+  workerId: string;
+  contractorId: string;
+  jobId: string;
+  status: ApplicationStatus;
+  appliedAt: string;
+  updatedAt: string;
+  viewedAt?: string;
+  withdrawnAt?: string;
+  note?: string;
 }
 
 export interface Match {
@@ -152,6 +176,6 @@ export interface Interview {
   time: string;
   location: string;
   status: 'pending' | 'confirmed' | 'completed' | 'declined';
-  ppeRequired: string[]; // e.g. ["Hard Hat", "Hi-Vis", "Steel Toe Boots"]
+  ppeRequired: string[];
   notes: string;
 }

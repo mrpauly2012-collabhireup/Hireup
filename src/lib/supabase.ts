@@ -1,4 +1,4 @@
-import { WorkerProfile, CompanyProfile, JobProfile, Match, Message, Interview, UserType } from '../types';
+import { WorkerProfile, CompanyProfile, JobProfile, Match, Message, Interview, UserType, JobApplication, ApplicationStatus } from '../types';
 import { supabase } from './client';
 import { fetchAdminUser } from './admin';
 
@@ -124,7 +124,23 @@ CREATE TABLE IF NOT EXISTS jobs (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. Create matches table
+-- 4. Create job applications table
+CREATE TABLE IF NOT EXISTS job_applications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  worker_id UUID NOT NULL REFERENCES worker_profiles(id) ON DELETE CASCADE,
+  contractor_id UUID NOT NULL REFERENCES contractor_profiles(id) ON DELETE CASCADE,
+  job_id UUID NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'applied'
+    CHECK (status IN ('applied', 'viewed', 'shortlisted', 'interview', 'offered', 'hired', 'rejected', 'withdrawn')),
+  note TEXT,
+  viewed_at TIMESTAMPTZ,
+  withdrawn_at TIMESTAMPTZ,
+  applied_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(worker_id, job_id)
+);
+
+-- 5. Create matches table
 CREATE TABLE IF NOT EXISTS matches (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   worker_id UUID REFERENCES worker_profiles(id) ON DELETE CASCADE,
@@ -234,6 +250,7 @@ CREATE TABLE IF NOT EXISTS reviews (
 ALTER TABLE contractor_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE worker_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE job_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE interviews ENABLE ROW LEVEL SECURITY;
@@ -250,6 +267,33 @@ CREATE POLICY "Allow public write on worker_profiles" ON worker_profiles FOR ALL
 
 CREATE POLICY "Allow public read on jobs" ON jobs FOR SELECT USING (true);
 CREATE POLICY "Allow public write on jobs" ON jobs FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Workers and contractors can read applications" ON job_applications;
+DROP POLICY IF EXISTS "Workers can create applications" ON job_applications;
+DROP POLICY IF EXISTS "Workers can withdraw applications" ON job_applications;
+DROP POLICY IF EXISTS "Contractors can update applications" ON job_applications;
+
+CREATE POLICY "Workers and contractors can read applications"
+ON job_applications FOR SELECT
+TO authenticated
+USING (auth.uid() = worker_id OR auth.uid() = contractor_id);
+
+CREATE POLICY "Workers can create applications"
+ON job_applications FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = worker_id);
+
+CREATE POLICY "Workers can withdraw applications"
+ON job_applications FOR UPDATE
+TO authenticated
+USING (auth.uid() = worker_id)
+WITH CHECK (auth.uid() = worker_id AND status = 'withdrawn');
+
+CREATE POLICY "Contractors can update applications"
+ON job_applications FOR UPDATE
+TO authenticated
+USING (auth.uid() = contractor_id)
+WITH CHECK (auth.uid() = contractor_id);
 
 CREATE POLICY "Allow public read on matches" ON matches FOR SELECT USING (true);
 CREATE POLICY "Allow public write on matches" ON matches FOR ALL USING (true) WITH CHECK (true);
@@ -730,6 +774,113 @@ export async function fetchJobs(): Promise<JobProfile[]> {
   return (data || []).map(mapJobFromDb);
 }
 
+export function mapApplicationFromDb(application: any): JobApplication {
+  return {
+    id: application.id,
+    workerId: application.worker_id,
+    contractorId: application.contractor_id,
+    jobId: application.job_id,
+    status: application.status as ApplicationStatus,
+    appliedAt: application.applied_at,
+    updatedAt: application.updated_at,
+    viewedAt: application.viewed_at || undefined,
+    withdrawnAt: application.withdrawn_at || undefined,
+    note: application.note || undefined,
+  };
+}
+
+export async function fetchApplications(
+  userId: string,
+  userType: UserType
+): Promise<JobApplication[]> {
+  const column = userType === 'worker' ? 'worker_id' : 'contractor_id';
+
+  const { data, error } = await supabase
+    .from('job_applications')
+    .select('*')
+    .eq(column, userId)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    console.warn('Could not load job applications:', error.message);
+    return [];
+  }
+
+  return (data || []).map(mapApplicationFromDb);
+}
+
+export async function createApplicationInDb(
+  workerId: string,
+  jobId: string
+): Promise<JobApplication | null> {
+  const { data: job, error: jobError } = await supabase
+    .from('jobs')
+    .select('id, company_id, contractor_id')
+    .eq('id', jobId)
+    .maybeSingle();
+
+  if (jobError || !job) {
+    console.warn(
+      'Could not resolve the job before creating an application:',
+      jobError?.message || 'Job not found'
+    );
+    return null;
+  }
+
+  const contractorId = job.company_id || job.contractor_id;
+  if (!contractorId) return null;
+
+  const { data, error } = await supabase
+    .from('job_applications')
+    .upsert(
+      {
+        worker_id: workerId,
+        contractor_id: contractorId,
+        job_id: jobId,
+        status: 'applied',
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: 'worker_id,job_id',
+        ignoreDuplicates: true,
+      }
+    )
+    .select('*')
+    .maybeSingle();
+
+  if (error) {
+    console.warn('Could not create job application:', error.message);
+    return null;
+  }
+
+  return data ? mapApplicationFromDb(data) : null;
+}
+
+export async function updateApplicationStatusInDb(
+  applicationId: string,
+  status: ApplicationStatus,
+  note?: string
+): Promise<JobApplication> {
+  const update: Record<string, any> = {
+    status,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (note !== undefined) update.note = note;
+  if (status === 'viewed') update.viewed_at = new Date().toISOString();
+  if (status === 'withdrawn') update.withdrawn_at = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('job_applications')
+    .update(update)
+    .eq('id', applicationId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return mapApplicationFromDb(data);
+}
+
 export async function fetchMatches(): Promise<Match[]> {
   const { data, error } = await supabase.from('matches').select('*').order('matched_at', { ascending: false });
   if (error) {
@@ -992,6 +1143,11 @@ export async function saveItemInDb(userId: string, itemId: string, itemType: 'wo
       console.warn("Could not save item to Supabase:", error.message);
       return false;
     }
+
+    if (itemType === 'job') {
+      await createApplicationInDb(userId, itemId);
+    }
+
     return true;
   } catch (err: any) {
     console.warn("saveItemInDb error:", err.message);
