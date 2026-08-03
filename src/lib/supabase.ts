@@ -195,7 +195,20 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 9. Create reviews table
+-- 9. Create user_settings table
+CREATE TABLE IF NOT EXISTS user_settings (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  account_type TEXT NOT NULL CHECK (account_type IN ('worker', 'employer')),
+  county TEXT,
+  date_of_birth TEXT,
+  travel_distance TEXT,
+  notification_preferences JSONB NOT NULL DEFAULT '{}'::jsonb,
+  privacy_preferences JSONB NOT NULL DEFAULT '{}'::jsonb,
+  platform_preferences JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 10. Create reviews table
 CREATE TABLE IF NOT EXISTS reviews (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   reviewer_id UUID NOT NULL,
@@ -226,6 +239,7 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE interviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE saved_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow public read on contractor_profiles" ON contractor_profiles FOR SELECT USING (true);
@@ -251,6 +265,23 @@ CREATE POLICY "Allow public write on saved_items" ON saved_items FOR ALL USING (
 
 CREATE POLICY "Allow public read on notifications" ON notifications FOR SELECT USING (true);
 CREATE POLICY "Allow public write on notifications" ON notifications FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Users can read own settings" ON user_settings;
+DROP POLICY IF EXISTS "Users can insert own settings" ON user_settings;
+DROP POLICY IF EXISTS "Users can update own settings" ON user_settings;
+
+CREATE POLICY "Users can read own settings"
+ON user_settings FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own settings"
+ON user_settings FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own settings"
+ON user_settings FOR UPDATE
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Allow public read on reviews" ON reviews FOR SELECT USING (true);
 CREATE POLICY "Allow public write on reviews" ON reviews FOR ALL USING (true) WITH CHECK (true);
@@ -983,6 +1014,155 @@ export async function deleteSavedItemFromDb(userId: string, itemId: string): Pro
   } catch (err: any) {
     console.warn("deleteSavedItemFromDb error:", err.message);
     return false;
+  }
+}
+
+
+export interface UserSettingsRecord {
+  userId: string;
+  accountType: UserType;
+  county: string;
+  dateOfBirth: string;
+  travelDistance: string;
+  notifications: {
+    matchNotifications: boolean;
+    messageNotifications: boolean;
+    interviewNotifications: boolean;
+    jobNotifications: boolean;
+    pushNotifications: boolean;
+    smsNotifications: boolean;
+    weeklyReports: boolean;
+    marketingEmails: boolean;
+  };
+  privacy: {
+    twoFactorEnabled: boolean;
+    profileVisibility: 'public' | 'verified' | 'private';
+    showInSearch: boolean;
+    showOnlineStatus: boolean;
+    allowDirectContact: boolean;
+  };
+  preferences: {
+    theme: 'light' | 'dark' | 'system';
+    language: string;
+    distanceUnit: 'miles' | 'kilometres';
+    dateFormat: string;
+    timeFormat: string;
+    searchRadius: string;
+    matchSensitivity: string;
+  };
+  updatedAt?: string;
+}
+
+export async function fetchUserSettings(
+  userId: string
+): Promise<UserSettingsRecord | null> {
+  const { data, error } = await supabase
+    .from('user_settings')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) {
+    if (
+      error.message?.toLowerCase().includes('user_settings') ||
+      error.message?.toLowerCase().includes('does not exist')
+    ) {
+      console.warn(
+        'The user_settings table has not been created yet. Run the supplied SQL migration.'
+      );
+      return null;
+    }
+
+    throw error;
+  }
+
+  if (!data) return null;
+
+  return {
+    userId: data.user_id,
+    accountType: data.account_type as UserType,
+    county: data.county || '',
+    dateOfBirth: data.date_of_birth || '',
+    travelDistance: data.travel_distance || '',
+    notifications: {
+      matchNotifications:
+        data.notification_preferences?.matchNotifications ?? true,
+      messageNotifications:
+        data.notification_preferences?.messageNotifications ?? true,
+      interviewNotifications:
+        data.notification_preferences?.interviewNotifications ?? true,
+      jobNotifications:
+        data.notification_preferences?.jobNotifications ?? true,
+      pushNotifications:
+        data.notification_preferences?.pushNotifications ?? true,
+      smsNotifications:
+        data.notification_preferences?.smsNotifications ?? false,
+      weeklyReports:
+        data.notification_preferences?.weeklyReports ?? false,
+      marketingEmails:
+        data.notification_preferences?.marketingEmails ?? false,
+    },
+    privacy: {
+      twoFactorEnabled:
+        data.privacy_preferences?.twoFactorEnabled ?? false,
+      profileVisibility:
+        data.privacy_preferences?.profileVisibility || 'public',
+      showInSearch:
+        data.privacy_preferences?.showInSearch ?? true,
+      showOnlineStatus:
+        data.privacy_preferences?.showOnlineStatus ?? true,
+      allowDirectContact:
+        data.privacy_preferences?.allowDirectContact ?? true,
+    },
+    preferences: {
+      theme: data.platform_preferences?.theme || 'light',
+      language: data.platform_preferences?.language || 'English',
+      distanceUnit:
+        data.platform_preferences?.distanceUnit || 'miles',
+      dateFormat:
+        data.platform_preferences?.dateFormat || 'DD/MM/YYYY',
+      timeFormat:
+        data.platform_preferences?.timeFormat || '24 hour',
+      searchRadius:
+        data.platform_preferences?.searchRadius || '25',
+      matchSensitivity:
+        data.platform_preferences?.matchSensitivity || 'balanced',
+    },
+    updatedAt: data.updated_at || '',
+  };
+}
+
+export async function saveUserSettings(
+  settings: UserSettingsRecord
+): Promise<void> {
+  const { error } = await supabase
+    .from('user_settings')
+    .upsert(
+      {
+        user_id: settings.userId,
+        account_type: settings.accountType,
+        county: settings.county || null,
+        date_of_birth: settings.dateOfBirth || null,
+        travel_distance: settings.travelDistance || null,
+        notification_preferences: settings.notifications,
+        privacy_preferences: settings.privacy,
+        platform_preferences: settings.preferences,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' }
+    );
+
+  if (error) {
+    if (
+      error.message?.toLowerCase().includes('user_settings') ||
+      error.message?.toLowerCase().includes('does not exist')
+    ) {
+      throw new Error(
+        'The user_settings table is missing. Run the supplied Supabase SQL migration first.'
+      );
+    }
+
+    throw error;
   }
 }
 

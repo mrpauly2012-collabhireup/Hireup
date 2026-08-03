@@ -53,7 +53,12 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { CompanyProfile, UserType, WorkerProfile } from '../types';
-import { supabase, uploadFileToStorage } from '../lib/supabase';
+import {
+  fetchUserSettings,
+  saveUserSettings,
+  supabase,
+  uploadFileToStorage,
+} from '../lib/supabase';
 
 interface SettingsViewProps {
   userType: UserType;
@@ -735,6 +740,7 @@ export default function SettingsView({
   const [saveMessage, setSaveMessage] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [settingsLoading, setSettingsLoading] = useState(false);
   const [deactivated, setDeactivated] = useState(false);
 
   useEffect(() => {
@@ -807,6 +813,82 @@ export default function SettingsView({
     companyProfile,
     currentUserEmail,
   ]);
+
+  useEffect(() => {
+    const profileId = workerProfile?.id || companyProfile?.id;
+    if (!profileId) return;
+
+    let cancelled = false;
+
+    const loadSavedSettings = async () => {
+      setSettingsLoading(true);
+
+      try {
+        const remoteSettings = await fetchUserSettings(profileId);
+        if (!remoteSettings || cancelled) return;
+
+        setAccountForm(current => ({
+          ...current,
+          county: remoteSettings.county || current.county,
+          dateOfBirth:
+            remoteSettings.dateOfBirth || current.dateOfBirth,
+          travelDistance:
+            remoteSettings.travelDistance || current.travelDistance,
+        }));
+
+        setMatchNotifications(
+          remoteSettings.notifications.matchNotifications
+        );
+        setMessageNotifications(
+          remoteSettings.notifications.messageNotifications
+        );
+        setInterviewNotifications(
+          remoteSettings.notifications.interviewNotifications
+        );
+        setJobNotifications(
+          remoteSettings.notifications.jobNotifications
+        );
+        setPushNotifications(
+          remoteSettings.notifications.pushNotifications
+        );
+        setSmsNotifications(
+          remoteSettings.notifications.smsNotifications
+        );
+        setWeeklyReports(remoteSettings.notifications.weeklyReports);
+        setMarketingEmails(
+          remoteSettings.notifications.marketingEmails
+        );
+
+        setSecurityForm(current => ({
+          ...current,
+          twoFactorEnabled:
+            remoteSettings.privacy.twoFactorEnabled,
+          profileVisibility:
+            remoteSettings.privacy.profileVisibility,
+          showInSearch: remoteSettings.privacy.showInSearch,
+          showOnlineStatus:
+            remoteSettings.privacy.showOnlineStatus,
+          allowDirectContact:
+            remoteSettings.privacy.allowDirectContact,
+        }));
+
+        setPreferences(remoteSettings.preferences);
+      } catch (error: any) {
+        console.warn(
+          'Could not load saved account settings:',
+          error.message
+        );
+      } finally {
+        if (!cancelled) setSettingsLoading(false);
+      }
+    };
+
+    loadSavedSettings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [workerProfile?.id, companyProfile?.id]);
 
   const accountId = useMemo(() => {
     const prefix = isWorker ? 'HU-W' : 'HU-C';
@@ -902,6 +984,32 @@ export default function SettingsView({
         })
       );
 
+      await saveUserSettings({
+        userId: profileId,
+        accountType: userType,
+        county: accountForm.county,
+        dateOfBirth: accountForm.dateOfBirth,
+        travelDistance: accountForm.travelDistance,
+        notifications: {
+          matchNotifications,
+          messageNotifications,
+          interviewNotifications,
+          jobNotifications,
+          pushNotifications,
+          smsNotifications,
+          weeklyReports,
+          marketingEmails,
+        },
+        privacy: {
+          twoFactorEnabled: securityForm.twoFactorEnabled,
+          profileVisibility: securityForm.profileVisibility,
+          showInSearch: securityForm.showInSearch,
+          showOnlineStatus: securityForm.showOnlineStatus,
+          allowDirectContact: securityForm.allowDirectContact,
+        },
+        preferences,
+      });
+
       if (isWorker) {
         if (!workerProfile) {
           throw new Error('Your worker profile could not be loaded.');
@@ -971,8 +1079,8 @@ export default function SettingsView({
       setSavedSuccess(true);
       setSaveMessage(
         Object.values(verificationFiles).some(Boolean)
-          ? 'Your account information and verification documents have been saved.'
-          : 'Your account information has been saved.'
+          ? 'Your account, preferences and verification documents have been saved to Supabase.'
+          : 'Your account and preferences have been saved to Supabase.'
       );
       window.setTimeout(() => setSavedSuccess(false), 2200);
     } catch (error: any) {
@@ -1107,11 +1215,13 @@ export default function SettingsView({
         <button
           type="button"
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || settingsLoading}
           className="px-5 py-3 bg-[#34D399] hover:bg-[#10B981] disabled:opacity-60 disabled:cursor-not-allowed text-black rounded-xl text-xs font-mono font-black uppercase transition-all shadow-sm flex items-center justify-center gap-2"
         >
           {saving ? (
             'Saving...'
+          ) : settingsLoading ? (
+            'Loading settings...'
           ) : savedSuccess ? (
             <>
               <Check className="w-4 h-4" />
