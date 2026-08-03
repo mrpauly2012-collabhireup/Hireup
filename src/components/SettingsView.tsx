@@ -51,6 +51,7 @@ import {
   Power,
   Archive,
   Image as ImageIcon,
+  Scale,
 } from 'lucide-react';
 import { CompanyProfile, UserType, WorkerProfile } from '../types';
 import {
@@ -67,6 +68,7 @@ interface SettingsViewProps {
   companyProfile: CompanyProfile | null;
   onUpdateWorker: (profile: WorkerProfile) => Promise<void> | void;
   onUpdateCompany: (profile: CompanyProfile) => Promise<void> | void;
+  onOpenInformationCentre: () => void;
   onSignOut?: () => void;
 }
 
@@ -610,6 +612,7 @@ export default function SettingsView({
   companyProfile,
   onUpdateWorker,
   onUpdateCompany,
+  onOpenInformationCentre,
   onSignOut,
 }: SettingsViewProps) {
   const isWorker = userType === 'worker';
@@ -2162,6 +2165,50 @@ export default function SettingsView({
             <ChevronRight className="w-4 h-4 text-red-300" />
           </button>
         </div>
+      </section>
+
+      <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+        <div className="p-5 border-b border-zinc-100">
+          <div className="flex items-center gap-2">
+            <Scale className="w-5 h-5 text-[#10B981]" />
+            <p className="text-xs font-mono font-black uppercase tracking-wider text-[#10B981]">
+              Information Centre
+            </p>
+          </div>
+
+          <h3 className="text-lg font-black text-zinc-950 mt-2">
+            Legal, company and support information
+          </h3>
+
+          <p className="text-xs text-zinc-700 mt-1 max-w-3xl">
+            Access HireUp policies, terms, community standards, frequently
+            asked questions, contact information and help guidance.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpenInformationCentre}
+          className="w-full p-5 flex items-center justify-between gap-4 text-left hover:bg-zinc-50 transition-all"
+        >
+          <span className="flex items-center gap-4 min-w-0">
+            <span className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-200 text-[#10B981] flex items-center justify-center flex-shrink-0">
+              <FileText className="w-5 h-5" />
+            </span>
+
+            <span className="min-w-0">
+              <span className="block text-sm font-black text-zinc-950">
+                Open the HireUp Information Centre
+              </span>
+              <span className="block text-xs text-zinc-700 mt-1">
+                Privacy Policy, Terms & Conditions, Cookie Policy, Acceptable
+                Use, Community Guidelines, About, FAQ, Contact and Help.
+              </span>
+            </span>
+          </span>
+
+          <ChevronRight className="w-5 h-5 text-zinc-500 flex-shrink-0" />
+        </button>
       </section>
     </div>
   );

@@ -1039,7 +1039,6 @@ export default function App() {
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="w-4 h-4" /> },
     { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
     { id: 'profile', label: 'My Profile', icon: <User className="w-4 h-4" /> },
-    { id: 'information', label: 'Information Centre', icon: <Scale className="w-4 h-4" /> },
   ];
 
   // Mobile Bottom Tab Links
@@ -1121,11 +1120,6 @@ export default function App() {
             label: 'Settings',
             icon: <Settings className="w-5 h-5" />,
           },
-          {
-            id: 'information',
-            label: 'Information Centre',
-            icon: <Scale className="w-5 h-5" />,
-          },
         ]
       : [
           {
@@ -1173,11 +1167,6 @@ export default function App() {
             id: 'settings',
             label: 'Settings',
             icon: <Settings className="w-5 h-5" />,
-          },
-          {
-            id: 'information',
-            label: 'Information Centre',
-            icon: <Scale className="w-5 h-5" />,
           },
         ];
 
@@ -1489,7 +1478,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => {
-                    setCurrentView('information');
+                    setCurrentView('settings');
                     setShowMobileMenu(false);
                   }}
                   className="w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl text-zinc-950 hover:bg-zinc-100"
@@ -1869,7 +1858,7 @@ export default function App() {
               case 'information':
                 return (
                   <InformationCentre
-                    onBack={() => setCurrentView('dashboard')}
+                    onBack={() => setCurrentView('settings')}
                   />
                 );
               case 'settings':
@@ -1881,6 +1870,9 @@ export default function App() {
                     companyProfile={loggedInCompany}
                     onUpdateWorker={handleUpdateWorker}
                     onUpdateCompany={handleUpdateCompany}
+                    onOpenInformationCentre={() =>
+                      setCurrentView('information')
+                    }
                     onSignOut={handleSignOut}
                   />
                 );
