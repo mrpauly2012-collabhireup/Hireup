@@ -62,7 +62,6 @@ export default function SwipeView({
       companyId: company.id,
       companyName: company.name,
       companyLogo: company.logo,
-      companyCover: company.coverImage,
       title: `${company.name} Trade Opportunities`,
       trade: company.industry || 'Multi-Trade Contractor',
       subcategory: 'Site Contractor Profile',
@@ -209,7 +208,6 @@ export default function SwipeView({
             title: 'General Vacancy',
             companyName: 'Verified Contractor',
             companyLogo: 'https://images.unsplash.com/photo-1516880711640-ef7db81be3e1?w=200&auto=format&fit=crop&q=80',
-            companyCover: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&auto=format&fit=crop&q=80',
             payRate: 'Competitive CIS Rates'
           } as JobProfile;
 
@@ -267,7 +265,6 @@ export default function SwipeView({
           title: 'General Trade Opportunity',
           companyName: companies.find(c => c.id === myCompanyId)?.name || 'My Company',
           companyLogo: companies.find(c => c.id === myCompanyId)?.logo || '',
-          companyCover: companies.find(c => c.id === myCompanyId)?.coverImage || '',
           payRate: 'Competitive CIS Rates',
           trade: companies.find(c => c.id === myCompanyId)?.industry || 'Multi-Trade',
           subcategory: '',
@@ -742,38 +739,33 @@ export default function SwipeView({
                     </motion.div>
 
                     <div className="flex flex-col h-full overflow-hidden text-left">
-                      <div className="relative h-44 bg-zinc-950 flex-shrink-0">
-                        <img 
-                          src={worker.coverImage} 
-                          alt="site setup" 
-                          className="w-full h-full object-cover opacity-65"
-                          referrerPolicy="no-referrer"
-                        />
+                      <div className="relative h-52 bg-zinc-50 border-b border-zinc-200 flex-shrink-0 flex items-center justify-center px-5 pt-10 pb-5">
                         <div className="absolute top-3 left-3 flex flex-wrap gap-1">
-                          <span className="px-2 py-0.5 bg-[#34D399] text-white rounded text-[9px] font-mono font-bold flex items-center gap-1 uppercase">
+                          <span className="px-2 py-0.5 bg-[#34D399] text-zinc-950 rounded text-[9px] font-mono font-black flex items-center gap-1 uppercase">
                             {worker.experience} EXP
                           </span>
-                          <span className="px-2 py-0.5 bg-blue-600 text-white rounded text-[9px] font-mono font-bold flex items-center gap-1 uppercase">
+                          <span className="px-2 py-0.5 bg-blue-50 border border-blue-200 text-blue-800 rounded text-[9px] font-mono font-black flex items-center gap-1 uppercase">
                             ⚡ {worker.availability}
                           </span>
                         </div>
+
                         {worker.verified && (
-                          <div className="absolute top-3 right-3 px-2 py-0.5 bg-zinc-900/80 backdrop-blur-md border border-emerald-500 rounded text-[9px] font-mono font-bold text-emerald-400 flex items-center gap-1 uppercase">
-                            ✓ VERIFIED TRADESMAN
+                          <div className="absolute top-12 right-3 px-2 py-0.5 bg-emerald-50 border border-emerald-200 rounded text-[9px] font-mono font-black text-emerald-800 flex items-center gap-1 uppercase">
+                            ✓ Verified
                           </div>
                         )}
 
-                        <div className="absolute -bottom-8 left-5 border-4 border-white rounded-xl overflow-hidden w-20 h-20 bg-white shadow-sm flex items-center justify-center p-2">
+                        <div className="w-32 h-32 md:w-36 md:h-36 rounded-3xl overflow-hidden border-4 border-white bg-white shadow-md flex items-center justify-center">
                           <img 
-                            src={worker.avatar} 
+                            src={worker.profilePhotoUrl || worker.avatar} 
                             alt={worker.name} 
-                            className="max-w-full max-h-full object-contain rounded-lg"
+                            className="w-full h-full object-cover"
                             referrerPolicy="no-referrer"
                           />
                         </div>
                       </div>
 
-                      <div className="p-5 pt-10 flex-grow overflow-y-auto space-y-4 font-sans select-none">
+                      <div className="p-5 flex-grow overflow-y-auto space-y-4 font-sans select-none">
                         <div>
                           <div className="flex justify-between items-start">
                             <div>
@@ -882,40 +874,25 @@ export default function SwipeView({
                     </motion.div>
 
                     <div className="flex flex-col h-full overflow-hidden text-left">
-                      <div className="relative h-44 bg-zinc-950 flex-shrink-0">
-                        <img 
-                          src={job.companyCover} 
-                          alt="site background" 
-                          className="w-full h-full object-cover opacity-65"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="absolute bottom-3 right-3 z-20 px-3 py-2 bg-zinc-950/95 border border-[#34D399]/50 text-white rounded-xl shadow-lg">
-                          <div className="flex items-center gap-1.5">
-                            <Sparkles className="w-4 h-4 text-[#34D399]" />
-                            <span className="text-sm font-black">{aiMatch.score}% MATCH</span>
-                          </div>
-                          <p className="text-[8px] font-mono text-zinc-300 uppercase mt-0.5 max-w-40 truncate">
-                            {aiMatch.reasons[0] || 'HireUp recommended'}
-                          </p>
-                        </div>
-
+                      <div className="relative h-52 bg-zinc-50 border-b border-zinc-200 flex-shrink-0 flex items-center justify-center px-5 pt-10 pb-5">
                         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                          <span className="px-2 py-0.5 bg-zinc-950/80 backdrop-blur-md border border-zinc-700 rounded text-[9px] font-mono font-bold text-white uppercase tracking-wider">
+                          <span className="px-2 py-0.5 bg-white border border-zinc-200 rounded text-[9px] font-mono font-black text-zinc-950 uppercase tracking-wider">
                             {job.employmentType}
                           </span>
                           {isUrgent && (
-                            <span className="px-2 py-0.5 bg-red-600 border border-red-500 text-white rounded text-[9px] font-mono font-extrabold flex items-center gap-0.5 uppercase tracking-wider">
-                              🚨 URGENT
+                            <span className="px-2 py-0.5 bg-red-50 border border-red-200 text-red-700 rounded text-[9px] font-mono font-black flex items-center gap-0.5 uppercase tracking-wider">
+                              🚨 Urgent
                             </span>
                           )}
                         </div>
+
                         {job.verified && (
-                          <div className="absolute top-3 right-3 px-2 py-0.5 bg-zinc-900/80 backdrop-blur-md border border-[#34D399]/40 rounded text-[9px] font-mono font-bold text-[#34D399] flex items-center gap-1 uppercase">
-                            ✓ VERIFIED CONTRACTOR
+                          <div className="absolute top-12 right-3 px-2 py-0.5 bg-emerald-50 border border-emerald-200 rounded text-[9px] font-mono font-black text-emerald-800 flex items-center gap-1 uppercase">
+                            ✓ Verified
                           </div>
                         )}
 
-                        <div className="absolute -bottom-8 left-5 border-4 border-white rounded-xl overflow-hidden w-20 h-20 bg-white shadow-sm flex items-center justify-center p-2">
+                        <div className="w-32 h-32 md:w-36 md:h-36 rounded-3xl overflow-hidden border-4 border-white bg-white shadow-md flex items-center justify-center p-4">
                           <img 
                             src={job.companyLogo} 
                             alt={job.companyName} 
@@ -923,9 +900,19 @@ export default function SwipeView({
                             referrerPolicy="no-referrer"
                           />
                         </div>
+
+                        <div className="absolute bottom-3 right-3 z-20 px-3 py-2 bg-emerald-50 border border-emerald-200 text-zinc-950 rounded-xl shadow-sm">
+                          <div className="flex items-center gap-1.5">
+                            <Sparkles className="w-4 h-4 text-[#10B981]" />
+                            <span className="text-sm font-black">{aiMatch.score}% MATCH</span>
+                          </div>
+                          <p className="text-[8px] font-mono text-zinc-700 uppercase mt-0.5 max-w-40 truncate">
+                            {aiMatch.reasons[0] || 'HireUp recommended'}
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="p-5 pt-10 flex-grow overflow-y-auto space-y-4 font-sans select-none">
+                      <div className="p-5 flex-grow overflow-y-auto space-y-4 font-sans select-none">
                         <div>
                           <div className="flex justify-between items-start gap-2">
                             <div>
