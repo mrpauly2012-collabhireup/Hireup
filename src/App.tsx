@@ -1397,7 +1397,7 @@ export default function App() {
   <img
     src={HIREUP_LOGO}
     alt="HireUp Trades Recruitment"
-    className="w-40 h-14 object-contain object-left"
+    className="w-56 h-20 object-contain object-left"
   />
 </div>
 
@@ -1477,7 +1477,7 @@ export default function App() {
                 <img
                   src={HIREUP_LOGO}
                   alt="HireUp"
-                  className="w-36 h-14 object-contain object-left flex-shrink-0"
+                  className="w-48 h-20 object-contain object-left flex-shrink-0"
                 />
 
                 <p className="text-[10px] font-mono font-black uppercase tracking-wider text-[#10B981] truncate">
