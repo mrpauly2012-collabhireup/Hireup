@@ -178,6 +178,7 @@ export interface Interview {
   date: string;
   time: string;
   location: string;
+  meetingLink?: string;
   status: 'pending' | 'confirmed' | 'completed' | 'declined';
   ppeRequired: string[];
   notes: string;

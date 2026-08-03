@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { 
   Calendar, Clock, MapPin, ShieldAlert, Check, X, 
-  Plus, AlertTriangle, ExternalLink, HardHat, ShieldCheck, Star, AlertCircle
+  Plus, AlertTriangle, ExternalLink, HardHat, ShieldCheck, Star, AlertCircle, Video
 } from 'lucide-react';
 import { Interview, WorkerProfile, JobProfile, UserType } from '../types';
 
@@ -42,6 +42,7 @@ export default function InterviewsView({
   const [interviewTime, setInterviewTime] = useState('');
   const [interviewLocation, setInterviewLocation] = useState('');
   const [interviewNotes, setInterviewNotes] = useState('');
+  const [interviewMode, setInterviewMode] = useState<'video' | 'onsite'>('video');
   const [ppeList, setPpeList] = useState<string[]>(['Hard Hat', 'Steel Toe Boots', 'Hi-Vis Vest']);
 
   // State hooks for review submissions
@@ -61,15 +62,37 @@ export default function InterviewsView({
     e.preventDefault();
     if (!selectedWorkerId || !selectedJobId || !interviewDate || !interviewTime) return;
 
+    const roomName = [
+      'HireUpInterview',
+      selectedWorkerId,
+      selectedJobId,
+      interviewDate,
+      interviewTime,
+    ]
+      .join('-')
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .slice(0, 120);
+
     onScheduleInterview({
       workerId: selectedWorkerId,
       jobId: selectedJobId,
       date: interviewDate,
       time: interviewTime,
-      location: interviewLocation || "Battersea Site Office, London, SW11 5AL",
+      location:
+        interviewMode === 'video'
+          ? 'Online video interview'
+          : interviewLocation || 'Site address to be confirmed',
+      meetingLink:
+        interviewMode === 'video'
+          ? `https://meet.jit.si/${roomName}`
+          : undefined,
       status: 'pending',
-      ppeRequired: ppeList,
-      notes: interviewNotes || "Standard site walkthrough and induction. Bring CSCS card."
+      ppeRequired: interviewMode === 'video' ? [] : ppeList,
+      notes:
+        interviewNotes ||
+        (interviewMode === 'video'
+          ? 'Online HireUp video interview.'
+          : 'Standard site walkthrough and induction. Bring CSCS card.')
     });
 
     setShowScheduleModal(false);
@@ -254,11 +277,21 @@ export default function InterviewsView({
 
                     {interview.status === 'confirmed' && (
                       <div className="flex flex-col gap-2 w-full">
+                        {interview.meetingLink && (
+                          <a
+                            href={interview.meetingLink}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-full py-2 bg-[#34D399] hover:bg-[#10B981] text-zinc-950 text-xs font-mono font-black rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                          >
+                            <Video className="w-4 h-4" /> JOIN VIDEO INTERVIEW
+                          </a>
+                        )}
                         <button
                           onClick={() => onCompleteInterview(interview.id)}
                           className="w-full py-1.5 bg-zinc-900 hover:bg-[#10B981] text-white text-xs font-mono font-black rounded-lg transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
                         >
-                          ✓ MARK COMPLETED & PAID
+                          ✓ MARK INTERVIEW COMPLETED
                         </button>
                         <a 
                           href="https://maps.google.com" 
@@ -412,37 +445,73 @@ export default function InterviewsView({
               </div>
             </div>
 
-            {/* Site Walkthrough location */}
-            <div className="space-y-1">
-              <label className="text-xs font-mono font-bold text-zinc-400 uppercase">Site Location Postcode / Address</label>
-              <input 
-                type="text"
-                value={interviewLocation}
-                onChange={(e) => setInterviewLocation(e.target.value)}
-                placeholder="Battersea Site Office, London, SW11 5AL"
-                className="w-full p-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs focus:outline-none font-sans"
-              />
-            </div>
-
-            {/* Safety PPE Required checkboxes */}
             <div className="space-y-2">
-              <label className="text-xs font-mono font-bold text-zinc-400 uppercase block">Required Site Safety Wear</label>
-              <div className="flex flex-wrap gap-2">
-                {['Hard Hat', 'Steel Toe Boots', 'Hi-Vis Vest', 'Safety Glasses', 'Ear Protection'].map((item) => {
-                  const active = ppeList.includes(item);
-                  return (
-                    <button
-                      type="button"
-                      key={item}
-                      onClick={() => togglePpe(item)}
-                      className={`px-3 py-1 rounded-full text-[10px] font-mono font-bold border transition-all ${active ? 'bg-[#34D399] border-[#34D399] text-white shadow-sm' : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:border-zinc-300'}`}
-                    >
-                      {item.toUpperCase()}
-                    </button>
-                  );
-                })}
+              <label className="text-xs font-mono font-bold text-zinc-400 uppercase">
+                Interview Type
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInterviewMode('video')}
+                  className={`rounded-lg border px-3 py-2 text-xs font-mono font-black ${
+                    interviewMode === 'video'
+                      ? 'border-[#34D399] bg-emerald-50 text-emerald-700'
+                      : 'border-zinc-200 bg-white text-zinc-600'
+                  }`}
+                >
+                  VIDEO INTERVIEW
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInterviewMode('onsite')}
+                  className={`rounded-lg border px-3 py-2 text-xs font-mono font-black ${
+                    interviewMode === 'onsite'
+                      ? 'border-[#34D399] bg-emerald-50 text-emerald-700'
+                      : 'border-zinc-200 bg-white text-zinc-600'
+                  }`}
+                >
+                  ON-SITE
+                </button>
               </div>
             </div>
+
+            {interviewMode === 'onsite' && (
+              <>
+                <div className="space-y-1">
+                  <label className="text-xs font-mono font-bold text-zinc-400 uppercase">
+                    Site Location Postcode / Address
+                  </label>
+                  <input
+                    type="text"
+                    value={interviewLocation}
+                    onChange={(e) => setInterviewLocation(e.target.value)}
+                    placeholder="Site address or postcode"
+                    className="w-full p-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs focus:outline-none font-sans"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-mono font-bold text-zinc-400 uppercase block">
+                    Required Site Safety Wear
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Hard Hat', 'Steel Toe Boots', 'Hi-Vis Vest', 'Safety Glasses', 'Ear Protection'].map((item) => {
+                      const active = ppeList.includes(item);
+                      return (
+                        <button
+                          type="button"
+                          key={item}
+                          onClick={() => togglePpe(item)}
+                          className={`px-3 py-1 rounded-full text-[10px] font-mono font-bold border transition-all ${active ? 'bg-[#34D399] border-[#34D399] text-white shadow-sm' : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:border-zinc-300'}`}
+                        >
+                          {item.toUpperCase()}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Special Instructions */}
             <div className="space-y-1">
@@ -468,7 +537,7 @@ export default function InterviewsView({
                 type="submit"
                 className="flex-1 py-2 bg-[#34D399] hover:bg-[#10B981] text-white font-mono font-bold text-xs rounded-lg transition-all cursor-pointer"
               >
-                PROPOSE WALKTHROUGH
+                SEND INTERVIEW INVITE
               </button>
             </div>
           </form>

@@ -998,6 +998,7 @@ export async function fetchInterviews(): Promise<Interview[]> {
     date: i.date,
     time: i.time,
     location: i.location,
+    meetingLink: i.meeting_link || '',
     status: i.status,
     ppeRequired: i.ppe_required || [],
     notes: i.notes || '',
@@ -1503,40 +1504,72 @@ export async function sendMessageInDb(matchId: string, sender: 'worker' | 'emplo
   };
 }
 
-export async function createInterviewInDb(interview: Omit<Interview, 'id'>): Promise<Interview> {
-  // Try to find contractor_id from job_id
-  let contractorId = null;
+const createInterviewRoomName = (interview: Omit<Interview, 'id'>) => {
+  const source = [
+    'HireUpInterview',
+    interview.workerId,
+    interview.jobId,
+    interview.date,
+    interview.time,
+  ].join('-');
+
+  return source.replace(/[^a-zA-Z0-9]/g, '').slice(0, 120);
+};
+
+export async function createInterviewInDb(
+  interview: Omit<Interview, 'id'>
+): Promise<Interview> {
+  let contractorId: string | null = null;
+
   try {
-    const { data: jobData } = await supabase.from('jobs').select('contractor_id, company_id').eq('id', interview.jobId).maybeSingle();
+    const { data: jobData } = await supabase
+      .from('jobs')
+      .select('contractor_id, company_id')
+      .eq('id', interview.jobId)
+      .maybeSingle();
+
     if (jobData) {
       contractorId = jobData.contractor_id || jobData.company_id;
     }
   } catch (err) {
-    console.warn("Could not find job contractor id:", err);
+    console.warn('Could not find job contractor id:', err);
   }
 
-  const { data, error } = await supabase.from('interviews').insert({
-    worker_id: interview.workerId,
-    contractor_id: contractorId,
-    job_id: interview.jobId,
-    date: interview.date,
-    time: interview.time,
-    interview_time: interview.date && interview.time ? `${interview.date}T${interview.time}:00Z` : null,
-    location: interview.location,
-    meeting_link: interview.location?.toLowerCase().includes('http') ? interview.location : 'https://meet.google.com/abc-defg-hij',
-    status: interview.status,
-    ppe_required: interview.ppeRequired,
-    notes: interview.notes,
-  }).select('*').single();
+  const meetingLink =
+    interview.meetingLink ||
+    `https://meet.jit.si/${createInterviewRoomName(interview)}`;
+
+  const { data, error } = await supabase
+    .from('interviews')
+    .insert({
+      worker_id: interview.workerId,
+      contractor_id: contractorId,
+      job_id: interview.jobId,
+      date: interview.date,
+      time: interview.time,
+      interview_time:
+        interview.date && interview.time
+          ? `${interview.date}T${interview.time}:00Z`
+          : null,
+      location: interview.location,
+      meeting_link: meetingLink,
+      status: interview.status,
+      ppe_required: interview.ppeRequired,
+      notes: interview.notes,
+    })
+    .select('*')
+    .single();
 
   if (error) throw error;
+
   return {
     id: data.id,
     workerId: data.worker_id,
     jobId: data.job_id,
     date: data.date,
     time: data.time,
-    location: data.location || data.meeting_link || 'Online Walkthrough',
+    location: data.location || 'Online video interview',
+    meetingLink: data.meeting_link || meetingLink,
     status: data.status,
     ppeRequired: data.ppe_required || [],
     notes: data.notes || '',
