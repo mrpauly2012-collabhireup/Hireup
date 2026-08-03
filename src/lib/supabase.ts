@@ -120,6 +120,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   benefits TEXT[],
   requirements TEXT[],
   company_stats JSONB,
+  featured BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -262,6 +263,9 @@ ALTER TABLE contractor_profiles ADD COLUMN IF NOT EXISTS postcode TEXT;
 ALTER TABLE contractor_profiles ADD COLUMN IF NOT EXISTS contact_name TEXT;
 ALTER TABLE contractor_profiles ADD COLUMN IF NOT EXISTS contact_phone TEXT;
 ALTER TABLE contractor_profiles ADD COLUMN IF NOT EXISTS contact_email TEXT;
+
+-- Ensure featured jobs support exists for current deployments
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT FALSE;
 `;
 
 // Field Mapping Helpers
@@ -370,27 +374,41 @@ export function mapCompanyFromDb(c: any): CompanyProfile {
 }
 
 export function mapJobFromDb(j: any): JobProfile {
-  return {
+  const mappedJob = {
     id: j.id,
-    companyId: j.company_id,
-    companyName: j.company_name,
-    companyLogo: j.company_logo || 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?w=100&auto=format&fit=crop&q=80',
-    companyCover: j.company_cover || 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&auto=format&fit=crop&q=80',
-    title: j.title,
-    trade: j.trade,
-    subcategory: j.subcategory || '',
-    payRate: j.pay_rate || '£200/day',
-    location: j.location,
+    companyId: j.company_id || j.contractor_id || '',
+    companyName: j.company_name || 'Verified Contractor',
+    companyLogo:
+      j.company_logo ||
+      'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?w=100&auto=format&fit=crop&q=80',
+    companyCover:
+      j.company_cover ||
+      'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&auto=format&fit=crop&q=80',
+    title: j.title || 'Untitled Vacancy',
+    trade: j.trade || j.trade_category || '',
+    subcategory: j.subcategory || j.trade_subcategory || '',
+    payRate: j.pay_rate || j.day_rate || j.hourly_rate || '£200/day',
+    location: j.location || '',
     startDate: j.start_date || '',
     duration: j.duration || 'Ongoing',
     employmentType: j.employment_type || 'Contract',
     qualifications: j.qualifications || [],
     verified: Boolean(j.verified),
+
+    // This value is set from the Admin Dashboard.
+    // Keeping it on the mapped job allows Featured Jobs to display it.
+    featured: Boolean(j.featured),
+
     description: j.description || '',
     benefits: j.benefits || [],
     requirements: j.requirements || [],
-    companyStats: j.company_stats || { projects: 0, workers: 0, rating: 5.0 }
+    companyStats:
+      j.company_stats || { projects: 0, workers: 0, rating: 5.0 },
   };
+
+  // JobProfile may not yet declare `featured`, but the worker-facing
+  // Featured Jobs page safely reads this runtime property.
+  return mappedJob as JobProfile & { featured: boolean };
 }
 
 // Check database table connection
@@ -790,7 +808,15 @@ export async function createJobInDb(job: Omit<JobProfile, 'id'>): Promise<JobPro
     benefits: job.benefits,
     requirements: job.requirements,
     company_stats: job.companyStats,
-    urgent: job.title?.toLowerCase().includes('urgent') || job.description?.toLowerCase().includes('urgent') || false,
+    urgent:
+      job.title?.toLowerCase().includes('urgent') ||
+      job.description?.toLowerCase().includes('urgent') ||
+      false,
+
+    // New jobs are not featured until an admin promotes them.
+    featured: Boolean(
+      (job as JobProfile & { featured?: boolean }).featured
+    ),
   }).select('*').single();
 
   if (error) throw error;
