@@ -1,4 +1,4 @@
-/**
+"/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,6 +74,7 @@ interface AccountFormState {
   lastName: string;
   email: string;
   phone: string;
+  county: string;
   location: string;
   dateOfBirth: string;
   primaryTrade: string;
@@ -118,79 +119,58 @@ interface VerificationFiles {
 }
 
 
-const UK_TOWNS_AND_CITIES = [
-  'Aberdeen',
-  'Bath',
-  'Belfast',
-  'Birmingham',
-  'Blackpool',
-  'Bolton',
-  'Bournemouth',
-  'Bradford',
-  'Brighton and Hove',
-  'Bristol',
-  'Cambridge',
-  'Cardiff',
-  'Carlisle',
-  'Chester',
-  'Chichester',
-  'Colchester',
-  'Coventry',
-  'Crawley',
-  'Derby',
-  'Doncaster',
-  'Dundee',
-  'Durham',
+const EAST_SUSSEX_TOWNS = [
+  'Battle',
+  'Bexhill-on-Sea',
+  'Brighton',
+  'Crowborough',
   'Eastbourne',
-  'Edinburgh',
-  'Exeter',
-  'Glasgow',
-  'Gloucester',
-  'Guildford',
-  'Harrogate',
+  'Hailsham',
   'Hastings',
-  'Hereford',
-  'Huddersfield',
-  'Hull',
-  'Inverness',
-  'Ipswich',
-  'Leeds',
-  'Leicester',
-  'Lincoln',
-  'Liverpool',
-  'London',
-  'Luton',
-  'Manchester',
-  'Middlesbrough',
-  'Milton Keynes',
-  'Newcastle upon Tyne',
-  'Newport',
-  'Northampton',
-  'Norwich',
-  'Nottingham',
-  'Oxford',
-  'Peterborough',
-  'Plymouth',
-  'Portsmouth',
-  'Preston',
-  'Reading',
-  'Sheffield',
-  'Shoreham-by-Sea',
-  'Slough',
-  'Southampton',
-  'Southend-on-Sea',
-  'Stoke-on-Trent',
-  'Sunderland',
-  'Swansea',
-  'Swindon',
-  'Wakefield',
-  'Warrington',
-  'Watford',
-  'Wolverhampton',
-  'Worcester',
-  'Worthing',
-  'York',
+  'Heathfield',
+  'Hove',
+  'Lewes',
+  'Newhaven',
+  'Peacehaven',
+  'Polegate',
+  'Ringmer',
+  'Rye',
+  'Saltdean',
+  'Seaford',
+  'St Leonards-on-Sea',
+  'Uckfield',
 ];
+
+const WEST_SUSSEX_TOWNS = [
+  'Angmering',
+  'Arundel',
+  'Billingshurst',
+  'Bognor Regis',
+  'Burgess Hill',
+  'Chichester',
+  'Crawley',
+  'East Grinstead',
+  'Haywards Heath',
+  'Horsham',
+  'Lancing',
+  'Littlehampton',
+  'Midhurst',
+  'Petworth',
+  'Pulborough',
+  'Rustington',
+  'Selsey',
+  'Shoreham-by-Sea',
+  'Steyning',
+  'Worthing',
+];
+
+const LOCATION_COUNTIES = ['East Sussex', 'West Sussex'] as const;
+
+const getCountyFromTown = (town: string): string => {
+  if (EAST_SUSSEX_TOWNS.includes(town)) return 'East Sussex';
+  if (WEST_SUSSEX_TOWNS.includes(town)) return 'West Sussex';
+  return '';
+};
 
 const PRIMARY_TRADES = [
   'Bricklayer',
@@ -608,6 +588,7 @@ export default function SettingsView({
     lastName: '',
     email: '',
     phone: '',
+    county: '',
     location: '',
     dateOfBirth: '',
     primaryTrade: '',
@@ -622,6 +603,13 @@ export default function SettingsView({
     businessAddress: '',
     about: '',
   });
+
+  const availableTowns =
+    accountForm.county === 'East Sussex'
+      ? EAST_SUSSEX_TOWNS
+      : accountForm.county === 'West Sussex'
+      ? WEST_SUSSEX_TOWNS
+      : [];
 
   const [securityForm, setSecurityForm] = useState<SecurityFormState>({
     currentPassword: '',
@@ -689,6 +677,9 @@ export default function SettingsView({
         lastName,
         email: workerProfile.email || currentUserEmail || '',
         phone: workerProfile.phone || '',
+        county:
+          storedSettings.county ||
+          getCountyFromTown(workerProfile.location || ''),
         location: workerProfile.location || '',
         dateOfBirth: storedSettings.dateOfBirth || '',
         primaryTrade: workerProfile.trade || '',
@@ -715,6 +706,9 @@ export default function SettingsView({
           companyProfile.contactName?.split(' ').slice(1).join(' ') || '',
         email: companyProfile.contactEmail || currentUserEmail || '',
         phone: companyProfile.contactPhone || companyProfile.phone || '',
+        county:
+          storedSettings.county ||
+          getCountyFromTown(companyProfile.location || ''),
         location: companyProfile.location || '',
         dateOfBirth: storedSettings.dateOfBirth || '',
         companyName: companyProfile.name || '',
@@ -777,6 +771,14 @@ export default function SettingsView({
     setSaveMessage('');
 
     try {
+      if (!accountForm.county) {
+        throw new Error('Please select East Sussex or West Sussex.');
+      }
+
+      if (!accountForm.location) {
+        throw new Error('Please select your town or city.');
+      }
+
       const fullName = `${accountForm.firstName} ${accountForm.lastName}`.trim();
       const profileId = workerProfile?.id || companyProfile?.id || 'account';
       const storageKey = `hireup-settings-${profileId}`;
@@ -784,6 +786,7 @@ export default function SettingsView({
       window.localStorage.setItem(
         storageKey,
         JSON.stringify({
+          county: accountForm.county,
           dateOfBirth: accountForm.dateOfBirth,
           travelDistance: accountForm.travelDistance,
           notifications: {
@@ -1203,13 +1206,34 @@ export default function SettingsView({
                   icon={<Phone className="w-4 h-4" />}
                 />
                 <SelectField
-                  label="Location"
+                  label="County"
+                  value={accountForm.county}
+                  onChange={value => {
+                    updateAccountField('county', value);
+                    updateAccountField('location', '');
+                  }}
+                  icon={<MapPin className="w-4 h-4" />}
+                >
+                  <option value="">Select county</option>
+                  {LOCATION_COUNTIES.map(county => (
+                    <option key={county} value={county}>
+                      {county}
+                    </option>
+                  ))}
+                </SelectField>
+
+                <SelectField
+                  label="Town or city"
                   value={accountForm.location}
                   onChange={value => updateAccountField('location', value)}
                   icon={<MapPin className="w-4 h-4" />}
                 >
-                  <option value="">Select town or city</option>
-                  {UK_TOWNS_AND_CITIES.map(location => (
+                  <option value="">
+                    {accountForm.county
+                      ? 'Select town or city'
+                      : 'Select county first'}
+                  </option>
+                  {availableTowns.map(location => (
                     <option key={location} value={location}>
                       {location}
                     </option>
@@ -1911,4 +1935,4 @@ export default function SettingsView({
       </section>
     </div>
   );
-}
+}""
