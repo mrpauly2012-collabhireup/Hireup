@@ -3,17 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   Wrench, HardHat, ShieldCheck, Mail, Phone, Lock, ArrowRight, 
   Sparkles, Check, ChevronRight, MapPin, Award, Truck, Clock, 
   Users, Building, FileText, CheckCircle2, AlertCircle, PlayCircle, Eye, EyeOff, CheckSquare,
-  Sliders, LayoutGrid, Layers, Image as ImageIcon
+  Sliders, LayoutGrid, Layers, Image as ImageIcon, ChevronDown, Save, PartyPopper
 } from 'lucide-react';
 import { WorkerProfile, CompanyProfile, JobProfile, UserType } from '../types';
 import SearchableDropdown from './SearchableDropdown';
 import { HOMETOWNS, LICENCES, POSITION_LENGTHS, GRADES, REQUIREMENTS, TRADES_CATEGORIES, TRADE_SUBCATEGORIES_MAP } from '../data/datasets';
-import { signInUser, registerWorker, registerContractor, uploadFileToStorage, supabase } from '../lib/supabase';
+import { signInUser, registerWorker, registerContractor, uploadFileToStorage, updateWorkerProfileInDb, updateCompanyProfileInDb, supabase } from '../lib/supabase';
 import { HIREUP_LOGO } from '../constants';
 
 
@@ -78,8 +78,149 @@ export default function AuthView({
   const [workerTools, setWorkerTools] = useState<string[]>(['Own Hand Tools', 'Full Power Tools']);
   const [workerProfilePhotoUrl, setWorkerProfilePhotoUrl] = useState('');
   const [workerGalleryImages, setWorkerGalleryImages] = useState<string[]>([]);
+  const [workerAbout, setWorkerAbout] = useState('');
   const [workerSignupStep, setWorkerSignupStep] = useState(0);
+  const [workerStepDirection, setWorkerStepDirection] = useState<'forward' | 'back'>('forward');
+  const [showMobileWorkerPreview, setShowMobileWorkerPreview] = useState(false);
+  const [workerDraftRestored, setWorkerDraftRestored] = useState(false);
+  const [workerLaunchSuccess, setWorkerLaunchSuccess] = useState(false);
+  const workerFirstFieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const workerSignupTotalSteps = 6;
+
+  const workerDraftKey = 'hireup-worker-onboarding-draft-v1';
+
+  useEffect(() => {
+    try {
+      const savedDraft = window.localStorage.getItem(workerDraftKey);
+      if (!savedDraft) return;
+
+      const draft = JSON.parse(savedDraft);
+      setWorkerName(draft.workerName || '');
+      setWorkerPhone(draft.workerPhone || '');
+      setEmail(draft.email || '');
+      setWorkerRate(draft.workerRate || '£200');
+      setWorkerExp(draft.workerExp || '8 Years');
+      setWorkerMainTrade(draft.workerMainTrade || TRADES_CATEGORIES[0] || 'Electrician');
+      setWorkerSubcategory(draft.workerSubcategory || '');
+      setWorkerSecondaryTrade(draft.workerSecondaryTrade || '');
+      setWorkerLocation(draft.workerLocation || 'Brighton');
+      setWorkerQualifications(Array.isArray(draft.workerQualifications) ? draft.workerQualifications : []);
+      setWorkerLicences(Array.isArray(draft.workerLicences) ? draft.workerLicences : []);
+      setWorkerPrefs(Array.isArray(draft.workerPrefs) ? draft.workerPrefs : []);
+      setWorkerAvailability(draft.workerAvailability || 'Immediate');
+      setWorkerType(draft.workerType || 'CIS Subcontract');
+      setWorkerTools(Array.isArray(draft.workerTools) ? draft.workerTools : []);
+      setWorkerAbout(draft.workerAbout || '');
+      setWorkerSignupStep(Math.min(Number(draft.workerSignupStep || 0), workerSignupTotalSteps - 1));
+      setWorkerDraftRestored(true);
+    } catch (draftError) {
+      console.warn('Could not restore worker onboarding draft:', draftError);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (view !== 'signup_worker') return;
+
+    const timer = window.setTimeout(() => {
+      window.localStorage.setItem(
+        workerDraftKey,
+        JSON.stringify({
+          workerName,
+          workerPhone,
+          email,
+          workerRate,
+          workerExp,
+          workerMainTrade,
+          workerSubcategory,
+          workerSecondaryTrade,
+          workerLocation,
+          workerQualifications,
+          workerLicences,
+          workerPrefs,
+          workerAvailability,
+          workerType,
+          workerTools,
+          workerAbout,
+          workerSignupStep,
+        })
+      );
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    view,
+    workerName,
+    workerPhone,
+    email,
+    workerRate,
+    workerExp,
+    workerMainTrade,
+    workerSubcategory,
+    workerSecondaryTrade,
+    workerLocation,
+    workerQualifications,
+    workerLicences,
+    workerPrefs,
+    workerAvailability,
+    workerType,
+    workerTools,
+    workerAbout,
+    workerSignupStep,
+  ]);
+
+  useEffect(() => {
+    if (view !== 'signup_worker') return;
+    const timer = window.setTimeout(() => workerFirstFieldRef.current?.focus(), 220);
+    return () => window.clearTimeout(timer);
+  }, [view, workerSignupStep]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (view !== 'signup_worker' || workerLaunchSuccess) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [view, workerLaunchSuccess]);
+
+  const workerCompletedSections = [
+    Boolean(workerName.trim() && email.trim() && password.length >= 8 && workerPhone.trim()),
+    Boolean(workerMainTrade && workerSubcategory && workerExp && workerLocation),
+    Boolean(workerRate.trim() && workerAvailability && workerType && workerPrefs.length > 0),
+    workerTools.length > 0,
+    workerAbout.trim().length >= 30,
+    false,
+  ];
+
+  const workerProfileProgress = Math.min(
+    100,
+    Math.round(
+      ([
+        workerName.trim(),
+        email.trim(),
+        workerPhone.trim(),
+        password.length >= 8 ? password : '',
+        workerMainTrade,
+        workerSubcategory,
+        workerExp,
+        workerLocation,
+        workerRate,
+        workerAvailability,
+        workerType,
+        workerPrefs.length ? 'yes' : '',
+        workerTools.length ? 'yes' : '',
+        workerAbout.trim().length >= 30 ? 'yes' : '',
+      ].filter(Boolean).length / 14) * 100
+    )
+  );
+
+  const moveWorkerStep = (nextStep: number) => {
+    setWorkerStepDirection(nextStep > workerSignupStep ? 'forward' : 'back');
+    setWorkerSignupStep(Math.max(0, Math.min(workerSignupTotalSteps - 1, nextStep)));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Contractor Signup states
   const [companyName, setCompanyName] = useState('');
@@ -101,6 +242,38 @@ export default function AuthView({
   const [requiredLics, setRequiredLics] = useState<string[]>([]);
   const [contractorCompanyLogoUrl, setContractorCompanyLogoUrl] = useState('');
   const [contractorCompanyGalleryImages, setContractorCompanyGalleryImages] = useState<string[]>([]);
+  const [contractorSignupStep, setContractorSignupStep] = useState(0);
+  const [contractorStepDirection, setContractorStepDirection] = useState<'forward' | 'back'>('forward');
+  const [contractorLaunchSuccess, setContractorLaunchSuccess] = useState(false);
+  const contractorSignupTotalSteps = 5;
+
+  const contractorProfileProgress = Math.min(
+    100,
+    Math.round(
+      ([
+        companyName.trim(),
+        contactName.trim(),
+        email.trim(),
+        password.length >= 8 ? password : '',
+        contractorPhone.trim(),
+        companyIndustry.trim(),
+        companySize,
+        companyHQ,
+        companyInsurance,
+        tradesHiring,
+        tradesHiringSubcategory,
+        jobLocation,
+        hiringPositionLengths.length ? 'yes' : '',
+        companyRequirements.length ? 'yes' : '',
+      ].filter(Boolean).length / 14) * 100
+    )
+  );
+
+  const moveContractorStep = (nextStep: number) => {
+    setContractorStepDirection(nextStep > contractorSignupStep ? 'forward' : 'back');
+    setContractorSignupStep(Math.max(0, Math.min(contractorSignupTotalSteps - 1, nextStep)));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Local File states to defer upload until after signup is completed
   const [workerAvatarFile, setWorkerAvatarFile] = useState<File | null>(null);
@@ -213,7 +386,8 @@ export default function AuthView({
       !workerAvailability ||
       !workerType ||
       workerPrefs.length === 0 ||
-      workerTools.length === 0
+      workerTools.length === 0 ||
+      workerAbout.trim().length < 30
     ) {
       setErrorMsg(
         'Please complete every required section. Qualifications and licences are optional.'
@@ -266,7 +440,7 @@ export default function AuthView({
           }
         ],
         toolsAndTransport: workerTools,
-        about: `Fully qualified, high-performing ${workerMainTrade} with ${workerExp} experience based in ${workerLocation}. Specialize in commercial builds and industrial containment layouts. CIS registered with a full clean UK driver's licence and own professional vehicle. Ready to start ${workerAvailability}.`,
+        about: workerAbout.trim(),
         reviews: [
           {
             id: 'rev1',
@@ -300,19 +474,73 @@ export default function AuthView({
 
       clearTimeout(timeoutId);
 
-      // Pre-add worker profile locally to guarantee instant rendering in state without race conditions
-      const fullWorkerProfile: WorkerProfile = {
+      setSignupUploading('onboarding_files');
+
+      let uploadedProfilePhotoUrl = '';
+      const uploadedGalleryImages: string[] = [];
+
+      if (workerAvatarFile) {
+        addDebugLog('Uploading selected profile photo...', 'pending');
+
+        const safeAvatarName = workerAvatarFile.name.replace(/[^a-zA-Z0-9.]/g, '_');
+        const avatarPath = `${result.id}/avatar_${Date.now()}_${safeAvatarName}`;
+
+        uploadedProfilePhotoUrl = await uploadFileToStorage(
+          'profile-pictures',
+          avatarPath,
+          workerAvatarFile
+        );
+
+        addDebugLog('Profile photo uploaded successfully.', 'success');
+      }
+
+      for (let index = 0; index < workerGalleryFiles.length; index += 1) {
+        const galleryItem = workerGalleryFiles[index];
+        const safeGalleryName = galleryItem.file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+        const galleryPath = `${result.id}/gallery_${index}_${Date.now()}_${safeGalleryName}`;
+
+        const publicUrl = await uploadFileToStorage(
+          'work-gallery',
+          galleryPath,
+          galleryItem.file
+        );
+
+        uploadedGalleryImages.push(publicUrl);
+      }
+
+      const savedWorkerProfile: WorkerProfile = {
         ...newWorker,
         id: result.id,
-        email: email,
-        avatar: newWorker.avatar,
-        profilePhotoUrl: newWorker.profilePhotoUrl,
-        galleryImages: newWorker.galleryImages
+        email,
+        avatar:
+          uploadedProfilePhotoUrl ||
+          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+        profilePhotoUrl: uploadedProfilePhotoUrl,
+        galleryImages: uploadedGalleryImages,
+        portfolio:
+          uploadedGalleryImages.length > 0
+            ? uploadedGalleryImages
+            : newWorker.portfolio,
       };
-      onAddWorker(fullWorkerProfile);
+
+      await updateWorkerProfileInDb(
+        result.id,
+        savedWorkerProfile,
+        Boolean(uploadedProfilePhotoUrl)
+      );
+
+      setWorkerProfilePhotoUrl(uploadedProfilePhotoUrl);
+      setWorkerGalleryImages(uploadedGalleryImages);
+      setSignupUploading(null);
+
+      onAddWorker(savedWorkerProfile);
 
       console.log("Redirecting to dashboard");
       addDebugLog("Redirecting to dashboard", 'success');
+      window.localStorage.removeItem(workerDraftKey);
+      setWorkerLaunchSuccess(true);
+
+      await new Promise(resolve => window.setTimeout(resolve, 900));
 
       onAuthSuccess({
         id: result.id,
@@ -321,6 +549,7 @@ export default function AuthView({
       });
     } catch (err: any) {
       clearTimeout(timeoutId);
+      setSignupUploading(null);
       console.error("Worker sign up error:", err);
       const msg = err.message || String(err);
       setErrorMsg(msg);
@@ -335,94 +564,132 @@ export default function AuthView({
     if (isSubmitting) return;
 
     setErrorMsg(null);
-    setIsSubmitting(true);
 
-    if (!companyName || !email || !password) {
-      setErrorMsg('Please enter your company name, email and secure password.');
-      setIsSubmitting(false);
+    if (
+      !companyName.trim() ||
+      !contactName.trim() ||
+      !email.trim() ||
+      password.length < 8 ||
+      !contractorPhone.trim() ||
+      !companyIndustry.trim() ||
+      !companySize ||
+      !companyHQ ||
+      !companyInsurance ||
+      !tradesHiring ||
+      !tradesHiringSubcategory ||
+      !jobLocation ||
+      hiringPositionLengths.length === 0 ||
+      companyRequirements.length === 0
+    ) {
+      setErrorMsg('Please complete every required section. Qualifications, licences and media are optional.');
       return;
     }
+
+    setIsSubmitting(true);
 
     let timeoutId: any;
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(new Error('Signup timed out while waiting for Supabase Auth.'));
-      }, 15000);
+      }, 20000);
     });
 
     try {
-      const newCompany: Omit<CompanyProfile, 'id'> = {
-        name: companyName,
-        logo: 'https://images.unsplash.com/photo-1516880711640-ef7db81be3e1?w=200&auto=format&fit=crop&q=80',
+      const baseCompany: Omit<CompanyProfile, 'id'> = {
+        name: companyName.trim(),
+        logo: '',
         companyLogoUrl: '',
         companyGalleryImages: [],
         coverImage: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&auto=format&fit=crop&q=80',
-        description: `${companyName} is a premier ${companyIndustry} contractor headquartered in ${companyHQ}, operating a highly skilled crew of ${companySize}. We maintain an outstanding reputation for quality site execution, compliance, and strict adherence to CDM standards.`,
+        description: `${companyName.trim()} is a ${companyIndustry.trim()} contractor based in ${companyHQ}, hiring ${tradesHiringSubcategory || tradesHiring} professionals for work in ${jobLocation}.`,
         openVacanciesCount: 1,
-        benefits: ['Competitive Trade Pay', 'Weekly CIS Invoicing', 'Long-term contracts available', 'Direct site transport options'],
-        reviews: [
-          {
-            id: 'rev_c1',
-            reviewer: 'James K. (Electrician)',
-            role: 'Subcontractor',
-            rating: 5.0,
-            text: `Excellent firm to work for. Materials are always ready on site, and payments are approved on time every Friday without delay.`,
-            date: '2026-05-18'
-          }
-        ],
-        stats: {
-          projects: 14,
-          workers: 45,
-          rating: 4.9
-        },
-        verified: true,
+        benefits: ['Direct communication', 'Transparent project details', 'Fast worker matching'],
+        reviews: [],
+        stats: { projects: 0, workers: 0, rating: null },
+        verified: false,
         location: companyHQ,
-        requirements: companyRequirements.length > 0 ? companyRequirements : ['Insurance requirements (liability insurance)', 'Qualification checks'],
-        website: companyWebsite || `www.${companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.co.uk`,
-        industry: companyIndustry,
-        companySize: companySize,
-        companyHouseNumber: '08' + Math.floor(100000 + Math.random() * 900000),
-        vatNumber: 'GB ' + Math.floor(100 + Math.random() * 900) + ' ' + Math.floor(1000 + Math.random() * 9000) + ' ' + Math.floor(10 + Math.random() * 90),
+        requirements: companyRequirements,
+        website: companyWebsite.trim(),
+        industry: companyIndustry.trim(),
+        companySize,
+        companyHouseNumber: '',
+        vatNumber: '',
         insuranceStatus: companyInsurance,
-        phone: contractorPhone
+        phone: contractorPhone.trim(),
+        contactName: contactName.trim(),
+        contactPhone: contractorPhone.trim(),
+        contactEmail: email.trim(),
       };
 
-      addDebugLog(`Starting contractor sign up for company "${companyName}" with email: ${email}...`, 'pending');
+      addDebugLog(`Starting contractor sign up for ${companyName.trim()}...`, 'pending');
+
       const result = await Promise.race([
         registerContractor(
-          email,
+          email.trim(),
           password,
-          newCompany,
+          baseCompany,
           companyRequirements,
           [tradesHiring, tradesHiringSubcategory].filter(Boolean),
           addDebugLog
         ),
-        timeoutPromise
+        timeoutPromise,
       ]);
 
       clearTimeout(timeoutId);
+      setSignupUploading('onboarding_files');
 
-      // Pre-add company profile locally
-      const fullCompanyProfile: CompanyProfile = {
-        ...newCompany,
+      let uploadedLogoUrl = '';
+      const uploadedCompanyGallery: string[] = [];
+
+      if (contractorLogoFile) {
+        addDebugLog('Uploading company logo...', 'pending');
+        const safeLogoName = contractorLogoFile.name.replace(/[^a-zA-Z0-9.]/g, '_');
+        uploadedLogoUrl = await uploadFileToStorage(
+          'company-logos',
+          `${result.id}/logo_${Date.now()}_${safeLogoName}`,
+          contractorLogoFile
+        );
+        addDebugLog('Company logo uploaded successfully.', 'success');
+      }
+
+      for (let index = 0; index < contractorGalleryFiles.length; index += 1) {
+        const item = contractorGalleryFiles[index];
+        const safeName = item.file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+        const publicUrl = await uploadFileToStorage(
+          'company-gallery',
+          `${result.id}/gallery_${index}_${Date.now()}_${safeName}`,
+          item.file
+        );
+        uploadedCompanyGallery.push(publicUrl);
+      }
+
+      const savedCompanyProfile: CompanyProfile = {
+        ...baseCompany,
         id: result.id,
-        logo: newCompany.logo,
-        companyLogoUrl: newCompany.companyLogoUrl,
-        companyGalleryImages: newCompany.companyGalleryImages
+        logo: uploadedLogoUrl,
+        companyLogoUrl: uploadedLogoUrl,
+        companyGalleryImages: uploadedCompanyGallery,
       };
-      onAddCompany(fullCompanyProfile);
 
-      console.log("Redirecting to dashboard");
-      addDebugLog("Redirecting to dashboard", 'success');
+      await updateCompanyProfileInDb(result.id, savedCompanyProfile);
+
+      setContractorCompanyLogoUrl(uploadedLogoUrl);
+      setContractorCompanyGalleryImages(uploadedCompanyGallery);
+      setSignupUploading(null);
+      onAddCompany(savedCompanyProfile);
+      setContractorLaunchSuccess(true);
+
+      await new Promise(resolve => window.setTimeout(resolve, 900));
 
       onAuthSuccess({
         id: result.id,
-        email: email,
-        userType: 'employer'
+        email: email.trim(),
+        userType: 'employer',
       });
     } catch (err: any) {
       clearTimeout(timeoutId);
-      console.error("Contractor sign up error:", err);
+      setSignupUploading(null);
+      console.error('Contractor sign up error:', err);
       const msg = err.message || String(err);
       setErrorMsg(msg);
       addDebugLog(`Signup failed: ${msg}`, 'error');
@@ -691,7 +958,7 @@ export default function AuthView({
                 </span>
                 
                 <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none uppercase font-sans">
-                  Find Work Today. <br />
+                  I want to find work. <br />
                   <span className="text-[#00F5A0]">Find Workers Tomorrow.</span>
                 </h1>
                 
@@ -731,7 +998,7 @@ export default function AuthView({
                   onClick={() => setView('signup_worker')}
                   className="w-full py-4 px-6 bg-[#00F5A0] hover:bg-emerald-400 text-zinc-950 rounded-2xl font-mono text-xs font-black uppercase tracking-widest flex items-center justify-between transition-all cursor-pointer shadow-xs active:scale-[0.99] font-black"
                 >
-                  <span>Continue as Worker</span>
+                  <span>Find work</span>
                   <ArrowRight className="w-4 h-4 text-zinc-950" />
                 </button>
               </div>
@@ -745,7 +1012,7 @@ export default function AuthView({
                   <div>
                     <span className="text-[10px] font-mono font-black text-zinc-400 uppercase tracking-widest block">FOR SITE MANAGERS & CONTRACTORS</span>
                     <h2 className="text-2xl sm:text-3xl font-black text-zinc-950 font-sans tracking-tight mt-1">
-                      Need Workers Fast?
+                      I want to hire workers
                     </h2>
                   </div>
                   <p className="text-sm text-zinc-600 leading-relaxed font-medium">
@@ -758,7 +1025,7 @@ export default function AuthView({
                   onClick={() => setView('signup_contractor')}
                   className="w-full py-4 px-6 bg-[#00F5A0] hover:bg-emerald-400 text-zinc-950 rounded-2xl font-mono text-xs font-black uppercase tracking-widest flex items-center justify-between transition-all cursor-pointer shadow-xs active:scale-[0.99] font-black"
                 >
-                  <span>Continue as Contractor</span>
+                  <span>Hire workers</span>
                   <ArrowRight className="w-4 h-4 text-zinc-950" />
                 </button>
               </div>
@@ -1082,11 +1349,26 @@ export default function AuthView({
         {/* WORKER SIGN UP SUB-VIEW */}
         {view === 'signup_worker' && (
           <div className="relative overflow-hidden rounded-[32px] border border-zinc-200 bg-white shadow-xl animate-fade-in">
+            <style>{`
+              @keyframes hireupStepForward {
+                from { opacity: 0; transform: translateX(24px); }
+                to { opacity: 1; transform: translateX(0); }
+              }
+              @keyframes hireupStepBack {
+                from { opacity: 0; transform: translateX(-24px); }
+                to { opacity: 1; transform: translateX(0); }
+              }
+              @keyframes hireupSuccessPop {
+                0% { opacity: 0; transform: scale(.86); }
+                70% { opacity: 1; transform: scale(1.05); }
+                100% { opacity: 1; transform: scale(1); }
+              }
+            `}</style>
             <div className="absolute inset-x-0 top-0 h-1 bg-zinc-100">
               <div
                 className="h-full bg-[#34D399] transition-all duration-500 ease-out"
                 style={{
-                  width: `${Math.round(((workerSignupStep + 1) / workerSignupTotalSteps) * 100)}%`,
+                  width: `${workerProfileProgress}%`,
                 }}
               />
             </div>
@@ -1097,7 +1379,7 @@ export default function AuthView({
                   <div>
                     <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-[10px] font-mono font-black uppercase tracking-widest text-[#10B981]">
                       <Sparkles className="h-3.5 w-3.5" />
-                      Profile {Math.round(((workerSignupStep + 1) / workerSignupTotalSteps) * 100)}% complete
+                      Profile {workerProfileProgress}% complete
                     </span>
                     <h2 className="mt-4 text-3xl font-black tracking-tight text-zinc-950 sm:text-4xl">
                       {workerSignupStep === 0 && 'Start with the essentials.'}
@@ -1130,13 +1412,60 @@ export default function AuthView({
                   </button>
                 </div>
 
+                {workerDraftRestored && (
+                  <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-800">
+                      <Save className="h-4 w-4" />
+                      Your saved signup progress has been restored.
+                    </div>
+                    <button type="button" onClick={() => setWorkerDraftRestored(false)} className="text-[9px] font-mono font-black uppercase text-emerald-700">Dismiss</button>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowMobileWorkerPreview(current => !current)}
+                  className="mb-5 flex w-full items-center justify-between rounded-2xl border border-zinc-200 bg-zinc-950 px-4 py-3 text-left text-white lg:hidden"
+                >
+                  <span>
+                    <span className="block text-[9px] font-mono font-black uppercase tracking-wider text-[#34D399]">Live profile preview</span>
+                    <span className="block text-xs font-bold">See how contractors will see you</span>
+                  </span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${showMobileWorkerPreview ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showMobileWorkerPreview && (
+                  <div className="mb-6 rounded-3xl bg-zinc-950 p-5 text-white lg:hidden">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-zinc-800 text-xl font-black">
+                        {workerProfilePhotoUrl ? <img src={workerProfilePhotoUrl} alt="Profile preview" className="h-full w-full object-cover" /> : workerName.trim().charAt(0).toUpperCase() || 'HU'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-lg font-black">{workerName || 'Your name'}</p>
+                        <p className="truncate text-sm font-bold text-[#34D399]">{workerMainTrade || 'Your trade'}</p>
+                        <p className="mt-1 flex items-center gap-1 text-xs text-zinc-400"><MapPin className="h-3 w-3" />{workerLocation || 'Your location'}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      <div className="rounded-xl bg-white/5 p-3"><p className="text-[8px] uppercase text-zinc-500">Experience</p><p className="mt-1 text-xs font-bold">{workerExp}</p></div>
+                      <div className="rounded-xl bg-white/5 p-3"><p className="text-[8px] uppercase text-zinc-500">Day rate</p><p className="mt-1 text-xs font-bold text-[#34D399]">{workerRate.startsWith('£') ? workerRate : `£${workerRate}`}</p></div>
+                    </div>
+                  </div>
+                )}
+
                 <form onSubmit={handleWorkerSignUp}>
-                  <div className="transition-all duration-300">
+                  <div
+                    key={workerSignupStep}
+                    style={{
+                      animation: `${workerStepDirection === 'forward' ? 'hireupStepForward' : 'hireupStepBack'} 280ms ease-out both`,
+                    }}
+                  >
                     {workerSignupStep === 0 && (
                       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <label className="space-y-2 sm:col-span-2">
                           <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Full name *</span>
                           <input
+                            ref={workerSignupStep === 0 ? workerFirstFieldRef as React.RefObject<HTMLInputElement> : undefined}
                             type="text"
                             required
                             value={workerName}
@@ -1357,6 +1686,22 @@ export default function AuthView({
 
                     {workerSignupStep === 4 && (
                       <div className="space-y-6">
+                        <label className="block space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Why should a contractor hire you? *</span>
+                          <textarea
+                            ref={workerSignupStep === 4 ? workerFirstFieldRef as React.RefObject<HTMLTextAreaElement> : undefined}
+                            value={workerAbout}
+                            onChange={event => setWorkerAbout(event.target.value.slice(0, 500))}
+                            rows={5}
+                            placeholder="Describe your experience, reliability, strongest skills and the type of site work you do best..."
+                            className="w-full resize-none rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-medium leading-relaxed outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
+                          />
+                          <div className="flex justify-between text-[10px] font-semibold text-zinc-400">
+                            <span className={workerAbout.trim().length >= 30 ? 'text-emerald-600' : ''}>Minimum 30 characters</span>
+                            <span>{workerAbout.length}/500</span>
+                          </div>
+                        </label>
+
                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                           <SearchableDropdown
                             id="signup-worker-quals"
@@ -1460,6 +1805,7 @@ export default function AuthView({
                             ['Rate', workerRate.startsWith('£') ? workerRate : `£${workerRate}/day`],
                             ['Position types', workerPrefs.join(', ')],
                             ['Site equipment', workerTools.join(', ')],
+                            ['Profile statement', workerAbout],
                           ].map(([label, value]) => (
                             <div key={label} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
                               <p className="text-[9px] font-mono font-black uppercase tracking-wider text-zinc-400">{label}</p>
@@ -1483,7 +1829,7 @@ export default function AuthView({
                       type="button"
                       onClick={() => {
                         setErrorMsg(null);
-                        setWorkerSignupStep(current => Math.max(0, current - 1));
+                        moveWorkerStep(workerSignupStep - 1);
                       }}
                       disabled={workerSignupStep === 0}
                       className="rounded-2xl border border-zinc-200 px-5 py-3.5 text-xs font-mono font-black uppercase text-zinc-600 disabled:invisible"
@@ -1506,6 +1852,8 @@ export default function AuthView({
                               ? Boolean(workerRate.trim() && workerAvailability && workerType && workerPrefs.length > 0)
                               : workerSignupStep === 3
                               ? workerTools.length > 0
+                              : workerSignupStep === 4
+                              ? workerAbout.trim().length >= 30
                               : true;
 
                           if (!valid) {
@@ -1516,12 +1864,14 @@ export default function AuthView({
                                 ? 'Complete your trade, specialism, experience and location.'
                                 : workerSignupStep === 2
                                 ? 'Complete your rate, availability, employment type and position preferences.'
-                                : 'Select at least one tools or transport option.'
+                                : workerSignupStep === 3
+                                ? 'Select at least one tools or transport option.'
+                                : 'Write at least 30 characters explaining why a contractor should hire you.'
                             );
                             return;
                           }
 
-                          setWorkerSignupStep(current => Math.min(workerSignupTotalSteps - 1, current + 1));
+                          moveWorkerStep(workerSignupStep + 1);
                         }}
                         className="ml-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[#34D399] px-6 py-3.5 text-xs font-mono font-black uppercase text-zinc-950 shadow-lg shadow-emerald-500/15 transition hover:bg-[#10B981] hover:text-white active:scale-[0.98]"
                       >
@@ -1595,7 +1945,7 @@ export default function AuthView({
                           ? 'bg-[#34D399] text-zinc-950'
                           : 'bg-white/10 text-zinc-500'
                         }`}>
-                          {index < workerSignupStep ? <Check className="h-3.5 w-3.5" /> : index + 1}
+                          {workerCompletedSections[index] || index < workerSignupStep ? <Check className="h-3.5 w-3.5" /> : index + 1}
                         </span>
                         <span className={`text-xs font-bold ${index <= workerSignupStep ? 'text-white' : 'text-zinc-600'}`}>{label}</span>
                       </div>
@@ -1604,394 +1954,239 @@ export default function AuthView({
                 </div>
               </aside>
             </div>
+
+            {workerLaunchSuccess && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-zinc-950/95 p-6 text-center text-white backdrop-blur-sm">
+                <div style={{ animation: 'hireupSuccessPop 500ms ease-out both' }} className="max-w-md">
+                  <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-[28px] bg-[#34D399] text-zinc-950 shadow-2xl shadow-emerald-500/30">
+                    <PartyPopper className="h-11 w-11" />
+                  </div>
+                  <h3 className="mt-7 text-3xl font-black">Your HireUp profile is live.</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-zinc-300">We’re preparing your dashboard and finding relevant work near {workerLocation}.</p>
+                  <div className="mx-auto mt-7 h-1.5 w-48 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-full w-full origin-left animate-pulse rounded-full bg-[#34D399]" />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* CONTRACTOR SIGN UP SUB-VIEW */}
         {view === 'signup_contractor' && (
-          <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6 animate-fade-in">
-            <div className="flex justify-between items-center border-b border-zinc-100 pb-4">
-              <div>
-                <span className="px-2.5 py-1 bg-[#34D399] text-white rounded-lg text-[9px] font-mono font-black uppercase tracking-wider">Contractor Desk</span>
-                <h2 className="text-xl font-bold text-zinc-900 font-sans mt-2">Employer Profile & Vacancy Onboarding</h2>
-              </div>
-              <button
-                onClick={() => setView('landing')}
-                className="text-xs font-mono font-black text-zinc-400 hover:text-zinc-900 uppercase"
-              >
-                ← Back
-              </button>
+          <div className="relative overflow-hidden rounded-[32px] border border-zinc-200 bg-white shadow-xl animate-fade-in">
+            <style>{`
+              @keyframes contractorStepForward {
+                from { opacity: 0; transform: translateX(24px); }
+                to { opacity: 1; transform: translateX(0); }
+              }
+              @keyframes contractorStepBack {
+                from { opacity: 0; transform: translateX(-24px); }
+                to { opacity: 1; transform: translateX(0); }
+              }
+            `}</style>
+
+            <div className="absolute inset-x-0 top-0 h-1 bg-zinc-100">
+              <div
+                className="h-full bg-[#34D399] transition-all duration-500 ease-out"
+                style={{ width: `${contractorProfileProgress}%` }}
+              />
             </div>
 
-            <form onSubmit={handleContractorSignUp} className="space-y-6">
-              
-              {/* Profile Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">COMPANY NAME</label>
-                  <input
-                    type="text"
-                    required
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder="e.g. Oakridge Joinery Ltd"
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">PRIMARY RECRUITER NAME</label>
-                  <input
-                    type="text"
-                    required
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    placeholder="e.g. Richard Vance"
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">RECRUITMENT EMAIL</label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="hiring@oakridge-joinery.co.uk"
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">CHOOSE PASSWORD</label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">TELEPHONE OFFICE</label>
-                  <input
-                    type="text"
-                    value={contractorPhone}
-                    onChange={(e) => setContractorPhone(e.target.value)}
-                    placeholder="01273 900300"
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">COMPANY SIZE</label>
-                  <select
-                    value={companySize}
-                    onChange={(e) => setCompanySize(e.target.value)}
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] cursor-pointer"
+            <div className="grid min-h-[700px] grid-cols-1 lg:grid-cols-[1fr_340px]">
+              <div className="p-5 sm:p-8 lg:p-10">
+                <div className="mb-8 flex items-start justify-between gap-4">
+                  <div>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-[10px] font-mono font-black uppercase tracking-widest text-[#10B981]">
+                      <Building className="h-3.5 w-3.5" />
+                      Company profile {contractorProfileProgress}% complete
+                    </span>
+                    <h2 className="mt-4 text-3xl font-black tracking-tight text-zinc-950 sm:text-4xl">
+                      {contractorSignupStep === 0 && 'Create your hiring account.'}
+                      {contractorSignupStep === 1 && 'Tell workers about your company.'}
+                      {contractorSignupStep === 2 && 'Who are you looking to hire?'}
+                      {contractorSignupStep === 3 && 'Make your company stand out.'}
+                      {contractorSignupStep === 4 && 'Ready to start hiring.'}
+                    </h2>
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-500">
+                      {contractorSignupStep === 0 && 'Add the account and contact details your team will use.'}
+                      {contractorSignupStep === 1 && 'These details build your public contractor profile.'}
+                      {contractorSignupStep === 2 && 'Set the trade, location and requirements for your first vacancy.'}
+                      {contractorSignupStep === 3 && 'Qualifications, licences and company media are optional.'}
+                      {contractorSignupStep === 4 && 'Review everything before launching your company profile.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setContractorSignupStep(0);
+                      setErrorMsg(null);
+                      setView('landing');
+                    }}
+                    className="shrink-0 rounded-xl border border-zinc-200 px-3 py-2 text-[10px] font-mono font-black uppercase text-zinc-500 hover:border-zinc-400 hover:text-zinc-900"
                   >
-                    <option value="1 - 10 Employees">1 - 10 Employees</option>
-                    <option value="11 - 49 Employees">11 - 49 Employees</option>
-                    <option value="50 - 99 Employees">50 - 99 Employees</option>
-                    <option value="100 - 250 Employees">100 - 250 Employees</option>
-                    <option value="250+ Employees">250+ Employees</option>
-                  </select>
+                    Exit
+                  </button>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">COMPANY WEBSITE (OPTIONAL)</label>
-                  <input
-                    type="text"
-                    value={companyWebsite}
-                    onChange={(e) => setCompanyWebsite(e.target.value)}
-                    placeholder="www.oakridge-joinery.co.uk"
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">PUBLIC LIABILITY COVERAGE</label>
-                  <select
-                    value={companyInsurance}
-                    onChange={(e) => setCompanyInsurance(e.target.value)}
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] cursor-pointer"
+                <form onSubmit={handleContractorSignUp}>
+                  <div
+                    key={contractorSignupStep}
+                    style={{
+                      animation: `${contractorStepDirection === 'forward' ? 'contractorStepForward' : 'contractorStepBack'} 280ms ease-out both`,
+                    }}
                   >
-                    <option value="No insurance">No insurance</option>
-                    {Array.from({ length: 10 }, (_, index) => index + 1).map(amount => (
-                      <option
-                        key={amount}
-                        value={`£${amount}M Public Liability`}
-                      >
-                        £{amount}M Public Liability Cover
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-mono font-black text-zinc-400 uppercase">COMPANY FOCUS / INDUSTRY</label>
-                  <input
-                    type="text"
-                    value={companyIndustry}
-                    onChange={(e) => setCompanyIndustry(e.target.value)}
-                    placeholder="Commercial Joinery & Shopfitting"
-                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399]"
-                  />
-                </div>
-              </div>
-
-              {/* Vacancy Auto-creator block */}
-              <div className="bg-[#34D399]/5 border border-[#34D399]/15 rounded-2xl p-5 space-y-4">
-                <div className="flex items-center gap-1.5 border-b border-[#34D399]/10 pb-2.5">
-                  <Sparkles className="w-4 h-4 text-[#10B981]" />
-                  <h4 className="text-xs font-mono font-black text-zinc-800 uppercase">Initial Site Vacancy Auto-Creator</h4>
-                </div>
-                <p className="text-[11px] text-zinc-500 font-sans leading-relaxed">
-                  We use these details to instantly seed your company profile with an active, matched job listing:
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-mono font-black text-zinc-400 uppercase">TRADE CATEGORY HIRING FOR</label>
-                    <select
-                      value={tradesHiring}
-                      onChange={(e) => {
-                        const selectedMain = e.target.value;
-                        setTradesHiring(selectedMain);
-                        const subcategories = TRADE_SUBCATEGORIES_MAP[selectedMain] || [];
-                        if (subcategories.length > 0) {
-                          setTradesHiringSubcategory(subcategories[0]);
-                        } else {
-                          setTradesHiringSubcategory('');
-                        }
-                      }}
-                      className="w-full p-3 bg-white border border-zinc-250 rounded-xl text-sm font-medium focus:outline-none cursor-pointer"
-                    >
-                      {TRADES_CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-mono font-black text-zinc-400 uppercase">SPECIFIC TRADE HIRING FOR</label>
-                    <select
-                      value={tradesHiringSubcategory}
-                      onChange={(e) => setTradesHiringSubcategory(e.target.value)}
-                      className="w-full p-3 bg-white border border-zinc-250 rounded-xl text-sm font-medium focus:outline-none cursor-pointer"
-                    >
-                      {(TRADE_SUBCATEGORIES_MAP[tradesHiring] || []).map((sub) => (
-                        <option key={sub} value={sub}>{sub}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <SearchableDropdown
-                      id="signup-contractor-job-loc"
-                      label="Job Site Location"
-                      options={HOMETOWNS}
-                      selected={jobLocation}
-                      onChange={setJobLocation}
-                      multiple={false}
-                      placeholder="Select Job Town..."
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Searchable Dropdowns using dataset lists */}
-              <div className="space-y-4 border-t border-zinc-100 pt-5">
-                <h3 className="text-xs font-mono font-black text-zinc-400 uppercase tracking-wider">CSV Dataset Dropdown Configuration</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <SearchableDropdown
-                    id="signup-contractor-hq"
-                    label="Headquarters Location"
-                    options={HOMETOWNS}
-                    selected={companyHQ}
-                    onChange={setCompanyHQ}
-                    multiple={false}
-                    placeholder="Select Head Office..."
-                  />
-
-                  <SearchableDropdown
-                    id="signup-contractor-requirements"
-                    label="Company Hiring & Compliance Requirements"
-                    options={REQUIREMENTS}
-                    selected={companyRequirements}
-                    onChange={setCompanyRequirements}
-                    multiple={true}
-                    placeholder="Search and select compliance rules..."
-                  />
-
-                  <SearchableDropdown
-                    id="signup-contractor-quals"
-                    label="Required Grades & Qualifications"
-                    options={GRADES}
-                    selected={requiredQuals}
-                    onChange={setRequiredQuals}
-                    multiple={true}
-                    placeholder="Select required qualifications..."
-                  />
-
-                  <SearchableDropdown
-                    id="signup-contractor-licences"
-                    label="Required Licences"
-                    options={LICENCES}
-                    selected={requiredLics}
-                    onChange={setRequiredLics}
-                    multiple={true}
-                    placeholder="Select required clearances..."
-                  />
-
-                  <div className="md:col-span-2">
-                    <SearchableDropdown
-                      id="signup-contractor-position-lengths"
-                      label="Employment Contract Types Offered"
-                      options={POSITION_LENGTHS}
-                      selected={hiringPositionLengths}
-                      onChange={setHiringPositionLengths}
-                      multiple={true}
-                      placeholder="Select contract structures..."
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Optional Media Uploads */}
-              <div className="space-y-4 border-t border-zinc-100 pt-5">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#34D399]" />
-                  <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider">OPTIONAL COMPANY MEDIA UPLOADS</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Company Logo */}
-                  <div className="space-y-2">
-                    <label className="block text-xs font-mono font-black text-zinc-400 uppercase">COMPANY LOGO (RECOMMENDED)</label>
-                    <div className="border border-zinc-200 rounded-2xl p-4 bg-zinc-50/50 hover:bg-zinc-50 transition-all flex flex-col items-center justify-center gap-3 relative cursor-pointer min-h-[120px] group">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={(e) => handleSignupFileUpload(e, 'company-logos', 'logo')} 
-                        className="absolute inset-0 opacity-0 cursor-pointer z-10" 
-                      />
-                      {contractorCompanyLogoUrl ? (
-                        <div className="flex items-center gap-3 z-20">
-                          <img src={contractorCompanyLogoUrl} alt="Signup Logo Preview" className="w-12 h-12 rounded-xl object-cover border border-zinc-200" referrerPolicy="no-referrer" />
-                          <div className="text-left">
-                            <p className="text-xs font-bold text-zinc-900">Logo Uploaded</p>
-                            <span className="text-[10px] font-mono text-zinc-400">Click to replace logo</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <ImageIcon className="w-8 h-8 text-zinc-300 group-hover:text-emerald-500 transition-all" />
-                          <div className="text-center">
-                            <p className="text-xs font-bold text-zinc-750">Click to upload logo</p>
-                            <span className="text-[10px] font-mono text-zinc-400">company-logos bucket</span>
-                          </div>
-                        </>
-                      )}
-                      {signupUploading === 'logo' && (
-                        <div className="absolute inset-0 bg-white/90 rounded-2xl flex items-center justify-center gap-2 font-mono text-xs font-bold text-emerald-600 z-30">
-                          <Clock className="w-4 h-4 animate-spin" /> UPLOADING...
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Company Gallery */}
-                  <div className="space-y-2">
-                    <label className="block text-xs font-mono font-black text-zinc-400 uppercase">COMPANY SCHEME GALLERY (MULTIPLE)</label>
-                    <div className="border border-zinc-200 rounded-2xl p-4 bg-zinc-50/50 hover:bg-zinc-50 transition-all flex flex-col items-center justify-center gap-3 relative cursor-pointer min-h-[120px] group">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={(e) => handleSignupFileUpload(e, 'company-gallery', 'company_gallery')} 
-                        className="absolute inset-0 opacity-0 cursor-pointer z-10" 
-                      />
-                      <ImageIcon className="w-8 h-8 text-zinc-300 group-hover:text-emerald-500 transition-all" />
-                      <div className="text-center">
-                        <p className="text-xs font-bold text-zinc-750">Click to add gallery image</p>
-                        <span className="text-[10px] font-mono text-zinc-400">company-gallery bucket</span>
+                    {contractorSignupStep === 0 && (
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <label className="space-y-2 sm:col-span-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Company name *</span>
+                          <input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="e.g. Oakridge Joinery Ltd" className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Main contact *</span>
+                          <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="e.g. Richard Vance" className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Phone number *</span>
+                          <input value={contractorPhone} onChange={e => setContractorPhone(e.target.value)} placeholder="01273 900300" className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Email address *</span>
+                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="hiring@company.co.uk" className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Password *</span>
+                          <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                        </label>
                       </div>
-                      {signupUploading === 'company_gallery' && (
-                        <div className="absolute inset-0 bg-white/90 rounded-2xl flex items-center justify-center gap-2 font-mono text-xs font-bold text-emerald-600 z-30">
-                          <Clock className="w-4 h-4 animate-spin" /> UPLOADING...
+                    )}
+
+                    {contractorSignupStep === 1 && (
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <SearchableDropdown id="contractor-hq" label="Headquarters location *" options={HOMETOWNS} selected={companyHQ} onChange={setCompanyHQ} multiple={false} placeholder="Search location..." />
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Company size *</span>
+                          <select value={companySize} onChange={e => setCompanySize(e.target.value)} className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white">
+                            <option>1 - 10 Employees</option><option>11 - 49 Employees</option><option>50 - 99 Employees</option><option>100 - 250 Employees</option><option>250+ Employees</option>
+                          </select>
+                        </label>
+                        <label className="space-y-2 sm:col-span-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Industry / company focus *</span>
+                          <input value={companyIndustry} onChange={e => setCompanyIndustry(e.target.value)} placeholder="Commercial construction, civil engineering, shopfitting..." className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Public liability cover *</span>
+                          <select value={companyInsurance} onChange={e => setCompanyInsurance(e.target.value)} className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white">
+                            <option value="No insurance">No insurance</option>
+                            {Array.from({ length: 10 }, (_, index) => index + 1).map(amount => <option key={amount} value={`£${amount}M Public Liability`}>£{amount}M Public Liability</option>)}
+                          </select>
+                        </label>
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Website (optional)</span>
+                          <input value={companyWebsite} onChange={e => setCompanyWebsite(e.target.value)} placeholder="www.company.co.uk" className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                        </label>
+                      </div>
+                    )}
+
+                    {contractorSignupStep === 2 && (
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Trade category *</span>
+                          <select value={tradesHiring} onChange={e => { const value = e.target.value; setTradesHiring(value); setTradesHiringSubcategory((TRADE_SUBCATEGORIES_MAP[value] || [])[0] || ''); }} className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white">
+                            {TRADES_CATEGORIES.map(category => <option key={category}>{category}</option>)}
+                          </select>
+                        </label>
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Specific trade *</span>
+                          <select value={tradesHiringSubcategory} onChange={e => setTradesHiringSubcategory(e.target.value)} className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white">
+                            {(TRADE_SUBCATEGORIES_MAP[tradesHiring] || []).map(sub => <option key={sub}>{sub}</option>)}
+                          </select>
+                        </label>
+                        <SearchableDropdown id="contractor-job-location" label="Job location *" options={HOMETOWNS} selected={jobLocation} onChange={setJobLocation} multiple={false} placeholder="Search job location..." />
+                        <SearchableDropdown id="contractor-position-lengths" label="Contract types offered *" options={POSITION_LENGTHS} selected={hiringPositionLengths} onChange={setHiringPositionLengths} multiple={true} placeholder="Choose at least one..." />
+                        <div className="sm:col-span-2">
+                          <SearchableDropdown id="contractor-requirements" label="Hiring requirements *" options={REQUIREMENTS} selected={companyRequirements} onChange={setCompanyRequirements} multiple={true} placeholder="Choose at least one requirement..." />
                         </div>
-                      )}
-                    </div>
-                    {contractorCompanyGalleryImages.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        {contractorCompanyGalleryImages.map((img, i) => (
-                          <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-zinc-200">
-                            <img src={img} alt="Gallery item" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                            <button 
-                              type="button" 
-                              onClick={() => handleRemoveSignupFile(img, 'company_gallery')}
-                              className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center text-white text-[10px] font-bold"
-                            >
-                              REMOVE
-                            </button>
-                          </div>
-                        ))}
+                      </div>
+                    )}
+
+                    {contractorSignupStep === 3 && (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                          <SearchableDropdown id="contractor-required-quals" label="Required qualifications (optional)" options={GRADES} selected={requiredQuals} onChange={setRequiredQuals} multiple={true} placeholder="Search qualifications..." />
+                          <SearchableDropdown id="contractor-required-licences" label="Required licences (optional)" options={LICENCES} selected={requiredLics} onChange={setRequiredLics} multiple={true} placeholder="Search licences..." />
+                        </div>
+                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                          <label className="group relative min-h-[180px] cursor-pointer overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 hover:border-[#34D399] hover:bg-emerald-50/40">
+                            <input type="file" accept="image/*" onChange={e => handleSignupFileUpload(e, 'company-logos', 'logo')} className="absolute inset-0 z-10 cursor-pointer opacity-0" />
+                            <div className="flex h-full flex-col items-center justify-center text-center">
+                              {contractorCompanyLogoUrl ? <img src={contractorCompanyLogoUrl} alt="Company logo preview" className="h-24 w-24 rounded-2xl object-cover shadow-sm" /> : <Building className="h-10 w-10 text-zinc-300" />}
+                              <p className="mt-3 text-xs font-black text-zinc-900">{contractorCompanyLogoUrl ? 'Company logo selected' : 'Add company logo'}</p>
+                              <p className="text-[10px] text-zinc-500">Optional, but recommended</p>
+                            </div>
+                          </label>
+                          <label className="group relative min-h-[180px] cursor-pointer overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 hover:border-[#34D399] hover:bg-emerald-50/40">
+                            <input type="file" accept="image/*" onChange={e => handleSignupFileUpload(e, 'company-gallery', 'company_gallery')} className="absolute inset-0 z-10 cursor-pointer opacity-0" />
+                            <div className="flex h-full flex-col items-center justify-center text-center">
+                              <Layers className="h-10 w-10 text-zinc-300" />
+                              <p className="mt-3 text-xs font-black text-zinc-900">Add project photos</p>
+                              <p className="text-[10px] text-zinc-500">{contractorCompanyGalleryImages.length} selected</p>
+                            </div>
+                          </label>
+                        </div>
+                        {contractorCompanyGalleryImages.length > 0 && <div className="flex flex-wrap gap-3">{contractorCompanyGalleryImages.map((image, index) => <div key={`${image}-${index}`} className="relative h-20 w-20 overflow-hidden rounded-xl border border-zinc-200"><img src={image} alt={`Project ${index + 1}`} className="h-full w-full object-cover" /><button type="button" onClick={() => handleRemoveSignupFile(image, 'company_gallery')} className="absolute inset-0 bg-zinc-950/70 text-[9px] font-black uppercase text-white opacity-0 hover:opacity-100">Remove</button></div>)}</div>}
+                      </div>
+                    )}
+
+                    {contractorSignupStep === 4 && (
+                      <div className="space-y-5">
+                        <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5"><h3 className="text-lg font-black text-zinc-950">Your company profile is ready.</h3><p className="mt-1 text-sm text-zinc-600">The logo and project photos selected here will be uploaded and saved when you launch.</p></div>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          {[
+                            ['Company', companyName], ['Contact', contactName], ['Location', companyHQ], ['Industry', companyIndustry], ['Hiring', `${tradesHiring} • ${tradesHiringSubcategory}`], ['Job location', jobLocation], ['Contracts', hiringPositionLengths.join(', ')], ['Requirements', companyRequirements.join(', ')],
+                          ].map(([label, value]) => <div key={label} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-[9px] font-mono font-black uppercase tracking-wider text-zinc-400">{label}</p><p className="mt-1 text-sm font-bold text-zinc-900">{value || 'Not completed'}</p></div>)}
+                        </div>
                       </div>
                     )}
                   </div>
-                </div>
-                {debugLogs.length > 0 && (
-                  <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl font-mono text-[11px] text-zinc-300 space-y-2 shadow-inner mt-4">
-                    <div className="flex items-center justify-between border-b border-zinc-800 pb-2 mb-2 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                      <span>⚙️ Onboarding Process Console</span>
-                      <span className="animate-pulse flex items-center gap-1 text-emerald-400">
-                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span> LIVE STREAM
-                      </span>
-                    </div>
-                    <div className="max-h-48 overflow-y-auto space-y-1.5 scrollbar-thin font-mono">
-                      {debugLogs.map((log, i) => (
-                        <div key={i} className={`flex items-start gap-1.5 leading-relaxed ${
-                          log.status === 'success' ? 'text-emerald-400 font-bold' :
-                          log.status === 'error' ? 'text-rose-400 font-bold' :
-                          log.status === 'pending' ? 'text-amber-400' : 'text-zinc-400'
-                        }`}>
-                          <span className="flex-shrink-0">
-                            {log.status === 'success' ? '✔' :
-                             log.status === 'error' ? '✘' :
-                             log.status === 'pending' ? '⏳' : 'ℹ'}
-                          </span>
-                          <p className="flex-1">{log.message}</p>
-                        </div>
-                      ))}
-                    </div>
+
+                  {errorMsg && view === 'signup_contractor' && <div className="mt-6 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{errorMsg}</div>}
+
+                  <div className="mt-8 flex items-center justify-between gap-3 border-t border-zinc-100 pt-6">
+                    <button type="button" onClick={() => { setErrorMsg(null); moveContractorStep(contractorSignupStep - 1); }} disabled={contractorSignupStep === 0} className="rounded-2xl border border-zinc-200 px-5 py-3.5 text-xs font-mono font-black uppercase text-zinc-600 disabled:invisible">← Back</button>
+                    {contractorSignupStep < contractorSignupTotalSteps - 1 ? (
+                      <button type="button" onClick={() => {
+                        setErrorMsg(null);
+                        const valid = contractorSignupStep === 0 ? Boolean(companyName.trim() && contactName.trim() && email.trim() && password.length >= 8 && contractorPhone.trim()) : contractorSignupStep === 1 ? Boolean(companyIndustry.trim() && companySize && companyHQ && companyInsurance) : contractorSignupStep === 2 ? Boolean(tradesHiring && tradesHiringSubcategory && jobLocation && hiringPositionLengths.length > 0 && companyRequirements.length > 0) : true;
+                        if (!valid) { setErrorMsg(contractorSignupStep === 0 ? 'Complete the company name, contact, email, phone and an 8-character password.' : contractorSignupStep === 1 ? 'Complete the company location, industry, size and insurance.' : 'Complete the trade, job location, contract types and hiring requirements.'); return; }
+                        moveContractorStep(contractorSignupStep + 1);
+                      }} className="ml-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[#34D399] px-6 py-3.5 text-xs font-mono font-black uppercase text-zinc-950 shadow-lg shadow-emerald-500/15 transition hover:bg-[#10B981] hover:text-white">Continue <ArrowRight className="h-4 w-4" /></button>
+                    ) : (
+                      <button type="submit" disabled={isSubmitting} className="ml-auto inline-flex min-w-[220px] items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-6 py-4 text-xs font-mono font-black uppercase text-white shadow-xl disabled:opacity-50">{isSubmitting ? <>Creating company <Clock className="h-4 w-4 animate-spin text-[#34D399]" /></> : <>Launch company profile <ArrowRight className="h-4 w-4 text-[#34D399]" /></>}</button>
+                    )}
                   </div>
-                )}
-                {signupUploadError && (
-                  <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-mono font-bold text-rose-600 flex items-center gap-2 mt-4">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    {signupUploadError}
-                  </div>
-                )}
+                </form>
               </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-4 bg-[#34D399] hover:bg-[#10B981] disabled:bg-zinc-400 text-white rounded-xl font-mono text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-[#34D399]/25 mt-8"
-              >
-                {signupUploading === 'onboarding_files' ? (
-                  <>UPLOADING COMPANY LOGO & GALLERIES... <Clock className="w-4 h-4 animate-spin text-white" /></>
-                ) : isSubmitting ? (
-                  <>CREATING CONTRACTOR ACCOUNT... <Clock className="w-4 h-4 animate-spin" /></>
-                ) : (
-                  <>ONBOARD CONTRACTOR COMPANY PROFILE & POST VACANCY <ArrowRight className="w-4 h-4" /></>
-                )}
-              </button>
-            </form>
+              <aside className="hidden border-l border-zinc-200 bg-zinc-950 p-7 text-white lg:block">
+                <div className="sticky top-7">
+                  <p className="text-[9px] font-mono font-black uppercase tracking-[0.22em] text-[#34D399]">Live company preview</p>
+                  <div className="mt-6 overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl">
+                    <div className="h-28 bg-gradient-to-br from-[#34D399] via-emerald-500 to-zinc-950" />
+                    <div className="px-5 pb-5">
+                      <div className="-mt-10 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border-4 border-zinc-950 bg-zinc-800 text-2xl font-black">{contractorCompanyLogoUrl ? <img src={contractorCompanyLogoUrl} alt="Company preview" className="h-full w-full object-cover" /> : <Building className="h-8 w-8" />}</div>
+                      <h3 className="mt-4 text-xl font-black">{companyName || 'Your company'}</h3>
+                      <p className="mt-1 text-sm font-bold text-[#34D399]">{companyIndustry || 'Construction contractor'}</p>
+                      <p className="mt-1 flex items-center gap-1.5 text-xs text-zinc-400"><MapPin className="h-3.5 w-3.5" />{companyHQ || 'Company location'}</p>
+                      <div className="mt-5 rounded-xl bg-white/5 p-3"><p className="text-[8px] font-mono font-black uppercase text-zinc-500">Hiring for</p><p className="mt-1 text-xs font-bold">{tradesHiringSubcategory || tradesHiring}</p></div>
+                    </div>
+                  </div>
+                  <div className="mt-6 space-y-3">{['Account', 'Company', 'Hiring', 'Media', 'Review'].map((label, index) => <div key={label} className="flex items-center gap-3"><span className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-black ${index <= contractorSignupStep ? 'bg-[#34D399] text-zinc-950' : 'bg-white/10 text-zinc-500'}`}>{index < contractorSignupStep ? <Check className="h-3.5 w-3.5" /> : index + 1}</span><span className={`text-xs font-bold ${index <= contractorSignupStep ? 'text-white' : 'text-zinc-600'}`}>{label}</span></div>)}</div>
+                </div>
+              </aside>
+            </div>
+
+            {contractorLaunchSuccess && <div className="absolute inset-0 z-50 flex items-center justify-center bg-zinc-950/95 p-6 text-center text-white backdrop-blur-sm"><div className="max-w-md"><div className="mx-auto flex h-24 w-24 items-center justify-center rounded-[28px] bg-[#34D399] text-zinc-950"><PartyPopper className="h-11 w-11" /></div><h3 className="mt-7 text-3xl font-black">Your company profile is live.</h3><p className="mt-3 text-sm text-zinc-300">We’re preparing your hiring dashboard.</p></div></div>}
           </div>
         )}
           </>
