@@ -71,6 +71,7 @@ import VideoInterviewRoom from './components/VideoInterviewRoom';
 import AdminDashboard from './components/AdminDashboard';
 import InformationCentre from './components/InformationCentre';
 import ApplicationsView from './components/ApplicationsView';
+import { HIREUP_LOGO } from './constants';
 
 export default function App() {
   // Core User Session State
@@ -1394,7 +1395,7 @@ export default function App() {
           {/* Logo Brand */}
 <div className="px-5 py-4 border-b border-zinc-100 flex items-center">
   <img
-    src="/hireup-logo.png"
+    src={HIREUP_LOGO}
     alt="HireUp Trades Recruitment"
     className="w-40 h-14 object-contain object-left"
   />
@@ -1474,7 +1475,7 @@ export default function App() {
             <div className="p-5 border-b border-zinc-200 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <img
-                  src="/hireup-logo.png"
+                  src={HIREUP_LOGO}
                   alt="HireUp"
                   className="w-36 h-14 object-contain object-left flex-shrink-0"
                 />
@@ -1666,7 +1667,7 @@ export default function App() {
 
             <div className="w-28 h-10 flex items-center">
               <img
-                src="/hireup-logo.png"
+                src={HIREUP_LOGO}
                 alt="HireUp"
                 className="w-full h-full object-contain object-left"
               />

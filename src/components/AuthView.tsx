@@ -14,6 +14,7 @@ import { WorkerProfile, CompanyProfile, JobProfile, UserType } from '../types';
 import SearchableDropdown from './SearchableDropdown';
 import { HOMETOWNS, LICENCES, POSITION_LENGTHS, GRADES, REQUIREMENTS, TRADES_CATEGORIES, TRADE_SUBCATEGORIES_MAP } from '../data/datasets';
 import { signInUser, registerWorker, registerContractor, uploadFileToStorage, supabase } from '../lib/supabase';
+import { HIREUP_LOGO } from '../constants';
 
 
 interface AuthViewProps {
@@ -432,11 +433,12 @@ export default function AuthView({
         {/* LOGO & HEADING COMMON TO ALL SUB-VIEWS */}
         {!(view === 'landing' || view === 'signin') && (
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 mb-1 bg-white px-5 py-2.5 rounded-2xl border border-zinc-200 shadow-2xs">
-              <div className="w-9 h-9 rounded-xl bg-[#34D399] flex items-center justify-center text-white font-mono font-black text-xl shadow-md shadow-[#34D399]/20">
-                HU
-              </div>
-              <span className="text-xl font-black uppercase tracking-wider text-zinc-900 font-sans">Hire<span className="text-[#10B981]">Up</span></span>
+            <div className="inline-flex items-center justify-center mb-1 bg-white px-5 py-3 rounded-2xl border border-zinc-200 shadow-2xs">
+              <img
+                src={HIREUP_LOGO}
+                alt="HireUp Trades Recruitment"
+                className="w-44 h-20 object-contain"
+              />
             </div>
           </div>
         )}
@@ -612,14 +614,18 @@ export default function AuthView({
             <nav className="border-b border-zinc-100 bg-white/95 backdrop-blur-md sticky top-0 z-50 py-4">
               <div className="flex items-center justify-between">
                 {/* Logo on Left */}
-                <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('landing')}>
-                  <div className="w-8 h-8 rounded-lg bg-[#00F5A0] flex items-center justify-center text-zinc-950 font-mono font-black text-sm shadow-sm">
-                    HU
-                  </div>
-                  <span className="text-xl font-black uppercase tracking-wider text-zinc-950 font-sans">
-                    Hire<span className="text-emerald-500">Up</span>
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  className="w-36 h-14 flex items-center cursor-pointer"
+                  onClick={() => setView('landing')}
+                  aria-label="Return to HireUp home"
+                >
+                  <img
+                    src={HIREUP_LOGO}
+                    alt="HireUp"
+                    className="w-full h-full object-contain object-left"
+                  />
+                </button>
 
                 {/* Navigation links on Right */}
                 <div className="flex items-center gap-5 sm:gap-8 text-xs font-mono font-bold uppercase tracking-wider text-zinc-600">
