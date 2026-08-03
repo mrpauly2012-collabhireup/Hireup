@@ -96,6 +96,7 @@ export default function DashboardView({
 }: DashboardViewProps) {
   // Local notification for availability status update
   const [showNotification, setShowNotification] = useState<string | null>(null);
+  const [showAllWorkerTrades, setShowAllWorkerTrades] = useState(false);
 
   // Live contractor vacancy creation
   const [showPostJobModal, setShowPostJobModal] = useState(false);
@@ -229,8 +230,17 @@ export default function DashboardView({
   // Active vacancies posted by this company
   const activeVacancies = jobs.filter(j => j.companyId === loggedInCompany.id);
 
-  // Recommended workers matching active vacancies trades
-  const recommendedWorkers = [...workers]
+  // Recommended workers matching active vacancy trades by default.
+  const workersMatchingVacancyTrades =
+    showAllWorkerTrades || activeVacancies.length === 0
+      ? workers
+      : workers.filter(worker =>
+          activeVacancies.some(job =>
+            isSameTradeCategory(worker.trade, job.trade)
+          )
+        );
+
+  const recommendedWorkers = [...workersMatchingVacancyTrades]
     .sort(
       (a, b) =>
         bestWorkerMatchAcrossJobs(b, activeVacancies).score -
@@ -1108,6 +1118,15 @@ export default function DashboardView({
               )}
             </div>
 
+              {userType === 'employer' && activeVacancies.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllWorkerTrades(value => !value)}
+                  className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-mono font-black uppercase text-emerald-700 hover:bg-emerald-100"
+                >
+                  {showAllWorkerTrades ? 'Show Vacancy Trades' : 'Show All Trades'}
+                </button>
+              )}
             {/* 3. Recommended Workers */}
             <div className="space-y-4">
               <div className="flex justify-between items-center pb-2 border-b border-zinc-100">

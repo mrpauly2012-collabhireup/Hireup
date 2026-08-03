@@ -102,6 +102,17 @@ export default function SearchView({
   const [selectedHometown, setSelectedHometown] = useState<string>('');
   const [selectedPositionLengths, setSelectedPositionLengths] = useState<string[]>([]);
   const [selectedRequirements, setSelectedRequirements] = useState<string[]>([]);
+  const [showAllWorkerTrades, setShowAllWorkerTrades] = useState(false);
+
+  const loggedInWorker =
+    userType === 'worker'
+      ? workers.find(worker => worker.id === currentUser?.id)
+      : undefined;
+
+  const contractorJobs =
+    userType === 'employer' && currentUser
+      ? jobs.filter(job => job.companyId === currentUser.id)
+      : [];
 
   // Contractors can browse all trades. Workers only filter within their own category.
   const trades =
@@ -126,6 +137,17 @@ export default function SearchView({
 
   // Live filter logic
   const filteredWorkers = workers.filter(worker => {
+    if (
+      userType === 'employer' &&
+      !showAllWorkerTrades &&
+      contractorJobs.length > 0 &&
+      !contractorJobs.some(job =>
+        isSameTradeCategory(worker.trade, job.trade)
+      )
+    ) {
+      return false;
+    }
+
     if (
       !includesQuery([
         worker.name,
@@ -398,8 +420,6 @@ export default function SearchView({
 
     return sorted;
   };
-
-  const contractorJobs = jobs.filter(job => job.companyId === currentUser?.id);
 
   const sortedWorkers =
     aiQuery.trim() && userType === 'employer'
@@ -891,6 +911,26 @@ export default function SearchView({
             )}
         </div>
       </div>
+
+      {userType === 'employer' && contractorJobs.length > 0 && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <div>
+            <p className="text-xs font-black text-zinc-950">
+              {showAllWorkerTrades ? 'All worker trades are visible' : 'Workers are filtered to your vacancy trades'}
+            </p>
+            <p className="mt-0.5 text-[10px] text-zinc-600">
+              Matching against {contractorJobs.length} live {contractorJobs.length === 1 ? 'vacancy' : 'vacancies'}.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAllWorkerTrades(value => !value)}
+            className="flex-shrink-0 rounded-lg bg-white px-3 py-2 text-[10px] font-mono font-black uppercase text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+          >
+            {showAllWorkerTrades ? 'Vacancy Trades' : 'All Trades'}
+          </button>
+        </div>
+      )}
 
       {/* Filtered Search Results Count */}
       <div className="flex justify-between items-center">

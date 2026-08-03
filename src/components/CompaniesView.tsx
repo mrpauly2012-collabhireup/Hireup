@@ -213,15 +213,29 @@ export default function CompaniesView({
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [expandedCompanyId, setExpandedCompanyId] = useState<string | null>(null);
   const [workerDisplayMode, setWorkerDisplayMode] = useState<WorkerDisplayMode>('split');
+  const [showAllWorkerTrades, setShowAllWorkerTrades] = useState(false);
 
   const loggedInWorker = workers.find(worker => worker.id === currentUserId);
   const loggedInCompany = companies.find(company => company.id === currentUserId);
   const contractorJobs = jobs.filter(job => job.companyId === currentUserId);
 
-  const verifiedWorkers = useMemo(
-    () => workers.filter(worker => worker.verified),
-    [workers]
-  );
+  const verifiedWorkers = useMemo(() => {
+    const verified = workers.filter(worker => worker.verified);
+
+    if (
+      userType !== 'employer' ||
+      showAllWorkerTrades ||
+      contractorJobs.length === 0
+    ) {
+      return verified;
+    }
+
+    return verified.filter(worker =>
+      contractorJobs.some(job =>
+        isSameTradeCategory(worker.trade, job.trade)
+      )
+    );
+  }, [workers, userType, showAllWorkerTrades, contractorJobs]);
 
   const verifiedCompanies = useMemo(
     () => companies.filter(company => company.verified),
@@ -611,6 +625,16 @@ export default function CompaniesView({
               className="w-full pl-9 pr-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-[#34D399]"
             />
           </div>
+
+          {userType === 'employer' && contractorJobs.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAllWorkerTrades(value => !value)}
+              className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[10px] font-mono font-black uppercase text-emerald-700 hover:bg-emerald-100"
+            >
+              {showAllWorkerTrades ? 'Vacancy Trades' : 'All Trades'}
+            </button>
+          )}
 
           <select
             value={tradeFilter}

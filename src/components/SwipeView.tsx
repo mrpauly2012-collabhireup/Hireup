@@ -128,14 +128,39 @@ export default function SwipeView({
   const [shortlistedWorkerIds, setShortlistedWorkerIds] = useState<string[]>([]);
   const [persistedAppliedJobIds, setPersistedAppliedJobIds] = useState<string[]>([]);
   const [persistedShortlistedWorkerIds, setPersistedShortlistedWorkerIds] = useState<string[]>([]);
+  const [showAllWorkerTrades, setShowAllWorkerTrades] = useState(false);
+
+  const contractorJobsForFeed = React.useMemo(
+    () =>
+      userType === 'employer' && currentUser
+        ? jobs.filter(job => job.companyId === currentUser.id)
+        : [],
+    [jobs, userType, currentUser?.id]
+  );
+
+  const contractorTradeWorkers = React.useMemo(() => {
+    if (
+      userType !== 'employer' ||
+      showAllWorkerTrades ||
+      contractorJobsForFeed.length === 0
+    ) {
+      return workers;
+    }
+
+    return workers.filter(worker =>
+      contractorJobsForFeed.some(job =>
+        isSameTradeCategory(worker.trade, job.trade)
+      )
+    );
+  }, [workers, userType, showAllWorkerTrades, contractorJobsForFeed]);
 
   useEffect(() => {
-    const visibleWorkers = workers.filter(
+    const visibleWorkers = contractorTradeWorkers.filter(
       worker => !persistedShortlistedWorkerIds.includes(worker.id)
     );
     setWorkerDeck(visibleWorkers);
     setCurrentIndex(0);
-  }, [workers, persistedShortlistedWorkerIds]);
+  }, [contractorTradeWorkers, persistedShortlistedWorkerIds]);
 
   useEffect(() => {
     const visibleOpportunities = combinedWorkerOpportunities.filter(
