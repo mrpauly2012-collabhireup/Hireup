@@ -1423,8 +1423,19 @@ export async function markAllNotificationsAsRead(userId: string): Promise<void> 
   if (error) throw error;
 }
 
-export async function createNotificationInDb(userId: string, title: string, message: string): Promise<AppNotification | null> {
+export async function createNotificationInDb(
+  userId: string,
+  title: string,
+  message: string,
+  options?: {
+    type?: string;
+    url?: string;
+    tag?: string;
+  }
+): Promise<AppNotification | null> {
   try {
+    const type = options?.type || 'info';
+
     const { data, error } = await supabase
       .from('notifications')
       .insert({
@@ -1432,24 +1443,65 @@ export async function createNotificationInDb(userId: string, title: string, mess
         title,
         message,
         body: message,
-        type: 'info',
+        type,
         read: false,
-        is_read: false
-      }).select('*').single();
+        is_read: false,
+      })
+      .select('*')
+      .single();
+
     if (error) {
-      console.warn("Could not create notification in Supabase:", error.message);
+      console.warn(
+        'Could not create notification in Supabase:',
+        error.message
+      );
       return null;
     }
+
+    try {
+      const { error: pushError } = await supabase.functions.invoke(
+        'send-push',
+        {
+          body: {
+            userId,
+            title,
+            body: message,
+            type,
+            url: options?.url || '/',
+            tag: options?.tag || `hireup-${data.id}`,
+          },
+        }
+      );
+
+      if (pushError) {
+        console.warn(
+          'Notification saved, but push delivery failed:',
+          pushError.message
+        );
+      }
+    } catch (pushError: any) {
+      console.warn(
+        'Notification saved, but send-push could not be called:',
+        pushError?.message || String(pushError)
+      );
+    }
+
     return {
       id: data.id,
       userId: data.user_id,
       title: data.title,
       message: data.body || data.message,
-      isRead: data.read !== undefined ? data.read : data.is_read,
-      createdAt: data.created_at
+      isRead:
+        data.read !== undefined
+          ? data.read
+          : data.is_read,
+      createdAt: data.created_at,
     };
   } catch (err: any) {
-    console.warn("createNotificationInDb error:", err.message);
+    console.warn(
+      'createNotificationInDb error:',
+      err.message
+    );
     return null;
   }
 }
@@ -1868,5 +1920,5 @@ export async function moderateReviewInDb(
     })
     .eq('id', reviewId);
 
-  if (error) throw error;
+  if (error) throw errogr;
 }

@@ -73,6 +73,7 @@ import InformationCentre from './components/InformationCentre';
 import ApplicationsView from './components/ApplicationsView';
 import { HIREUP_LOGO } from './constants';
 import PublicJobsView from './components/PublicJobsView';
+import { showHireUpNotification } from './lib/pwa';
 
 export default function App() {
   // Core User Session State
@@ -438,6 +439,7 @@ export default function App() {
             date: newInt.date,
             time: newInt.time,
             location: newInt.location,
+            meetingLink: newInt.meeting_link || '',
             status: newInt.status,
             ppeRequired: newInt.ppe_required || ['Hard Hat', 'Steel Toe Boots', 'Hi-Vis Vest'],
             notes: newInt.notes || '',
@@ -480,6 +482,15 @@ export default function App() {
           setNotifications(prev => {
             if (prev.some(item => item.id === mappedNotification.id)) return prev;
             return [mappedNotification, ...prev];
+          });
+
+          void showHireUpNotification(mappedNotification.title, {
+            body: mappedNotification.message,
+            tag: `hireup-${mappedNotification.id}`,
+            data: {
+              url: '/',
+              notificationId: mappedNotification.id,
+            },
           });
         }
       )

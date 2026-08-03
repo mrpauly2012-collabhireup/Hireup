@@ -54,6 +54,9 @@ import {
   FileText,
   Building,
   Flag,
+  Send,
+  Megaphone,
+  UserRoundCheck,
 } from 'lucide-react';
 import {
   AdminAccountStatus,
@@ -106,10 +109,33 @@ type AdminSection =
   | 'overview'
   | 'users'
   | 'jobs'
+  | 'applications'
   | 'reviews'
   | 'reports'
+  | 'broadcast'
   | 'analytics'
   | 'audit';
+
+type AdminApplicationStatus =
+  | 'applied'
+  | 'viewed'
+  | 'shortlisted'
+  | 'interview'
+  | 'offered'
+  | 'hired'
+  | 'rejected'
+  | 'withdrawn';
+
+interface AdminApplication {
+  id: string;
+  workerId: string;
+  contractorId: string;
+  jobId: string;
+  status: AdminApplicationStatus;
+  note: string;
+  appliedAt: string;
+  updatedAt: string;
+}
 
 
 type SortDirection = 'asc' | 'desc';
@@ -120,7 +146,7 @@ type SortState = {
 };
 
 
-type PaginatedSection = 'users' | 'jobs' | 'reviews' | 'reports' | 'audit';
+type PaginatedSection = 'users' | 'jobs' | 'applications' | 'reviews' | 'reports' | 'audit';
 
 type PaginationState = {
   page: number;
@@ -156,8 +182,10 @@ const sectionLabels: Record<AdminSection, string> = {
   overview: 'Overview',
   users: 'Users',
   jobs: 'Jobs',
+  applications: 'Applications',
   reviews: 'Reviews',
   reports: 'Reports',
+  broadcast: 'Broadcast',
   analytics: 'Analytics',
   audit: 'Audit Log',
 };
@@ -166,8 +194,10 @@ const sectionIcons: Record<AdminSection, React.ElementType> = {
   overview: LayoutDashboard,
   users: Users,
   jobs: Briefcase,
+  applications: ClipboardList,
   reviews: Star,
   reports: FileWarning,
+  broadcast: Megaphone,
   analytics: BarChart3,
   audit: ListChecks,
 };
@@ -432,9 +462,10 @@ export default function AdminDashboard({
   const [openActionsId, setOpenActionsId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<AdminManagedUser | null>(null);
 
-  const [sorts, setSorts] = useState<Record<Exclude<AdminSection, 'overview' | 'analytics'>, SortState>>({
+  const [sorts, setSorts] = useState<Record<Exclude<AdminSection, 'overview' | 'analytics' | 'broadcast'>, SortState>>({
     users: { field: 'createdAt', direction: 'desc' },
     jobs: { field: 'createdAt', direction: 'desc' },
+    applications: { field: 'updatedAt', direction: 'desc' },
     reviews: { field: 'createdAt', direction: 'desc' },
     reports: { field: 'createdAt', direction: 'desc' },
     audit: { field: 'createdAt', direction: 'desc' },
@@ -443,6 +474,7 @@ export default function AdminDashboard({
   const [pagination, setPagination] = useState<Record<PaginatedSection, PaginationState>>({
     users: { page: 1, pageSize: 25 },
     jobs: { page: 1, pageSize: 25 },
+    applications: { page: 1, pageSize: 25 },
     reviews: { page: 1, pageSize: 25 },
     reports: { page: 1, pageSize: 25 },
     audit: { page: 1, pageSize: 25 },
@@ -456,6 +488,15 @@ export default function AdminDashboard({
   });
 
   const [jobs, setJobs] = useState<AdminJob[]>([]);
+  const [applications, setApplications] = useState<AdminApplication[]>([]);
+  const [applicationStatusFilter, setApplicationStatusFilter] =
+    useState<'all' | AdminApplicationStatus>('all');
+  const [broadcastAudience, setBroadcastAudience] =
+    useState<'all' | 'worker' | 'contractor'>('all');
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcastSending, setBroadcastSending] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState('');
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [reports, setReports] = useState<AdminReport[]>([]);
   const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
@@ -485,9 +526,19 @@ export default function AdminDashboard({
     setSectionError(null);
 
     try {
-      const [jobRows, reviewRows, reportRows, auditRows, analyticsRows] =
-        await Promise.all([
+      const [
+        jobRows,
+        applicationResponse,
+        reviewRows,
+        reportRows,
+        auditRows,
+        analyticsRows,
+      ] = await Promise.all([
           fetchAdminJobs(),
+          supabase
+            .from('job_applications')
+            .select('*')
+            .order('updated_at', { ascending: false }),
           fetchAdminReviews(),
           fetchAdminReports(),
           fetchAdminAuditLogs(),
@@ -495,6 +546,21 @@ export default function AdminDashboard({
         ]);
 
       setJobs(jobRows);
+      if (applicationResponse.error) {
+        throw applicationResponse.error;
+      }
+      setApplications(
+        (applicationResponse.data || []).map((application: any) => ({
+          id: application.id,
+          workerId: application.worker_id,
+          contractorId: application.contractor_id,
+          jobId: application.job_id,
+          status: application.status as AdminApplicationStatus,
+          note: application.note || '',
+          appliedAt: application.applied_at || application.created_at || '',
+          updatedAt: application.updated_at || application.applied_at || '',
+        }))
+      );
       setReviews(reviewRows);
       setReports(reportRows);
       setAuditLogs(auditRows);
@@ -515,6 +581,7 @@ export default function AdminDashboard({
       ...previous,
       users: { ...previous.users, page: 1 },
       jobs: { ...previous.jobs, page: 1 },
+      applications: { ...previous.applications, page: 1 },
       reviews: { ...previous.reviews, page: 1 },
       reports: { ...previous.reports, page: 1 },
       audit: { ...previous.audit, page: 1 },
@@ -560,6 +627,11 @@ export default function AdminDashboard({
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'jobs' },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'job_applications' },
         scheduleRealtimeRefresh
       )
       .on(
@@ -623,6 +695,41 @@ export default function AdminDashboard({
     });
   }, [jobs, searchQuery, jobStatusFilter, jobFeaturedFilter]);
 
+  const filteredApplications = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return applications.filter(application => {
+      if (
+        applicationStatusFilter !== 'all' &&
+        application.status !== applicationStatusFilter
+      ) {
+        return false;
+      }
+
+      if (!query) return true;
+
+      const worker = users.find(user => user.id === application.workerId);
+      const contractor = users.find(user => user.id === application.contractorId);
+      const job = jobs.find(item => item.id === application.jobId);
+
+      return [
+        worker?.name || '',
+        worker?.email || '',
+        contractor?.name || '',
+        contractor?.email || '',
+        job?.title || '',
+        application.status,
+        application.note,
+      ].some(value => value.toLowerCase().includes(query));
+    });
+  }, [
+    applications,
+    applicationStatusFilter,
+    searchQuery,
+    users,
+    jobs,
+  ]);
+
   const filteredReviews = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
@@ -678,7 +785,7 @@ export default function AdminDashboard({
   }, [auditLogs, searchQuery, auditTypeFilter]);
 
   const handleSort = (
-    targetSection: Exclude<AdminSection, 'overview' | 'analytics'>,
+    targetSection: Exclude<AdminSection, 'overview' | 'analytics' | 'broadcast'>,
     field: string
   ) => {
     setSorts(previous => {
@@ -813,6 +920,38 @@ export default function AdminDashboard({
         return values[field];
       }),
     [filteredJobs, sorts.jobs]
+  );
+
+  const sortedApplications = useMemo(
+    () =>
+      applySort<AdminApplication>(
+        filteredApplications,
+        sorts.applications,
+        (application, field) => {
+          const worker = users.find(user => user.id === application.workerId);
+          const contractor = users.find(
+            user => user.id === application.contractorId
+          );
+          const job = jobs.find(item => item.id === application.jobId);
+
+          const values: Record<string, unknown> = {
+            worker: worker?.name || '',
+            contractor: contractor?.name || '',
+            job: job?.title || '',
+            status: application.status,
+            appliedAt: application.appliedAt,
+            updatedAt: application.updatedAt,
+          };
+
+          return values[field];
+        }
+      ),
+    [filteredApplications, sorts.applications, users, jobs]
+  );
+
+  const paginatedApplications = paginateRows(
+    sortedApplications,
+    'applications'
   );
 
   const sortedReviews = useMemo(
@@ -1054,6 +1193,109 @@ export default function AdminDashboard({
     });
   };
 
+  const updateApplicationStatus = async (
+    applicationId: string,
+    status: AdminApplicationStatus
+  ) => {
+    setLocalActionId(applicationId);
+    setSectionError(null);
+
+    try {
+      const { error: updateError } = await supabase
+        .from('job_applications')
+        .update({
+          status,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', applicationId);
+
+      if (updateError) throw updateError;
+      await refreshEverything();
+    } catch (updateError: any) {
+      setSectionError(updateError.message || String(updateError));
+    } finally {
+      setLocalActionId(null);
+    }
+  };
+
+  const sendBroadcast = async () => {
+    const title = broadcastTitle.trim();
+    const message = broadcastMessage.trim();
+
+    if (!title || !message) {
+      setBroadcastResult('Enter both a title and message.');
+      return;
+    }
+
+    const recipients = users.filter(user => {
+      if (broadcastAudience === 'all') return true;
+      if (broadcastAudience === 'worker') return user.type === 'worker';
+      return user.type === 'contractor';
+    });
+
+    if (recipients.length === 0) {
+      setBroadcastResult('No users match the selected audience.');
+      return;
+    }
+
+    setBroadcastSending(true);
+    setBroadcastResult('');
+
+    try {
+      const rows = recipients.map(user => ({
+        user_id: user.id,
+        type: 'broadcast',
+        title,
+        body: message,
+        message,
+        read: false,
+        is_read: false,
+      }));
+
+      const { data: inserted, error: insertError } = await supabase
+        .from('notifications')
+        .insert(rows)
+        .select('id, user_id');
+
+      if (insertError) throw insertError;
+
+      const pushResults = await Promise.allSettled(
+        (inserted || []).map(notification =>
+          supabase.functions.invoke('send-push', {
+            body: {
+              userId: notification.user_id,
+              title,
+              body: message,
+              type: 'broadcast',
+              url: '/',
+              tag: `hireup-broadcast-${notification.id}`,
+            },
+          })
+        )
+      );
+
+      const failed = pushResults.filter(
+        result =>
+          result.status === 'rejected' ||
+          (result.status === 'fulfilled' && result.value.error)
+      ).length;
+
+      setBroadcastResult(
+        failed > 0
+          ? `Broadcast saved for ${recipients.length} users. ${failed} push request(s) could not be delivered.`
+          : `Broadcast sent successfully to ${recipients.length} users.`
+      );
+      setBroadcastTitle('');
+      setBroadcastMessage('');
+    } catch (broadcastError: any) {
+      setBroadcastResult(
+        broadcastError.message || 'Broadcast could not be sent.'
+      );
+    } finally {
+      setBroadcastSending(false);
+    }
+  };
+
   const exportCurrentSection = () => {
     const date = new Date().toISOString().slice(0, 10);
 
@@ -1121,6 +1363,41 @@ export default function AdminDashboard({
           job.featured,
           job.createdAt,
         ])
+      );
+      return;
+    }
+
+    if (section === 'applications') {
+      downloadCsv(
+        `hireup-applications-${date}.csv`,
+        [
+          'ID',
+          'Worker',
+          'Contractor',
+          'Job',
+          'Status',
+          'Note',
+          'Applied',
+          'Updated',
+        ],
+        sortedApplications.map(application => {
+          const worker = users.find(user => user.id === application.workerId);
+          const contractor = users.find(
+            user => user.id === application.contractorId
+          );
+          const job = jobs.find(item => item.id === application.jobId);
+
+          return [
+            application.id,
+            worker?.name || application.workerId,
+            contractor?.name || application.contractorId,
+            job?.title || application.jobId,
+            application.status,
+            application.note,
+            application.appliedAt,
+            application.updatedAt,
+          ];
+        })
       );
       return;
     }
@@ -1258,6 +1535,12 @@ export default function AdminDashboard({
       value: stats?.liveJobs ?? 0,
       icon: Briefcase,
       action: () => setSection('jobs'),
+    },
+    {
+      label: 'Applications',
+      value: applications.length,
+      icon: ClipboardList,
+      action: () => setSection('applications'),
     },
     {
       label: 'Matches',
@@ -1506,8 +1789,8 @@ export default function AdminDashboard({
                   Platform control centre
                 </h2>
                 <p className="text-sm text-zinc-400 mt-3">
-                  Manage users, jobs, reviews, reports, analytics and every
-                  administrative action from one console.
+                  Manage users, jobs, applications, broadcasts, reviews, reports,
+                  analytics and every administrative action from one console.
                 </p>
               </div>
             </section>
@@ -2096,6 +2379,201 @@ export default function AdminDashboard({
           </section>
         )}
 
+        {section === 'applications' && (
+          <section className="space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-mono font-black uppercase tracking-wider text-[#10B981]">
+                  Recruitment pipeline
+                </p>
+                <h2 className="text-2xl font-black text-zinc-950">
+                  Applications management
+                </h2>
+                <p className="text-sm text-zinc-500 mt-1">
+                  Review and update every application across HireUp.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={exportCurrentSection}
+                className="px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-[10px] font-mono font-black uppercase flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Export applications
+              </button>
+            </div>
+
+            <div className="bg-white border border-zinc-200 rounded-2xl p-4 flex flex-col md:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <input
+                  value={searchQuery}
+                  onChange={event => setSearchQuery(event.target.value)}
+                  placeholder="Search worker, contractor, job or status..."
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 text-sm outline-none focus:border-[#34D399]"
+                />
+              </div>
+
+              <select
+                value={applicationStatusFilter}
+                onChange={event =>
+                  setApplicationStatusFilter(
+                    event.target.value as 'all' | AdminApplicationStatus
+                  )
+                }
+                className="px-4 py-3 rounded-xl border border-zinc-200 bg-white text-xs font-bold"
+              >
+                <option value="all">All statuses</option>
+                <option value="applied">Applied</option>
+                <option value="viewed">Viewed</option>
+                <option value="shortlisted">Shortlisted</option>
+                <option value="interview">Interview</option>
+                <option value="offered">Offered</option>
+                <option value="hired">Hired</option>
+                <option value="rejected">Rejected</option>
+                <option value="withdrawn">Withdrawn</option>
+              </select>
+            </div>
+
+            <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[980px]">
+                  <thead className="bg-zinc-50 border-b border-zinc-200">
+                    <tr>
+                      {[
+                        ['Worker', 'worker'],
+                        ['Contractor', 'contractor'],
+                        ['Job', 'job'],
+                        ['Status', 'status'],
+                        ['Applied', 'appliedAt'],
+                        ['Updated', 'updatedAt'],
+                      ].map(([label, field]) => (
+                        <th key={field} className="text-left px-4 py-3">
+                          <SortButton
+                            label={label}
+                            field={field}
+                            sort={sorts.applications}
+                            onSort={fieldName =>
+                              handleSort('applications', fieldName)
+                            }
+                          />
+                        </th>
+                      ))}
+                      <th className="text-left px-4 py-3 text-[9px] font-mono font-black uppercase text-zinc-400">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-zinc-100">
+                    {paginatedApplications.map(application => {
+                      const worker = users.find(
+                        user => user.id === application.workerId
+                      );
+                      const contractor = users.find(
+                        user => user.id === application.contractorId
+                      );
+                      const job = jobs.find(
+                        item => item.id === application.jobId
+                      );
+
+                      return (
+                        <tr key={application.id} className="hover:bg-zinc-50">
+                          <td className="px-4 py-4">
+                            <p className="text-sm font-black text-zinc-950">
+                              {worker?.name || 'Unknown worker'}
+                            </p>
+                            <p className="text-[10px] text-zinc-500">
+                              {worker?.email || application.workerId}
+                            </p>
+                          </td>
+                          <td className="px-4 py-4">
+                            <p className="text-sm font-bold text-zinc-800">
+                              {contractor?.name || 'Unknown contractor'}
+                            </p>
+                          </td>
+                          <td className="px-4 py-4">
+                            <p className="text-sm font-bold text-zinc-800">
+                              {job?.title || 'Unknown job'}
+                            </p>
+                            <p className="text-[10px] text-zinc-500">
+                              {job?.companyName || ''}
+                            </p>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[9px] font-mono font-black uppercase ${statusClass(
+                                application.status
+                              )}`}
+                            >
+                              {application.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-xs text-zinc-600">
+                            {formatDate(application.appliedAt)}
+                          </td>
+                          <td className="px-4 py-4 text-xs text-zinc-600">
+                            {formatDate(application.updatedAt)}
+                          </td>
+                          <td className="px-4 py-4">
+                            <select
+                              value={application.status}
+                              disabled={localActionId === application.id}
+                              onChange={event =>
+                                void updateApplicationStatus(
+                                  application.id,
+                                  event.target.value as AdminApplicationStatus
+                                )
+                              }
+                              className="px-3 py-2 rounded-lg border border-zinc-200 bg-white text-[10px] font-mono font-black uppercase disabled:opacity-50"
+                            >
+                              <option value="applied">Applied</option>
+                              <option value="viewed">Viewed</option>
+                              <option value="shortlisted">Shortlisted</option>
+                              <option value="interview">Interview</option>
+                              <option value="offered">Offered</option>
+                              <option value="hired">Hired</option>
+                              <option value="rejected">Rejected</option>
+                              <option value="withdrawn">Withdrawn</option>
+                            </select>
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                    {paginatedApplications.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="px-6 py-12 text-center text-sm text-zinc-500"
+                        >
+                          No applications match the current filters.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <PaginationControls
+              page={pagination.applications.page}
+              pageSize={pagination.applications.pageSize}
+              totalItems={sortedApplications.length}
+              onPageChange={page =>
+                updatePagination('applications', { page })
+              }
+              onPageSizeChange={pageSize =>
+                updatePagination('applications', {
+                  page: 1,
+                  pageSize,
+                })
+              }
+            />
+          </section>
+        )}
+
         {section === 'reviews' && (
           <section className="space-y-3">
             <select
@@ -2391,6 +2869,118 @@ export default function AdminDashboard({
                 updatePagination('reports', { page: 1, pageSize })
               }
             />
+          </section>
+        )}
+
+        {section === 'broadcast' && (
+          <section className="space-y-5">
+            <div>
+              <p className="text-[10px] font-mono font-black uppercase tracking-wider text-[#10B981]">
+                Platform communication
+              </p>
+              <h2 className="text-2xl font-black text-zinc-950">
+                Broadcast notifications
+              </h2>
+              <p className="text-sm text-zinc-500 mt-1">
+                Send an in-app and push notification to selected HireUp users.
+              </p>
+            </div>
+
+            <div className="max-w-3xl bg-white border border-zinc-200 rounded-3xl overflow-hidden shadow-sm">
+              <div className="p-5 border-b border-zinc-200 bg-zinc-50 flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-[#34D399]/15 text-[#10B981] flex items-center justify-center">
+                  <Megaphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-black text-zinc-950">New broadcast</p>
+                  <p className="text-xs text-zinc-500">
+                    Messages are delivered to the notification centre and subscribed devices.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-5">
+                <label className="block space-y-2">
+                  <span className="text-[10px] font-mono font-black uppercase text-zinc-500">
+                    Audience
+                  </span>
+                  <select
+                    value={broadcastAudience}
+                    onChange={event =>
+                      setBroadcastAudience(
+                        event.target.value as 'all' | 'worker' | 'contractor'
+                      )
+                    }
+                    className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-white text-sm outline-none focus:border-[#34D399]"
+                  >
+                    <option value="all">All HireUp users</option>
+                    <option value="worker">Workers only</option>
+                    <option value="contractor">Contractors only</option>
+                  </select>
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-[10px] font-mono font-black uppercase text-zinc-500">
+                    Notification title
+                  </span>
+                  <input
+                    value={broadcastTitle}
+                    onChange={event => setBroadcastTitle(event.target.value)}
+                    maxLength={80}
+                    placeholder="HireUp update"
+                    className="w-full px-4 py-3 rounded-xl border border-zinc-200 text-sm outline-none focus:border-[#34D399]"
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-[10px] font-mono font-black uppercase text-zinc-500">
+                    Message
+                  </span>
+                  <textarea
+                    value={broadcastMessage}
+                    onChange={event => setBroadcastMessage(event.target.value)}
+                    maxLength={500}
+                    rows={6}
+                    placeholder="Write the notification users will receive..."
+                    className="w-full px-4 py-3 rounded-xl border border-zinc-200 text-sm outline-none resize-none focus:border-[#34D399]"
+                  />
+                  <span className="block text-right text-[10px] text-zinc-400">
+                    {broadcastMessage.length}/500
+                  </span>
+                </label>
+
+                <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-800">
+                    Broadcasts cannot be recalled after sending. Confirm the audience and wording first.
+                  </p>
+                </div>
+
+                {broadcastResult && (
+                  <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-xs font-bold text-emerald-800">
+                    {broadcastResult}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => void sendBroadcast()}
+                  disabled={
+                    broadcastSending ||
+                    !broadcastTitle.trim() ||
+                    !broadcastMessage.trim()
+                  }
+                  className="w-full py-3.5 rounded-xl bg-zinc-950 text-white text-xs font-mono font-black uppercase flex items-center justify-center gap-2 disabled:opacity-40"
+                >
+                  {broadcastSending ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  {broadcastSending ? 'Sending broadcast...' : 'Send broadcast'}
+                </button>
+              </div>
+            </div>
           </section>
         )}
 
@@ -3143,4 +3733,4 @@ export default function AdminDashboard({
       </main>
     </div>
   );
-}
+} 
