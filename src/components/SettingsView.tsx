@@ -112,6 +112,197 @@ interface VerificationFiles {
   insurance: File | null;
 }
 
+
+const UK_TOWNS_AND_CITIES = [
+  'Aberdeen',
+  'Bath',
+  'Belfast',
+  'Birmingham',
+  'Blackpool',
+  'Bolton',
+  'Bournemouth',
+  'Bradford',
+  'Brighton and Hove',
+  'Bristol',
+  'Cambridge',
+  'Cardiff',
+  'Carlisle',
+  'Chester',
+  'Chichester',
+  'Colchester',
+  'Coventry',
+  'Crawley',
+  'Derby',
+  'Doncaster',
+  'Dundee',
+  'Durham',
+  'Eastbourne',
+  'Edinburgh',
+  'Exeter',
+  'Glasgow',
+  'Gloucester',
+  'Guildford',
+  'Harrogate',
+  'Hastings',
+  'Hereford',
+  'Huddersfield',
+  'Hull',
+  'Inverness',
+  'Ipswich',
+  'Leeds',
+  'Leicester',
+  'Lincoln',
+  'Liverpool',
+  'London',
+  'Luton',
+  'Manchester',
+  'Middlesbrough',
+  'Milton Keynes',
+  'Newcastle upon Tyne',
+  'Newport',
+  'Northampton',
+  'Norwich',
+  'Nottingham',
+  'Oxford',
+  'Peterborough',
+  'Plymouth',
+  'Portsmouth',
+  'Preston',
+  'Reading',
+  'Sheffield',
+  'Shoreham-by-Sea',
+  'Slough',
+  'Southampton',
+  'Southend-on-Sea',
+  'Stoke-on-Trent',
+  'Sunderland',
+  'Swansea',
+  'Swindon',
+  'Wakefield',
+  'Warrington',
+  'Watford',
+  'Wolverhampton',
+  'Worcester',
+  'Worthing',
+  'York',
+];
+
+const PRIMARY_TRADES = [
+  'Bricklayer',
+  'Carpenter / Joiner',
+  'Cleaner',
+  'Decorator',
+  'Demolition Operative',
+  'Dryliner',
+  'Electrician',
+  'Floor Layer',
+  'General Labourer',
+  'Groundworker',
+  'Handyman',
+  'Heating Engineer',
+  'Landscaper',
+  'Machine Operator',
+  'Painter',
+  'Plasterer',
+  'Plumber',
+  'Roofer',
+  'Scaffolder',
+  'Site Manager',
+  'Steel Fixer',
+  'Tiler',
+  'Welder / Fabricator',
+  'Window Fitter',
+];
+
+const EXPERIENCE_OPTIONS = [
+  'Less than 1 year',
+  '1 year',
+  '2 years',
+  '3 years',
+  '4 years',
+  '5 years',
+  '6 years',
+  '7 years',
+  '8 years',
+  '9 years',
+  '10 years',
+  '11–15 years',
+  '16–20 years',
+  '21–25 years',
+  '26–30 years',
+  '30+ years',
+];
+
+const DAY_RATE_OPTIONS = [
+  'Under £100/day',
+  '£100/day',
+  '£120/day',
+  '£140/day',
+  '£150/day',
+  '£160/day',
+  '£180/day',
+  '£200/day',
+  '£220/day',
+  '£240/day',
+  '£250/day',
+  '£260/day',
+  '£280/day',
+  '£300/day',
+  '£325/day',
+  '£350/day',
+  '£375/day',
+  '£400/day',
+  '£450/day',
+  '£500+/day',
+  'Negotiable',
+];
+
+const AVAILABILITY_OPTIONS = [
+  'Available now',
+  'Available tomorrow',
+  'Available this week',
+  'Available next week',
+  'Available within 2 weeks',
+  'Available within 1 month',
+  'Weekends only',
+  'Evenings only',
+  'Currently unavailable',
+];
+
+const TRAVEL_DISTANCE_OPTIONS = [
+  '5 miles',
+  '10 miles',
+  '15 miles',
+  '20 miles',
+  '25 miles',
+  '30 miles',
+  '40 miles',
+  '50 miles',
+  '75 miles',
+  '100 miles',
+  'Anywhere in the UK',
+];
+
+const DATE_MONTHS = [
+  ['01', 'January'],
+  ['02', 'February'],
+  ['03', 'March'],
+  ['04', 'April'],
+  ['05', 'May'],
+  ['06', 'June'],
+  ['07', 'July'],
+  ['08', 'August'],
+  ['09', 'September'],
+  ['10', 'October'],
+  ['11', 'November'],
+  ['12', 'December'],
+] as const;
+
+const DATE_YEARS = Array.from(
+  { length: 83 },
+  (_, index) => String(new Date().getFullYear() - 18 - index)
+);
+
 interface ToggleRowProps {
   title: string;
   description: string;
@@ -226,6 +417,110 @@ function SelectField({
         </select>
       </div>
     </label>
+  );
+}
+
+
+function DateOfBirthField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [year = '', month = '', day = ''] = value
+    ? value.split('-')
+    : ['', '', ''];
+
+  const daysInSelectedMonth =
+    year && month
+      ? new Date(Number(year), Number(month), 0).getDate()
+      : 31;
+
+  const days = Array.from(
+    { length: daysInSelectedMonth },
+    (_, index) => String(index + 1).padStart(2, '0')
+  );
+
+  const updateDate = (
+    nextYear: string,
+    nextMonth: string,
+    nextDay: string
+  ) => {
+    if (!nextYear && !nextMonth && !nextDay) {
+      onChange('');
+      return;
+    }
+
+    onChange(`${nextYear}-${nextMonth}-${nextDay}`);
+  };
+
+  return (
+    <div className="space-y-2">
+      <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-800">
+        Date of birth
+      </span>
+
+      <div className="grid grid-cols-[0.8fr_1.35fr_1fr] gap-2">
+        <select
+          value={day}
+          onChange={event =>
+            updateDate(year, month, event.target.value)
+          }
+          className="w-full px-3 py-3 rounded-xl border bg-white border-zinc-200 outline-none text-sm text-zinc-950 focus:border-[#34D399]"
+          aria-label="Birth day"
+        >
+          <option value="">Day</option>
+          {days.map(item => (
+            <option key={item} value={item}>
+              {Number(item)}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={month}
+          onChange={event => {
+            const nextMonth = event.target.value;
+            const maximumDay =
+              year && nextMonth
+                ? new Date(Number(year), Number(nextMonth), 0).getDate()
+                : 31;
+            const nextDay =
+              day && Number(day) > maximumDay
+                ? String(maximumDay).padStart(2, '0')
+                : day;
+
+            updateDate(year, nextMonth, nextDay);
+          }}
+          className="w-full px-3 py-3 rounded-xl border bg-white border-zinc-200 outline-none text-sm text-zinc-950 focus:border-[#34D399]"
+          aria-label="Birth month"
+        >
+          <option value="">Month</option>
+          {DATE_MONTHS.map(([monthNumber, monthName]) => (
+            <option key={monthNumber} value={monthNumber}>
+              {monthName}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={year}
+          onChange={event =>
+            updateDate(event.target.value, month, day)
+          }
+          className="w-full px-3 py-3 rounded-xl border bg-white border-zinc-200 outline-none text-sm text-zinc-950 focus:border-[#34D399]"
+          aria-label="Birth year"
+        >
+          <option value="">Year</option>
+          {DATE_YEARS.map(item => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
   );
 }
 
@@ -701,19 +996,25 @@ export default function SettingsView({
                   type="tel"
                   icon={<Phone className="w-4 h-4" />}
                 />
-                <FormField
+                <SelectField
                   label="Location"
                   value={accountForm.location}
                   onChange={value => updateAccountField('location', value)}
-                  placeholder="Town or city"
                   icon={<MapPin className="w-4 h-4" />}
-                />
-                <FormField
-                  label="Date of birth"
+                >
+                  <option value="">Select town or city</option>
+                  {UK_TOWNS_AND_CITIES.map(location => (
+                    <option key={location} value={location}>
+                      {location}
+                    </option>
+                  ))}
+                </SelectField>
+
+                <DateOfBirthField
                   value={accountForm.dateOfBirth}
-                  onChange={value => updateAccountField('dateOfBirth', value)}
-                  type="date"
-                  icon={<CalendarDays className="w-4 h-4" />}
+                  onChange={value =>
+                    updateAccountField('dateOfBirth', value)
+                  }
                 />
               </div>
 
@@ -724,49 +1025,83 @@ export default function SettingsView({
 
                 {isWorker ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <FormField
+                    <SelectField
                       label="Primary trade"
                       value={accountForm.primaryTrade}
                       onChange={value =>
                         updateAccountField('primaryTrade', value)
                       }
-                      placeholder="e.g. Electrician"
                       icon={<Wrench className="w-4 h-4" />}
-                    />
-                    <FormField
+                    >
+                      <option value="">Select primary trade</option>
+                      {PRIMARY_TRADES.map(trade => (
+                        <option key={trade} value={trade}>
+                          {trade}
+                        </option>
+                      ))}
+                    </SelectField>
+
+                    <SelectField
                       label="Experience"
                       value={accountForm.experience}
                       onChange={value =>
                         updateAccountField('experience', value)
                       }
-                      placeholder="e.g. 8 years"
                       icon={<CalendarDays className="w-4 h-4" />}
-                    />
-                    <FormField
+                    >
+                      <option value="">Select experience</option>
+                      {EXPERIENCE_OPTIONS.map(experience => (
+                        <option key={experience} value={experience}>
+                          {experience}
+                        </option>
+                      ))}
+                    </SelectField>
+
+                    <SelectField
                       label="Day rate"
                       value={accountForm.dayRate}
-                      onChange={value => updateAccountField('dayRate', value)}
-                      placeholder="e.g. £220/day"
+                      onChange={value =>
+                        updateAccountField('dayRate', value)
+                      }
                       icon={<Briefcase className="w-4 h-4" />}
-                    />
-                    <FormField
+                    >
+                      <option value="">Select expected day rate</option>
+                      {DAY_RATE_OPTIONS.map(rate => (
+                        <option key={rate} value={rate}>
+                          {rate}
+                        </option>
+                      ))}
+                    </SelectField>
+
+                    <SelectField
                       label="Availability"
                       value={accountForm.availability}
                       onChange={value =>
                         updateAccountField('availability', value)
                       }
-                      placeholder="e.g. Available now"
                       icon={<CalendarCheck className="w-4 h-4" />}
-                    />
-                    <FormField
+                    >
+                      {AVAILABILITY_OPTIONS.map(availability => (
+                        <option key={availability} value={availability}>
+                          {availability}
+                        </option>
+                      ))}
+                    </SelectField>
+
+                    <SelectField
                       label="Travel distance"
                       value={accountForm.travelDistance}
                       onChange={value =>
                         updateAccountField('travelDistance', value)
                       }
-                      placeholder="e.g. 25 miles"
                       icon={<MapPin className="w-4 h-4" />}
-                    />
+                    >
+                      {TRAVEL_DISTANCE_OPTIONS.map(distance => (
+                        <option key={distance} value={distance}>
+                          {distance}
+                        </option>
+                      ))}
+                    </SelectField>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
