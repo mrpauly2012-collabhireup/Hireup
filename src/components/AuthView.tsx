@@ -28,6 +28,27 @@ interface AuthViewProps {
 
 type AuthSubView = 'landing' | 'signin' | 'signup_worker' | 'signup_contractor';
 
+
+const COMPANY_INDUSTRIES = [
+  'General Building & Construction',
+  'Civil Engineering',
+  'Groundworks & Drainage',
+  'Residential Construction',
+  'Commercial Construction',
+  'Industrial Construction',
+  'Mechanical & Electrical',
+  'Property Maintenance',
+  'Refurbishment & Renovation',
+  'Shopfitting & Interiors',
+  'Roofing & Cladding',
+  'Landscaping & External Works',
+  'Facilities Management',
+  'Specialist Subcontracting',
+];
+
+const isValidEmailAddress = (value: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(value.trim());
+
 export default function AuthView({
   onAuthSuccess,
   workers,
@@ -565,10 +586,15 @@ export default function AuthView({
 
     setErrorMsg(null);
 
+    if (email.trim() && !isValidEmailAddress(email)) {
+      setErrorMsg('Enter a valid email address, for example hiring@company.co.uk.');
+      return;
+    }
+
     if (
       !companyName.trim() ||
       !contactName.trim() ||
-      !email.trim() ||
+      !isValidEmailAddress(email) ||
       password.length < 8 ||
       !contractorPhone.trim() ||
       !companyIndustry.trim() ||
@@ -618,14 +644,14 @@ export default function AuthView({
         phone: contractorPhone.trim(),
         contactName: contactName.trim(),
         contactPhone: contractorPhone.trim(),
-        contactEmail: email.trim(),
+        contactEmail: email.trim().toLowerCase(),
       };
 
       addDebugLog(`Starting contractor sign up for ${companyName.trim()}...`, 'pending');
 
       const result = await Promise.race([
         registerContractor(
-          email.trim(),
+          email.trim().toLowerCase(),
           password,
           baseCompany,
           companyRequirements,
@@ -2072,7 +2098,16 @@ export default function AuthView({
                         </label>
                         <label className="space-y-2 sm:col-span-2">
                           <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Industry / company focus *</span>
-                          <input value={companyIndustry} onChange={e => setCompanyIndustry(e.target.value)} placeholder="Commercial construction, civil engineering, shopfitting..." className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                          <select
+                            value={companyIndustry}
+                            onChange={e => setCompanyIndustry(e.target.value)}
+                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                          >
+                            <option value="">Select your company industry...</option>
+                            {COMPANY_INDUSTRIES.map(industry => (
+                              <option key={industry} value={industry}>{industry}</option>
+                            ))}
+                          </select>
                         </label>
                         <label className="space-y-2">
                           <span className="text-[10px] font-mono font-black uppercase tracking-wider text-zinc-500">Public liability cover *</span>
@@ -2157,8 +2192,8 @@ export default function AuthView({
                     {contractorSignupStep < contractorSignupTotalSteps - 1 ? (
                       <button type="button" onClick={() => {
                         setErrorMsg(null);
-                        const valid = contractorSignupStep === 0 ? Boolean(companyName.trim() && contactName.trim() && email.trim() && password.length >= 8 && contractorPhone.trim()) : contractorSignupStep === 1 ? Boolean(companyIndustry.trim() && companySize && companyHQ && companyInsurance) : contractorSignupStep === 2 ? Boolean(tradesHiring && tradesHiringSubcategory && jobLocation && hiringPositionLengths.length > 0 && companyRequirements.length > 0) : true;
-                        if (!valid) { setErrorMsg(contractorSignupStep === 0 ? 'Complete the company name, contact, email, phone and an 8-character password.' : contractorSignupStep === 1 ? 'Complete the company location, industry, size and insurance.' : 'Complete the trade, job location, contract types and hiring requirements.'); return; }
+                        const valid = contractorSignupStep === 0 ? Boolean(companyName.trim() && contactName.trim() && isValidEmailAddress(email) && password.length >= 8 && contractorPhone.trim()) : contractorSignupStep === 1 ? Boolean(companyIndustry.trim() && companySize && companyHQ && companyInsurance) : contractorSignupStep === 2 ? Boolean(tradesHiring && tradesHiringSubcategory && jobLocation && hiringPositionLengths.length > 0 && companyRequirements.length > 0) : true;
+                        if (!valid) { setErrorMsg(contractorSignupStep === 0 ? 'Enter the company name, contact, phone, a valid email address and an 8-character password.' : contractorSignupStep === 1 ? 'Complete the company location, industry, size and insurance.' : 'Complete the trade, job location, contract types and hiring requirements.'); return; }
                         moveContractorStep(contractorSignupStep + 1);
                       }} className="ml-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[#34D399] px-6 py-3.5 text-xs font-mono font-black uppercase text-zinc-950 shadow-lg shadow-emerald-500/15 transition hover:bg-[#10B981] hover:text-white">Continue <ArrowRight className="h-4 w-4" /></button>
                     ) : (
