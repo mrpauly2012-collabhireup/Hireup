@@ -94,6 +94,7 @@ interface AccountFormState {
   vatNumber: string;
   website: string;
   businessAddress: string;
+  insuranceStatus: string;
   about: string;
 }
 
@@ -635,6 +636,7 @@ export default function SettingsView({
     vatNumber: '',
     website: '',
     businessAddress: '',
+    insuranceStatus: 'No insurance',
     about: '',
   });
 
@@ -807,6 +809,7 @@ export default function SettingsView({
         vatNumber: companyProfile.vatNumber || '',
         website: companyProfile.website || '',
         businessAddress: companyProfile.businessAddress || '',
+        insuranceStatus: companyProfile.insuranceStatus || 'No insurance',
         about: companyProfile.description || '',
       }));
     }
@@ -1061,6 +1064,7 @@ export default function SettingsView({
           vatNumber: accountForm.vatNumber,
           phone: accountForm.phone,
           businessAddress: accountForm.businessAddress,
+          insuranceStatus: accountForm.insuranceStatus,
           contactName: fullName,
           contactPhone: accountForm.phone,
           contactEmail: accountForm.email || currentUserEmail,
@@ -1598,6 +1602,26 @@ export default function SettingsView({
                       placeholder="https://..."
                       icon={<Globe2 className="w-4 h-4" />}
                     />
+                    <SelectField
+                      label="Public liability insurance"
+                      value={accountForm.insuranceStatus}
+                      onChange={value =>
+                        updateAccountField('insuranceStatus', value)
+                      }
+                      icon={<Scale className="w-4 h-4" />}
+                    >
+                      <option value="No insurance">No insurance</option>
+                      {Array.from({ length: 10 }, (_, index) => index + 1).map(
+                        amount => (
+                          <option
+                            key={amount}
+                            value={`£${amount}M Public Liability`}
+                          >
+                            £{amount}M Public Liability
+                          </option>
+                        )
+                      )}
+                    </SelectField>
                     <div className="md:col-span-2">
                       <FormField
                         label="Business address"

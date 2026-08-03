@@ -17,6 +17,51 @@ import {
   scoreWorkerForJob,
 } from '../lib/matching';
 
+const normaliseTradeCategory = (value?: string | null): string => {
+  const trade = (value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (
+    trade.includes('paint') ||
+    trade.includes('decorat')
+  ) {
+    return 'painter and decorator';
+  }
+
+  if (trade.includes('carpenter') || trade.includes('joiner')) {
+    return 'carpenter and joiner';
+  }
+
+  if (trade.includes('labourer') || trade.includes('laborer')) {
+    return 'general labourer';
+  }
+
+  if (trade.includes('heating') || trade.includes('gas engineer')) {
+    return 'heating engineer';
+  }
+
+  if (trade.includes('window') && trade.includes('fit')) {
+    return 'window fitter';
+  }
+
+  return trade;
+};
+
+const isSameTradeCategory = (
+  workerTrade?: string | null,
+  jobTrade?: string | null
+): boolean => {
+  const workerCategory = normaliseTradeCategory(workerTrade);
+  const jobCategory = normaliseTradeCategory(jobTrade);
+
+  return Boolean(workerCategory && jobCategory && workerCategory === jobCategory);
+};
+
 interface SwipeViewProps {
   userType: UserType;
   workers: WorkerProfile[];
@@ -55,32 +100,20 @@ export default function SwipeView({
     return `⭐ 4.9 (52)`;
   };
 
-  // Combine jobs and companies/contractors for workers
-  const combinedWorkerOpportunities = React.useMemo(() => {
-    const mappedContractorOpportunities = (companies || []).map(company => ({
-      id: `contractor-${company.id}`,
-      companyId: company.id,
-      companyName: company.name,
-      companyLogo: company.logo,
-      title: `${company.name} Trade Opportunities`,
-      trade: company.industry || 'Multi-Trade Contractor',
-      subcategory: 'Site Contractor Profile',
-      payRate: company.insuranceStatus || 'Competitive CIS Rates',
-      location: company.location,
-      startDate: 'Immediate',
-      duration: 'Ongoing Contracts',
-      employmentType: 'Full-time / Subcontract',
-      qualifications: company.requirements || [],
-      verified: company.verified,
-      description: company.description,
-      benefits: company.benefits || [],
-      requirements: company.requirements || [],
-      companyStats: company.stats || { projects: 0, workers: 0, rating: 5.0 },
-      isContractorOpportunity: true
-    } as JobProfile & { isContractorOpportunity?: boolean }));
+  // Workers only see live jobs from their own main trade category.
+  // Contractor profile cards are intentionally excluded from the worker job feed.
+  const loggedInWorkerForFeed = workers.find(
+    worker => worker.id === currentUser?.id
+  );
 
-    return [...jobs, ...mappedContractorOpportunities];
-  }, [jobs, companies]);
+  const combinedWorkerOpportunities = React.useMemo(() => {
+    if (userType !== 'worker') return jobs;
+    if (!loggedInWorkerForFeed?.trade) return [];
+
+    return jobs.filter(job =>
+      isSameTradeCategory(loggedInWorkerForFeed.trade, job.trade)
+    );
+  }, [jobs, userType, loggedInWorkerForFeed?.trade]);
 
   // We keep a local deck of items that can be swiped
   const [workerDeck, setWorkerDeck] = useState<WorkerProfile[]>(workers);

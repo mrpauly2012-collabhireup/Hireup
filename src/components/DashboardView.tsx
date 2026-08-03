@@ -16,6 +16,51 @@ import {
   scoreWorkerForJob,
 } from '../lib/matching';
 
+const normaliseTradeCategory = (value?: string | null): string => {
+  const trade = (value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (
+    trade.includes('paint') ||
+    trade.includes('decorat')
+  ) {
+    return 'painter and decorator';
+  }
+
+  if (trade.includes('carpenter') || trade.includes('joiner')) {
+    return 'carpenter and joiner';
+  }
+
+  if (trade.includes('labourer') || trade.includes('laborer')) {
+    return 'general labourer';
+  }
+
+  if (trade.includes('heating') || trade.includes('gas engineer')) {
+    return 'heating engineer';
+  }
+
+  if (trade.includes('window') && trade.includes('fit')) {
+    return 'window fitter';
+  }
+
+  return trade;
+};
+
+const isSameTradeCategory = (
+  workerTrade?: string | null,
+  jobTrade?: string | null
+): boolean => {
+  const workerCategory = normaliseTradeCategory(workerTrade);
+  const jobCategory = normaliseTradeCategory(jobTrade);
+
+  return Boolean(workerCategory && jobCategory && workerCategory === jobCategory);
+};
+
 interface DashboardViewProps {
   userType: UserType;
   workers: WorkerProfile[];
@@ -137,8 +182,13 @@ export default function DashboardView({
 
   const { percentage: workerPercentage, steps: workerSteps } = getProfileCompletion(loggedInWorker);
 
+  // Workers only see jobs from their own main trade category.
+  const workerTradeJobs = jobs.filter(job =>
+    isSameTradeCategory(loggedInWorker.trade, job.trade)
+  );
+
   // Filters and helpers for Worker Dashboard
-  const rankedWorkerJobs = rankJobsForWorker(loggedInWorker, jobs);
+  const rankedWorkerJobs = rankJobsForWorker(loggedInWorker, workerTradeJobs);
   const resolvedRecJobs = rankedWorkerJobs.slice(0, 3).map(result => result.item);
   const workerJobMatch = (job: JobProfile) =>
     scoreWorkerForJob(loggedInWorker, job);

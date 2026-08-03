@@ -57,6 +57,46 @@ type WorkerDisplayMode = 'list' | 'split' | 'map';
 
 const normalise = (value?: string | null) => (value || '').trim().toLowerCase();
 
+const normaliseTradeCategory = (value?: string | null): string => {
+  const trade = normalise(value)
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (trade.includes('paint') || trade.includes('decorat')) {
+    return 'painter and decorator';
+  }
+
+  if (trade.includes('carpenter') || trade.includes('joiner')) {
+    return 'carpenter and joiner';
+  }
+
+  if (trade.includes('labourer') || trade.includes('laborer')) {
+    return 'general labourer';
+  }
+
+  if (trade.includes('heating') || trade.includes('gas engineer')) {
+    return 'heating engineer';
+  }
+
+  if (trade.includes('window') && trade.includes('fit')) {
+    return 'window fitter';
+  }
+
+  return trade;
+};
+
+const isSameTradeCategory = (
+  workerTrade?: string | null,
+  jobTrade?: string | null
+): boolean => {
+  const workerCategory = normaliseTradeCategory(workerTrade);
+  const jobCategory = normaliseTradeCategory(jobTrade);
+
+  return Boolean(workerCategory && jobCategory && workerCategory === jobCategory);
+};
+
 const safeWebsiteUrl = (website?: string) => {
   if (!website) return '';
   return /^https?:\/\//i.test(website) ? website : `https://${website}`;
@@ -191,6 +231,14 @@ export default function CompaniesView({
   const featuredJobs = useMemo(
     () =>
       jobs.filter(job => {
+        if (
+          userType === 'worker' &&
+          (!loggedInWorker?.trade ||
+            !isSameTradeCategory(loggedInWorker.trade, job.trade))
+        ) {
+          return false;
+        }
+
         const item = job as JobProfile & {
           featured?: boolean;
           isFeatured?: boolean;
@@ -207,17 +255,17 @@ export default function CompaniesView({
           item.featured_status === 'active'
         );
       }),
-    [jobs]
+    [jobs, userType, loggedInWorker?.trade]
   );
 
   const availableTrades = useMemo(() => {
     const source =
       userType === 'employer'
         ? verifiedWorkers.map(worker => worker.trade)
-        : jobs.map(job => job.trade);
+        : featuredJobs.map(job => job.trade);
 
     return Array.from(new Set(source.filter(Boolean))).sort();
-  }, [userType, verifiedWorkers, jobs]);
+  }, [userType, verifiedWorkers, featuredJobs]);
 
   const availableLocations = useMemo(() => {
     const source =

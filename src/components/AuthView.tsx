@@ -87,7 +87,7 @@ export default function AuthView({
   const [companyIndustry, setCompanyIndustry] = useState('Civil Engineering & Commercial Build');
   const [companySize, setCompanySize] = useState('100 - 250 Employees');
   const [companyHQ, setCompanyHQ] = useState('Brighton');
-  const [companyInsurance, setCompanyInsurance] = useState('£10M Public Liability Active');
+  const [companyInsurance, setCompanyInsurance] = useState('No insurance');
   const [companyRequirements, setCompanyRequirements] = useState<string[]>([]);
   const [tradesHiring, setTradesHiring] = useState(TRADES_CATEGORIES[0] || 'Electrician');
   const [tradesHiringSubcategory, setTradesHiringSubcategory] = useState(
@@ -1536,10 +1536,15 @@ export default function AuthView({
                     onChange={(e) => setCompanyInsurance(e.target.value)}
                     className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] cursor-pointer"
                   >
-                    <option value="£2M Public Liability">£2M Public Liability Cover</option>
-                    <option value="£5M Public Liability">£5M Public Liability Cover</option>
-                    <option value="£10M Public Liability Active">£10M Public Liability Cover</option>
-                    <option value="£10M Public & Employers Liability Active">£10M Public & Employers Liability Active</option>
+                    <option value="No insurance">No insurance</option>
+                    {Array.from({ length: 10 }, (_, index) => index + 1).map(amount => (
+                      <option
+                        key={amount}
+                        value={`£${amount}M Public Liability`}
+                      >
+                        £{amount}M Public Liability Cover
+                      </option>
+                    ))}
                   </select>
                 </div>
 

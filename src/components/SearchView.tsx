@@ -19,6 +19,51 @@ import {
 import SearchableDropdown from './SearchableDropdown';
 import { HOMETOWNS, LICENCES, POSITION_LENGTHS, GRADES, REQUIREMENTS, TRADES_CATEGORIES, TRADE_SUBCATEGORIES_MAP } from '../data/datasets';
 
+const normaliseTradeCategory = (value?: string | null): string => {
+  const trade = (value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (
+    trade.includes('paint') ||
+    trade.includes('decorat')
+  ) {
+    return 'painter and decorator';
+  }
+
+  if (trade.includes('carpenter') || trade.includes('joiner')) {
+    return 'carpenter and joiner';
+  }
+
+  if (trade.includes('labourer') || trade.includes('laborer')) {
+    return 'general labourer';
+  }
+
+  if (trade.includes('heating') || trade.includes('gas engineer')) {
+    return 'heating engineer';
+  }
+
+  if (trade.includes('window') && trade.includes('fit')) {
+    return 'window fitter';
+  }
+
+  return trade;
+};
+
+const isSameTradeCategory = (
+  workerTrade?: string | null,
+  jobTrade?: string | null
+): boolean => {
+  const workerCategory = normaliseTradeCategory(workerTrade);
+  const jobCategory = normaliseTradeCategory(jobTrade);
+
+  return Boolean(workerCategory && jobCategory && workerCategory === jobCategory);
+};
+
 interface SearchViewProps {
   userType: UserType;
   workers: WorkerProfile[];
@@ -58,8 +103,11 @@ export default function SearchView({
   const [selectedPositionLengths, setSelectedPositionLengths] = useState<string[]>([]);
   const [selectedRequirements, setSelectedRequirements] = useState<string[]>([]);
 
-  // Use TRADES_CATEGORIES as the master list
-  const trades = TRADES_CATEGORIES;
+  // Contractors can browse all trades. Workers only filter within their own category.
+  const trades =
+    userType === 'worker' && loggedInWorker?.trade
+      ? [loggedInWorker.trade]
+      : TRADES_CATEGORIES;
 
   const extractRate = (payRate: string): number => {
     const values = payRate.match(/\d+(?:\.\d+)?/g);
@@ -202,6 +250,14 @@ export default function SearchView({
 
   const filteredJobs = jobs.filter(job => {
     if (
+      userType === 'worker' &&
+      (!loggedInWorker?.trade ||
+        !isSameTradeCategory(loggedInWorker.trade, job.trade))
+    ) {
+      return false;
+    }
+
+    if (
       !includesQuery([
         job.title,
         job.companyName,
@@ -343,7 +399,6 @@ export default function SearchView({
     return sorted;
   };
 
-  const loggedInWorker = workers.find(worker => worker.id === currentUser?.id);
   const contractorJobs = jobs.filter(job => job.companyId === currentUser?.id);
 
   const sortedWorkers =
