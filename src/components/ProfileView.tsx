@@ -890,24 +890,24 @@ export default function ProfileView({
             </div>
 
             
-      <section className="bg-zinc-950 text-white rounded-3xl p-6 md:p-8 border border-zinc-800 shadow-sm">
+      <section className="bg-white text-black rounded-3xl p-6 md:p-8 border border-zinc-200 shadow-sm">
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-[#34D399]" />
-              <p className="text-[10px] font-mono font-black text-[#34D399] uppercase tracking-wider">
+              <p className="text-[10px] font-mono font-black text-black uppercase tracking-wider">
                 HireUp AI Scorecard
               </p>
             </div>
 
             <div className="flex items-end gap-3 mt-4">
-              <span className="text-5xl font-black">
+              <span className="text-5xl font-black text-black">
                 {userType === 'worker' ? workerBestMatch.score : companyAiReadiness}
               </span>
-              <span className="text-lg text-zinc-400 mb-1">/100</span>
+              <span className="text-lg text-black mb-1">/100</span>
             </div>
 
-            <h3 className="text-xl font-black mt-2">
+            <h3 className="text-xl font-black text-black mt-2">
               {userType === 'worker'
                 ? workerBestMatch.label
                 : companyAiReadiness >= 85
@@ -917,7 +917,7 @@ export default function ProfileView({
                 : 'Profile needs improvement'}
             </h3>
 
-            <p className="text-sm text-zinc-400 mt-2 max-w-2xl">
+            <p className="text-sm text-black mt-2 max-w-2xl">
               {userType === 'worker'
                 ? workerBestMatch.reasons[0] || 'Complete more profile details to improve your future match scores.'
                 : 'This score measures how ready your company profile and vacancies are for smart candidate matching.'}
@@ -943,12 +943,12 @@ export default function ProfileView({
                   ['Verification', companyProfile.verified ? 100 : 35],
                 ]
             ).map(([label, value]) => (
-              <div key={String(label)} className="bg-white/5 border border-white/10 rounded-xl p-3">
-                <p className="text-[9px] font-mono font-black text-zinc-400 uppercase">
+              <div key={String(label)} className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                <p className="text-[9px] font-mono font-black text-black uppercase">
                   {label}
                 </p>
-                <p className="text-xl font-black mt-1">{value}%</p>
-                <div className="h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
+                <p className="text-xl font-black text-black mt-1">{value}%</p>
+                <div className="h-1.5 bg-zinc-200 rounded-full mt-2 overflow-hidden">
                   <div
                     className="h-full bg-[#34D399] rounded-full"
                     style={{ width: `${value}%` }}
@@ -960,8 +960,8 @@ export default function ProfileView({
         </div>
 
         {userType === 'worker' && (
-          <div className="mt-6 pt-5 border-t border-white/10">
-            <p className="text-[10px] font-mono font-black text-zinc-400 uppercase">
+          <div className="mt-6 pt-5 border-t border-zinc-200">
+            <p className="text-[10px] font-mono font-black text-black uppercase">
               Improve my score
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
@@ -973,9 +973,9 @@ export default function ProfileView({
                     key={item.label}
                     type="button"
                     onClick={() => setProfileMode('edit')}
-                    className="flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-left"
+                    className="flex items-center justify-between p-3 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-xl text-left"
                   >
-                    <span className="text-xs font-bold">{item.label}</span>
+                    <span className="text-xs font-bold text-black">{item.label}</span>
                     <span className="text-xs font-mono font-black text-[#34D399]">
                       +{item.points}%
                     </span>
