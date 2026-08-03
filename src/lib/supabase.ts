@@ -940,24 +940,6 @@ export async function fetchMatches(): Promise<Match[]> {
   }));
 }
 
-export async function markMessagesAsReadForUser(
-  userId: string
-): Promise<void> {
-  const { error } = await supabase
-    .from('messages')
-    .update({
-      read: true,
-      is_read: true,
-    })
-    .eq('recipient_id', userId)
-    .eq('read', false);
-
-  if (error) {
-    throw error;
-  }
-}
-
-
 export async function fetchMessages(matchId: string): Promise<Message[]> {
   const { data, error } = await supabase
     .from('messages')
