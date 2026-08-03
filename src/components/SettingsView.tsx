@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Settings,
   Bell,
@@ -52,11 +52,16 @@ import {
   Archive,
   Image as ImageIcon,
 } from 'lucide-react';
-import { UserType } from '../types';
+import { CompanyProfile, UserType, WorkerProfile } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface SettingsViewProps {
   userType: UserType;
-  onChangeUserType: (type: UserType) => void;
+  currentUserEmail: string;
+  workerProfile: WorkerProfile | null;
+  companyProfile: CompanyProfile | null;
+  onUpdateWorker: (profile: WorkerProfile) => Promise<void> | void;
+  onUpdateCompany: (profile: CompanyProfile) => Promise<void> | void;
   onSignOut?: () => void;
 }
 
@@ -589,7 +594,11 @@ function FileUploadRow({
 
 export default function SettingsView({
   userType,
-  onChangeUserType: _onChangeUserType,
+  currentUserEmail,
+  workerProfile,
+  companyProfile,
+  onUpdateWorker,
+  onUpdateCompany,
   onSignOut,
 }: SettingsViewProps) {
   const isWorker = userType === 'worker';
@@ -652,8 +661,76 @@ export default function SettingsView({
   const [weeklyReports, setWeeklyReports] = useState(false);
   const [marketingEmails, setMarketingEmails] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
   const [deactivated, setDeactivated] = useState(false);
+
+  useEffect(() => {
+    const storageKey = `hireup-settings-${workerProfile?.id || companyProfile?.id || 'account'}`;
+
+    let storedSettings: Partial<AccountFormState> = {};
+    try {
+      const storedValue = window.localStorage.getItem(storageKey);
+      storedSettings = storedValue ? JSON.parse(storedValue) : {};
+    } catch {
+      storedSettings = {};
+    }
+
+    if (isWorker && workerProfile) {
+      const nameParts = (workerProfile.name || '').trim().split(/\s+/);
+      const firstName = nameParts.shift() || '';
+      const lastName = nameParts.join(' ');
+
+      setAccountForm(current => ({
+        ...current,
+        firstName,
+        lastName,
+        email: workerProfile.email || currentUserEmail || '',
+        phone: workerProfile.phone || '',
+        location: workerProfile.location || '',
+        dateOfBirth: storedSettings.dateOfBirth || '',
+        primaryTrade: workerProfile.trade || '',
+        experience: workerProfile.experience || '',
+        dayRate: workerProfile.payRate || '',
+        availability: workerProfile.availability || 'Available now',
+        travelDistance:
+          storedSettings.travelDistance ||
+          workerProfile.positionLengths?.find(item =>
+            item.toLowerCase().includes('mile')
+          ) ||
+          '25 miles',
+        about: workerProfile.about || '',
+      }));
+
+      return;
+    }
+
+    if (!isWorker && companyProfile) {
+      setAccountForm(current => ({
+        ...current,
+        firstName: companyProfile.contactName?.split(' ')[0] || '',
+        lastName:
+          companyProfile.contactName?.split(' ').slice(1).join(' ') || '',
+        email: companyProfile.contactEmail || currentUserEmail || '',
+        phone: companyProfile.contactPhone || companyProfile.phone || '',
+        location: companyProfile.location || '',
+        dateOfBirth: storedSettings.dateOfBirth || '',
+        companyName: companyProfile.name || '',
+        companyNumber: companyProfile.companyHouseNumber || '',
+        vatNumber: companyProfile.vatNumber || '',
+        website: companyProfile.website || '',
+        businessAddress: companyProfile.businessAddress || '',
+        about: companyProfile.description || '',
+      }));
+    }
+  }, [
+    isWorker,
+    workerProfile,
+    companyProfile,
+    currentUserEmail,
+  ]);
 
   const accountId = useMemo(() => {
     const prefix = isWorker ? 'HU-W' : 'HU-C';
@@ -695,12 +772,100 @@ export default function SettingsView({
     setPreferences(current => ({ ...current, [field]: value }));
   };
 
-  const handleSave = () => {
-    setSavedSuccess(true);
-    window.setTimeout(() => setSavedSuccess(false), 2200);
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveMessage('');
+
+    try {
+      const fullName = `${accountForm.firstName} ${accountForm.lastName}`.trim();
+      const profileId = workerProfile?.id || companyProfile?.id || 'account';
+      const storageKey = `hireup-settings-${profileId}`;
+
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          dateOfBirth: accountForm.dateOfBirth,
+          travelDistance: accountForm.travelDistance,
+          notifications: {
+            matchNotifications,
+            messageNotifications,
+            interviewNotifications,
+            jobNotifications,
+            pushNotifications,
+            smsNotifications,
+            weeklyReports,
+            marketingEmails,
+          },
+          security: {
+            profileVisibility: securityForm.profileVisibility,
+            showInSearch: securityForm.showInSearch,
+            showOnlineStatus: securityForm.showOnlineStatus,
+            allowDirectContact: securityForm.allowDirectContact,
+            twoFactorEnabled: securityForm.twoFactorEnabled,
+          },
+          preferences,
+        })
+      );
+
+      if (isWorker) {
+        if (!workerProfile) {
+          throw new Error('Your worker profile could not be loaded.');
+        }
+
+        const existingPreferences = workerProfile.positionLengths || [];
+        const withoutDistance = existingPreferences.filter(
+          item => !item.toLowerCase().includes('mile')
+        );
+
+        await onUpdateWorker({
+          ...workerProfile,
+          name: fullName || workerProfile.name,
+          email: accountForm.email || currentUserEmail,
+          phone: accountForm.phone,
+          location: accountForm.location,
+          trade: accountForm.primaryTrade,
+          experience: accountForm.experience,
+          payRate: accountForm.dayRate,
+          availability: accountForm.availability,
+          about: accountForm.about,
+          positionLengths: accountForm.travelDistance
+            ? [...withoutDistance, accountForm.travelDistance]
+            : withoutDistance,
+        });
+      } else {
+        if (!companyProfile) {
+          throw new Error('Your contractor profile could not be loaded.');
+        }
+
+        await onUpdateCompany({
+          ...companyProfile,
+          name: accountForm.companyName || companyProfile.name,
+          description: accountForm.about,
+          location: accountForm.location,
+          website: accountForm.website,
+          companyHouseNumber: accountForm.companyNumber,
+          vatNumber: accountForm.vatNumber,
+          phone: accountForm.phone,
+          businessAddress: accountForm.businessAddress,
+          contactName: fullName,
+          contactPhone: accountForm.phone,
+          contactEmail: accountForm.email || currentUserEmail,
+        });
+      }
+
+      setSavedSuccess(true);
+      setSaveMessage('Your account information has been saved.');
+      window.setTimeout(() => setSavedSuccess(false), 2200);
+    } catch (error: any) {
+      setSaveMessage(error.message || 'Settings could not be saved.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handlePasswordUpdate = () => {
+  const handlePasswordUpdate = async () => {
+    setPasswordMessage('');
+
     if (!securityForm.currentPassword) {
       setPasswordMessage('Enter your current password.');
       return;
@@ -716,13 +881,41 @@ export default function SettingsView({
       return;
     }
 
-    setPasswordMessage('Password change is ready to connect to Supabase Auth.');
-    setSecurityForm(current => ({
-      ...current,
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    }));
+    if (!currentUserEmail) {
+      setPasswordMessage('Your account email could not be resolved.');
+      return;
+    }
+
+    setPasswordSaving(true);
+
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: currentUserEmail,
+        password: securityForm.currentPassword,
+      });
+
+      if (signInError) {
+        throw new Error('Your current password is incorrect.');
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: securityForm.newPassword,
+      });
+
+      if (updateError) throw updateError;
+
+      setPasswordMessage('Password updated successfully.');
+      setSecurityForm(current => ({
+        ...current,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      }));
+    } catch (error: any) {
+      setPasswordMessage(error.message || 'Password could not be updated.');
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
   const handleDownloadData = () => {
@@ -795,9 +988,12 @@ export default function SettingsView({
         <button
           type="button"
           onClick={handleSave}
-          className="px-5 py-3 bg-[#34D399] hover:bg-[#10B981] text-white rounded-xl text-xs font-mono font-black uppercase transition-all shadow-sm flex items-center justify-center gap-2"
+          disabled={saving}
+          className="px-5 py-3 bg-[#34D399] hover:bg-[#10B981] disabled:opacity-60 disabled:cursor-not-allowed text-black rounded-xl text-xs font-mono font-black uppercase transition-all shadow-sm flex items-center justify-center gap-2"
         >
-          {savedSuccess ? (
+          {saving ? (
+            'Saving...'
+          ) : savedSuccess ? (
             <>
               <Check className="w-4 h-4" />
               Changes saved
@@ -810,6 +1006,16 @@ export default function SettingsView({
           )}
         </button>
       </div>
+
+      {saveMessage && (
+        <div className={`rounded-xl border px-4 py-3 text-sm font-bold ${
+          savedSuccess
+            ? 'bg-emerald-50 border-emerald-200 text-black'
+            : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
+          {saveMessage}
+        </div>
+      )}
 
       <section className="bg-white text-zinc-950 border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
@@ -1372,9 +1578,10 @@ export default function SettingsView({
               <button
                 type="button"
                 onClick={handlePasswordUpdate}
-                className="w-full py-3 bg-zinc-950 text-white rounded-xl text-xs font-mono font-black uppercase"
+                disabled={passwordSaving}
+                className="w-full py-3 bg-zinc-950 disabled:opacity-60 text-white rounded-xl text-xs font-mono font-black uppercase"
               >
-                Update password
+                {passwordSaving ? 'Updating password...' : 'Update password'}
               </button>
 
               <div className="border-t border-zinc-100 pt-1">

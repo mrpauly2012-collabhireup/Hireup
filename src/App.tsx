@@ -1852,9 +1852,13 @@ export default function App() {
                 );
               case 'settings':
                 return (
-                  <SettingsView 
+                  <SettingsView
                     userType={userType}
-                    onChangeUserType={(t) => setUserType(t)}
+                    currentUserEmail={currentUser?.email || ''}
+                    workerProfile={loggedInWorker}
+                    companyProfile={loggedInCompany}
+                    onUpdateWorker={handleUpdateWorker}
+                    onUpdateCompany={handleUpdateCompany}
                     onSignOut={handleSignOut}
                   />
                 );
