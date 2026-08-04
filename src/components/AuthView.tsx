@@ -1698,14 +1698,21 @@ export default function AuthView({
                         <label className="space-y-2">
                           <span className="text-xs font-sans font-black uppercase tracking-wider text-zinc-500">Expected day rate *</span>
                           <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-zinc-500">£</span>
+                            <span className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 font-black text-zinc-500">
+                              £
+                            </span>
                             <input
                               type="text"
+                              inputMode="decimal"
                               required
                               value={workerRate.replace(/^£/, '')}
-                              onChange={event => setWorkerRate(event.target.value.replace(/[^0-9.]/g, ''))}
+                              onChange={event =>
+                                setWorkerRate(
+                                  event.target.value.replace(/[^0-9.]/g, '')
+                                )
+                              }
                               placeholder="220"
-                              className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 py-4 pl-9 pr-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                              className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 py-4 pl-12 pr-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
                             />
                           </div>
                         </label>

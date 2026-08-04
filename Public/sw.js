@@ -1,90 +1,128 @@
-const CACHE_NAME = 'hireup-pwa-v2';
+const CACHE_NAME = 'hireup-shell-v1';
+
 const APP_SHELL = [
   '/',
-  '/offline.html',
+  '/index.html',
   '/manifest.webmanifest',
   '/icon-192.png',
-  '/icon-512.png'
+  '/icon-512.png',
+  '/favicon-32.png',
+  '/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))
+    caches
+      .open(CACHE_NAME)
+      .then(cache => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
+    caches
+      .keys()
+      .then(keys =>
+        Promise.all(
+          keys
+            .filter(key => key !== CACHE_NAME)
+            .map(key => caches.delete(key))
+        )
       )
-    )
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
+  const request = event.request;
 
-  const url = new URL(event.request.url);
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+
   if (url.origin !== self.location.origin) return;
 
-  if (event.request.mode === 'navigate') {
+  if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(async () =>
-        (await caches.match('/')) || (await caches.match('/offline.html'))
-      )
+      fetch(request).catch(() => caches.match('/index.html'))
     );
     return;
   }
 
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    caches.match(request).then(cachedResponse => {
+      if (cachedResponse) return cachedResponse;
+
+      return fetch(request).then(networkResponse => {
+        if (
+          networkResponse &&
+          networkResponse.status === 200 &&
+          networkResponse.type === 'basic'
+        ) {
+          const responseCopy = networkResponse.clone();
+
+          caches
+            .open(CACHE_NAME)
+            .then(cache => cache.put(request, responseCopy));
+        }
+
+        return networkResponse;
+      });
+    })
   );
 });
 
 self.addEventListener('push', event => {
-  let payload = {
-    title: 'HireUp',
-    body: 'You have a new HireUp update.',
-    url: '/'
-  };
+  let payload = {};
 
   try {
-    if (event.data) payload = { ...payload, ...event.data.json() };
+    payload = event.data ? event.data.json() : {};
   } catch {
-    if (event.data) payload.body = event.data.text();
+    payload = {
+      body: event.data ? event.data.text() : ''
+    };
   }
 
+  const title = payload.title || 'HireUp';
+  const options = {
+    body: payload.body || payload.message || 'You have a new HireUp update.',
+    icon: payload.icon || '/icon-192.png',
+    badge: payload.badge || '/icon-192.png',
+    tag: payload.tag || 'hireup-notification',
+    data: {
+      url: payload.url || payload.data?.url || '/'
+    }
+  };
+
   event.waitUntil(
-    self.registration.showNotification(payload.title, {
-      body: payload.body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      data: { url: payload.url || '/' },
-      vibrate: [120, 60, 120],
-      tag: payload.tag || 'hireup-push'
-    })
+    self.registration.showNotification(title, options)
   );
 });
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const target = event.notification.data?.url || '/';
+
+  const targetUrl = new URL(
+    event.notification.data?.url || '/',
+    self.location.origin
+  ).href;
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      for (const client of list) {
-        if ('focus' in client) {
-          client.navigate(target);
-          return client.focus();
+    clients
+      .matchAll({
+        type: 'window',
+        includeUncontrolled: true
+      })
+      .then(windowClients => {
+        for (const client of windowClients) {
+          if ('focus' in client) {
+            client.navigate(targetUrl);
+            return client.focus();
+          }
         }
-      }
-      return clients.openWindow(target);
-    })
+
+        return clients.openWindow(targetUrl);
+      })
   );
 });
