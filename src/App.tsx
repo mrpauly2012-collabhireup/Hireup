@@ -2615,7 +2615,7 @@ export default function App() {
                 }}
                 className="flex-1 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-mono text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
               >
-                <Calendar className="w-3.5 h-3.5" /> INVITE / BOOK DATE
+                <Calendar className="w-3.5 h-3.5" /> {userType === 'worker' ? 'BOOK INTERVIEW' : 'INVITE / BOOK DATE'}
               </button>
 
               <button
@@ -2623,12 +2623,12 @@ export default function App() {
                   setSelectedJob(null);
                   handleMatchCreated(currentUser.id, selectedJob.id);
                   // Simulate rapid hire offer
-                  alert("Bid submitted! Opened instant site chat to finalize CIS rates and starting details.");
+                  alert(userType === 'worker' ? "Application submitted! Your contractor chat is now open for site details and next steps." : "Hire action started! The site chat is now open to confirm rates and starting details.");
                   setCurrentView('messages');
                 }}
                 className="flex-1 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-mono text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
               >
-                <UserCheck className="w-3.5 h-3.5" /> HIRE NOW
+                <UserCheck className="w-3.5 h-3.5" /> {userType === 'worker' ? 'APPLY NOW' : 'HIRE NOW'}
               </button>
             </div>
           </div>
