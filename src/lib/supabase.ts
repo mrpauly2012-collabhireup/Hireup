@@ -1680,6 +1680,8 @@ export async function updateInterviewStatusInDb(id: string, status: string) {
 export async function updateWorkerProfileInDb(id: string, profile: WorkerProfile, photoChanged: boolean = false) {
   const updateData: any = {
     full_name: profile.name,
+    trade: profile.trade,
+    subcategory: profile.subcategory || '',
     years_experience: profile.experience,
     hometown: profile.location,
     bio: profile.about,

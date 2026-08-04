@@ -6,69 +6,16 @@
 import React, { useState } from 'react';
 import { 
   Search, SlidersHorizontal, MapPin, Award, Wrench, Briefcase,
-  Star, ShieldCheck, Clock, Check, ChevronRight, X, Heart, ArrowUpDown, Sparkles
+  Star, ShieldCheck, Clock, Check, ChevronRight, X, Heart, ArrowUpDown
 } from 'lucide-react';
 import { WorkerProfile, JobProfile, UserType } from '../types';
-import {
-  bestWorkerMatchAcrossJobs,
-  rankJobsForWorker,
-  scoreWorkerForJob,
-  scoreJobAgainstNaturalLanguage,
-  scoreWorkerAgainstNaturalLanguage,
-} from '../lib/matching';
 import SearchableDropdown from './SearchableDropdown';
 import { HOMETOWNS, LICENCES, POSITION_LENGTHS, GRADES, REQUIREMENTS, TRADES_CATEGORIES, TRADE_SUBCATEGORIES_MAP } from '../data/datasets';
-
-const normaliseTradeCategory = (value?: string | null): string => {
-  const trade = (value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, 'and')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  if (
-    trade.includes('paint') ||
-    trade.includes('decorat')
-  ) {
-    return 'painter and decorator';
-  }
-
-  if (trade.includes('carpenter') || trade.includes('joiner')) {
-    return 'carpenter and joiner';
-  }
-
-  if (trade.includes('labourer') || trade.includes('laborer')) {
-    return 'general labourer';
-  }
-
-  if (trade.includes('heating') || trade.includes('gas engineer')) {
-    return 'heating engineer';
-  }
-
-  if (trade.includes('window') && trade.includes('fit')) {
-    return 'window fitter';
-  }
-
-  return trade;
-};
-
-const isSameTradeCategory = (
-  workerTrade?: string | null,
-  jobTrade?: string | null
-): boolean => {
-  const workerCategory = normaliseTradeCategory(workerTrade);
-  const jobCategory = normaliseTradeCategory(jobTrade);
-
-  return Boolean(workerCategory && jobCategory && workerCategory === jobCategory);
-};
 
 interface SearchViewProps {
   userType: UserType;
   workers: WorkerProfile[];
   jobs: JobProfile[];
-  currentUser?: { id: string; email: string; userType: UserType } | null;
   onSelectWorker: (worker: WorkerProfile) => void;
   onSelectJob: (job: JobProfile) => void;
   onNavigate: (view: string) => void;
@@ -78,13 +25,11 @@ export default function SearchView({
   userType,
   workers,
   jobs,
-  currentUser,
   onSelectWorker,
   onSelectJob,
   onNavigate
 }: SearchViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [aiQuery, setAiQuery] = useState('');
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [cscsTier, setCscsTier] = useState<string | null>(null);
@@ -102,23 +47,48 @@ export default function SearchView({
   const [selectedHometown, setSelectedHometown] = useState<string>('');
   const [selectedPositionLengths, setSelectedPositionLengths] = useState<string[]>([]);
   const [selectedRequirements, setSelectedRequirements] = useState<string[]>([]);
-  const [showAllWorkerTrades, setShowAllWorkerTrades] = useState(false);
 
-  const loggedInWorker =
-    userType === 'worker'
-      ? workers.find(worker => worker.id === currentUser?.id)
-      : undefined;
+  // Always show the complete trade catalogue.
+  const trades = React.useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...TRADES_CATEGORIES,
+          ...Object.keys(TRADE_SUBCATEGORIES_MAP),
+        ])
+      ).sort((a, b) => a.localeCompare(b)),
+    []
+  );
 
-  const contractorJobs =
-    userType === 'employer' && currentUser
-      ? jobs.filter(job => job.companyId === currentUser.id)
-      : [];
+  const selectedTradeMapKey = React.useMemo(() => {
+    if (!selectedTrade) return null;
 
-  // Contractors can browse all trades. Workers only filter within their own category.
-  const trades =
-    userType === 'worker' && loggedInWorker?.trade
-      ? [loggedInWorker.trade]
-      : TRADES_CATEGORIES;
+    const normalisedSelected = selectedTrade
+      .trim()
+      .toLowerCase()
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return (
+      Object.keys(TRADE_SUBCATEGORIES_MAP).find(key => {
+        const normalisedKey = key
+          .trim()
+          .toLowerCase()
+          .replace(/&/g, 'and')
+          .replace(/[^a-z0-9]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        return normalisedKey === normalisedSelected;
+      }) || null
+    );
+  }, [selectedTrade]);
+
+  const availableSubcategories = selectedTradeMapKey
+    ? TRADE_SUBCATEGORIES_MAP[selectedTradeMapKey] || []
+    : [];
 
   const extractRate = (payRate: string): number => {
     const values = payRate.match(/\d+(?:\.\d+)?/g);
@@ -127,7 +97,13 @@ export default function SearchView({
   };
 
   const normalise = (value: string | undefined | null) =>
-    (value || '').trim().toLowerCase();
+    (value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
 
   const includesQuery = (fields: Array<string | undefined | null>) => {
     const query = normalise(searchQuery);
@@ -137,17 +113,6 @@ export default function SearchView({
 
   // Live filter logic
   const filteredWorkers = workers.filter(worker => {
-    if (
-      userType === 'employer' &&
-      !showAllWorkerTrades &&
-      contractorJobs.length > 0 &&
-      !contractorJobs.some(job =>
-        isSameTradeCategory(worker.trade, job.trade)
-      )
-    ) {
-      return false;
-    }
-
     if (
       !includesQuery([
         worker.name,
@@ -271,14 +236,6 @@ export default function SearchView({
   });
 
   const filteredJobs = jobs.filter(job => {
-    if (
-      userType === 'worker' &&
-      (!loggedInWorker?.trade ||
-        !isSameTradeCategory(loggedInWorker.trade, job.trade))
-    ) {
-      return false;
-    }
-
     if (
       !includesQuery([
         job.title,
@@ -421,41 +378,8 @@ export default function SearchView({
     return sorted;
   };
 
-  const sortedWorkers =
-    aiQuery.trim() && userType === 'employer'
-      ? [...filteredWorkers].sort(
-          (a, b) =>
-            scoreWorkerAgainstNaturalLanguage(b, aiQuery, contractorJobs) -
-            scoreWorkerAgainstNaturalLanguage(a, aiQuery, contractorJobs)
-        )
-      : sortOrder === 'relevance' && userType === 'employer' && contractorJobs.length > 0
-      ? [...filteredWorkers].sort(
-          (a, b) =>
-            bestWorkerMatchAcrossJobs(b, contractorJobs).score -
-            bestWorkerMatchAcrossJobs(a, contractorJobs).score
-        )
-      : sortWorkers(filteredWorkers);
-
-  const sortedJobs =
-    aiQuery.trim() && userType === 'worker'
-      ? [...filteredJobs].sort(
-          (a, b) =>
-            scoreJobAgainstNaturalLanguage(b, aiQuery, loggedInWorker) -
-            scoreJobAgainstNaturalLanguage(a, aiQuery, loggedInWorker)
-        )
-      : sortOrder === 'relevance' && userType === 'worker' && loggedInWorker
-      ? rankJobsForWorker(loggedInWorker, filteredJobs).map(result => result.item)
-      : sortJobs(filteredJobs);
-
-  const getWorkerMatch = (worker: WorkerProfile) =>
-    contractorJobs.length > 0
-      ? bestWorkerMatchAcrossJobs(worker, contractorJobs)
-      : { score: 1, reasons: ['Post a vacancy to calculate a match'], strengths: [], gaps: [] };
-
-  const getJobMatch = (job: JobProfile) =>
-    loggedInWorker
-      ? scoreWorkerForJob(loggedInWorker, job)
-      : { score: 1, reasons: ['Complete a worker profile to calculate a match'], strengths: [], gaps: [] };
+  const sortedWorkers = sortWorkers(filteredWorkers);
+  const sortedJobs = sortJobs(filteredJobs);
 
   const clearFilters = () => {
     setSelectedTrade(null);
@@ -477,73 +401,19 @@ export default function SearchView({
   return (
     <div id="search_view" className="space-y-6 pb-12 font-sans max-w-lg mx-auto">
       {/* View Mode Toggle Segmented Control */}
-      <div className="flex bg-zinc-100 p-1 rounded-xl border border-zinc-200/80 shadow-inner">
+      <div className="flex bg-zinc-100 p-1 rounded-xl border border-zinc-200 shadow-inner">
         <button
           onClick={() => onNavigate('swipe')}
-          className="flex-1 py-1.5 text-xs font-mono font-black rounded-xl transition-all duration-200 ease-out uppercase flex items-center justify-center gap-1.5 text-zinc-500 hover:text-zinc-950 cursor-pointer active:scale-[0.99]"
+          className="flex-1 py-1.5 text-xs font-mono font-black rounded-lg transition-all uppercase flex items-center justify-center gap-1.5 text-zinc-500 hover:text-zinc-950 cursor-pointer"
         >
           <Heart className="w-3.5 h-3.5 text-zinc-400" /> Card Swipe
         </button>
         <button
           onClick={() => {}}
-          className="flex-1 py-1.5 text-xs font-mono font-black rounded-xl transition-all duration-200 ease-out uppercase flex items-center justify-center gap-1.5 bg-[#34D399] text-white shadow-md"
+          className="flex-1 py-1.5 text-xs font-mono font-black rounded-lg transition-all uppercase flex items-center justify-center gap-1.5 bg-[#34D399] text-white shadow-xs"
         >
           <MapPin className="w-3.5 h-3.5 text-white animate-pulse" /> Search Filters & Map
         </button>
-      </div>
-
-      <div className="bg-zinc-950 text-white rounded-2xl p-4 border border-zinc-800 shadow-md">
-        <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#34D399]/15 text-[#34D399] flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[9px] font-mono font-black text-[#34D399] uppercase tracking-wider">
-              HireUp Smart Matching
-            </p>
-            <h3 className="text-base font-black mt-1">
-              Results ranked by your profile
-            </h3>
-            <p className="text-xs text-zinc-400 mt-1">
-              Match scores use trade, qualifications, licences, location, availability and pay.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-md">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-[#10B981]" />
-          <p className="text-[10px] font-mono font-black uppercase text-zinc-600">
-            {userType === 'worker' ? 'AI Job Finder' : 'AI Recruiter'}
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            value={aiQuery}
-            onChange={event => setAiQuery(event.target.value)}
-            placeholder={
-              userType === 'worker'
-                ? 'Example: weekend electrical work in London paying £250/day'
-                : 'Example: electrician in Brighton, ECS Gold, available Monday'
-            }
-            className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200/80 rounded-xl text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:border-[#34D399]"
-          />
-          {aiQuery && (
-            <button
-              type="button"
-              onClick={() => setAiQuery('')}
-              className="px-4 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-mono font-black uppercase"
-            >
-              Clear AI Search
-            </button>
-          )}
-        </div>
-        {aiQuery && (
-          <p className="text-xs text-emerald-700 mt-3">
-            Smart ranking active for: “{aiQuery}”
-          </p>
-        )}
       </div>
 
       {/* Immersive Search input */}
@@ -554,7 +424,7 @@ export default function SearchView({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={userType === 'employer' ? "Search certified tradesmen (e.g. 'Dave Knyte', 'NVQ Level 3')..." : "Search active sub-contracts (e.g. 'Commercial Electrician', 'Vanguard')..."}
-          className="w-full pl-12 pr-4 py-3 bg-white border border-zinc-200/80 rounded-xl shadow-md text-zinc-900 placeholder-zinc-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:border-[#34D399] focus:ring-1 focus:ring-[#34D399] transition-all duration-200 ease-out text-sm md:text-base font-medium"
+          className="w-full pl-12 pr-4 py-3 bg-white border border-zinc-200 rounded-xl shadow-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-[#34D399] focus:ring-1 focus:ring-[#34D399] transition-all text-sm md:text-base font-medium"
         />
         {searchQuery && (
           <button 
@@ -567,7 +437,7 @@ export default function SearchView({
       </div>
 
       {/* Filter Options Panel */}
-      <div className="bg-white border border-zinc-200/80 rounded-xl p-5 shadow-md space-y-4">
+      <div className="bg-white border border-zinc-200 rounded-xl p-5 shadow-sm space-y-4">
         <div className="flex justify-between items-center pb-3 border-b border-zinc-100">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="w-4 h-4 text-[#34D399]" />
@@ -575,7 +445,7 @@ export default function SearchView({
           </div>
           <button 
             onClick={clearFilters}
-            className="text-xs font-mono font-bold text-zinc-400 hover:text-[#34D399] transition-colors duration-200 ease-out cursor-pointer active:scale-[0.99]"
+            className="text-xs font-mono font-bold text-zinc-400 hover:text-[#34D399] transition-colors cursor-pointer"
           >
             CLEAR ALL
           </button>
@@ -597,7 +467,7 @@ export default function SearchView({
                     setSelectedSubcategory(null);
                   }
                 }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold border transition-all duration-200 ease-out cursor-pointer active:scale-[0.99] ${selectedTrade === trade ? 'bg-[#34D399] border-[#34D399] text-white shadow-md' : 'bg-zinc-50 border-zinc-200/80 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-100'}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold border transition-all cursor-pointer ${selectedTrade === trade ? 'bg-[#34D399] border-[#34D399] text-white shadow-xs' : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-100'}`}
               >
                 {trade.toUpperCase()}
               </button>
@@ -612,10 +482,10 @@ export default function SearchView({
             <select
               value={selectedSubcategory || ''}
               onChange={(e) => setSelectedSubcategory(e.target.value || null)}
-              className="w-full p-2.5 bg-white border border-zinc-200/80 rounded-xl text-xs font-mono font-bold uppercase focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:ring-2 focus:ring-[#34D399] cursor-pointer active:scale-[0.99]"
+              className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl text-xs font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-[#34D399] cursor-pointer"
             >
               <option value="">-- ALL {selectedTrade.toUpperCase()} SUBCATEGORIES --</option>
-              {(TRADE_SUBCATEGORIES_MAP[selectedTrade] || []).map((sub) => (
+              {availableSubcategories.map((sub) => (
                 <option key={sub} value={sub}>{sub.toUpperCase()}</option>
               ))}
             </select>
@@ -634,7 +504,7 @@ export default function SearchView({
               step="10"
               value={minimumRate}
               onChange={event => setMinimumRate(Math.max(0, Number(event.target.value)))}
-              className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:border-[#34D399]"
+              className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:border-[#34D399]"
             />
           </label>
 
@@ -648,7 +518,7 @@ export default function SearchView({
               step="10"
               value={maximumRate}
               onChange={event => setMaximumRate(Math.max(0, Number(event.target.value)))}
-              className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:border-[#34D399]"
+              className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:border-[#34D399]"
             />
           </label>
 
@@ -660,7 +530,7 @@ export default function SearchView({
               <select
                 value={selectedAvailability}
                 onChange={event => setSelectedAvailability(event.target.value)}
-                className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:border-[#34D399]"
+                className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:border-[#34D399]"
               >
                 <option value="">Any availability</option>
                 <option value="Immediate">Immediate</option>
@@ -694,7 +564,7 @@ export default function SearchView({
                 <button
                   key={tier}
                   onClick={() => setCscsTier(cscsTier === tier ? null : tier)}
-                  className={`flex-1 py-1.5 rounded-xl text-[10px] font-mono font-black border transition-all duration-200 ease-out text-center uppercase ${cscsTier === tier ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' : 'bg-zinc-50 border-zinc-200/80 text-zinc-600 hover:border-zinc-300'}`}
+                  className={`flex-1 py-1.5 rounded-lg text-[10px] font-mono font-black border transition-all text-center uppercase ${cscsTier === tier ? 'bg-zinc-900 border-zinc-900 text-white shadow-sm' : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:border-zinc-300'}`}
                 >
                   {tier}
                 </button>
@@ -704,7 +574,7 @@ export default function SearchView({
 
           {/* Verified Checkbox */}
           <div className="flex items-end pb-1">
-            <label className="flex items-center gap-2 cursor-pointer active:scale-[0.99] select-none">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
               <input 
                 type="checkbox"
                 checked={requireVerified}
@@ -794,7 +664,7 @@ export default function SearchView({
       </div>
 
       {/* Active Filter Summary */}
-      <div className="bg-white border border-zinc-200/80 rounded-xl p-4 shadow-md space-y-3">
+      <div className="bg-white border border-zinc-200 rounded-xl p-4 shadow-sm space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h4 className="text-xs font-mono font-black text-zinc-800 uppercase tracking-wider">
@@ -819,7 +689,7 @@ export default function SearchView({
                     | 'name'
                 )
               }
-              className="p-2 bg-zinc-50 border border-zinc-200/80 rounded-xl text-[10px] font-mono font-black uppercase focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:border-[#34D399]"
+              className="p-2 bg-zinc-50 border border-zinc-200 rounded-lg text-[10px] font-mono font-black uppercase focus:outline-none focus:border-[#34D399]"
             >
               <option value="relevance">Most Relevant</option>
               <option value="rate-high">Highest Rate</option>
@@ -912,26 +782,6 @@ export default function SearchView({
         </div>
       </div>
 
-      {userType === 'employer' && contractorJobs.length > 0 && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-          <div>
-            <p className="text-xs font-black text-zinc-950">
-              {showAllWorkerTrades ? 'All worker trades are visible' : 'Workers are filtered to your vacancy trades'}
-            </p>
-            <p className="mt-0.5 text-[10px] text-zinc-600">
-              Matching against {contractorJobs.length} live {contractorJobs.length === 1 ? 'vacancy' : 'vacancies'}.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowAllWorkerTrades(value => !value)}
-            className="flex-shrink-0 rounded-xl bg-white px-3 py-2 text-[10px] font-mono font-black uppercase text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
-          >
-            {showAllWorkerTrades ? 'Vacancy Trades' : 'All Trades'}
-          </button>
-        </div>
-      )}
-
       {/* Filtered Search Results Count */}
       <div className="flex justify-between items-center">
         <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-zinc-500">
@@ -951,19 +801,10 @@ export default function SearchView({
             {sortedWorkers.map((worker) => (
               <div 
                 key={worker.id}
-                className="bg-white border border-zinc-200/80 rounded-xl p-4 shadow-md hover:border-[#34D399]/30 transition-all duration-200 ease-out flex flex-col justify-between"
+                className="bg-white border border-zinc-200 rounded-xl p-4 shadow-xs hover:border-[#34D399]/30 transition-all flex flex-col justify-between"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[9px] font-mono font-black uppercase">
-                    <Sparkles className="w-3 h-3" />
-                    {getWorkerMatch(worker).score}% match
-                  </span>
-                  <span className="text-[9px] text-zinc-400">
-                    {getWorkerMatch(worker).reasons[0]}
-                  </span>
-                </div>
                 <div className="flex gap-4">
-                  <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-zinc-100 border border-zinc-100">
+                  <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-zinc-100 border border-zinc-100">
                     <img 
                       src={worker.avatar} 
                       alt={worker.name} 
@@ -991,12 +832,12 @@ export default function SearchView({
                 {((worker.licences && worker.licences.length > 0) || (worker.verifiedBadges && worker.verifiedBadges.length > 0)) && (
                   <div className="flex flex-wrap gap-1 mt-3 px-1">
                     {worker.licences?.slice(0, 3).map((lic, idx) => (
-                      <span key={`lic-${idx}`} className="px-2 py-0.5 bg-blue-50 border border-blue-100 text-blue-700 rounded-xl text-[9px] font-mono font-bold uppercase flex items-center gap-1">
+                      <span key={`lic-${idx}`} className="px-2 py-0.5 bg-blue-50 border border-blue-100 text-blue-700 rounded-lg text-[9px] font-mono font-bold uppercase flex items-center gap-1">
                         🛡️ {lic}
                       </span>
                     ))}
                     {worker.verifiedBadges?.slice(0, 2).map((badge, idx) => (
-                      <span key={`badge-${idx}`} className="px-2 py-0.5 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-[9px] font-mono font-bold uppercase flex items-center gap-1">
+                      <span key={`badge-${idx}`} className="px-2 py-0.5 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-lg text-[9px] font-mono font-bold uppercase flex items-center gap-1">
                         ⭐ {badge}
                       </span>
                     ))}
@@ -1007,7 +848,7 @@ export default function SearchView({
                   <span className="text-xs font-mono font-black text-[#10B981]">{worker.payRate}</span>
                   <button
                     onClick={() => onSelectWorker(worker)}
-                    className="px-3 py-1 bg-zinc-900 hover:bg-[#34D399] text-white text-xs font-mono font-bold rounded-md transition-all duration-200 ease-out flex items-center gap-1 cursor-pointer active:scale-[0.99]"
+                    className="px-3 py-1 bg-zinc-900 hover:bg-[#34D399] text-white text-xs font-mono font-bold rounded-md transition-all flex items-center gap-1 cursor-pointer"
                   >
                     DETAIL CV <ChevronRight className="w-3.5 h-3.5" />
                   </button>
@@ -1016,10 +857,10 @@ export default function SearchView({
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white border border-zinc-200/80 rounded-xl space-y-2">
+          <div className="text-center py-12 bg-white border border-zinc-200 rounded-xl space-y-2">
             <Wrench className="w-8 h-8 text-zinc-400 mx-auto" />
             <p className="text-xs text-zinc-600 font-mono">No tradesmen matched your selected filters.</p>
-            <button onClick={clearFilters} className="text-xs font-mono font-black text-[#34D399] hover:underline cursor-pointer active:scale-[0.99]">RESET FILTER PARAMS</button>
+            <button onClick={clearFilters} className="text-xs font-mono font-black text-[#34D399] hover:underline cursor-pointer">RESET FILTER PARAMS</button>
           </div>
         )
       ) : (
@@ -1028,19 +869,10 @@ export default function SearchView({
             {sortedJobs.map((job) => (
               <div 
                 key={job.id}
-                className="bg-white border border-zinc-200/80 rounded-xl p-4 shadow-md hover:border-[#34D399]/30 transition-all duration-200 ease-out flex flex-col justify-between"
+                className="bg-white border border-zinc-200 rounded-xl p-4 shadow-xs hover:border-[#34D399]/30 transition-all flex flex-col justify-between"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[9px] font-mono font-black uppercase">
-                    <Sparkles className="w-3 h-3" />
-                    {getJobMatch(job).score}% match
-                  </span>
-                  <span className="text-[9px] text-zinc-400">
-                    {getJobMatch(job).reasons[0]}
-                  </span>
-                </div>
                 <div className="flex gap-4">
-                  <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-white border border-zinc-200/80 flex items-center justify-center p-1.5">
+                  <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-white border border-zinc-200 flex items-center justify-center p-1.5">
                     <img 
                       src={job.companyLogo} 
                       alt={job.companyName} 
@@ -1070,7 +902,7 @@ export default function SearchView({
                   <span className="text-xs font-mono font-black text-[#10B981]">{job.payRate}</span>
                   <button
                     onClick={() => onSelectJob(job)}
-                    className="px-3 py-1 bg-zinc-900 hover:bg-[#34D399] text-white text-xs font-mono font-bold rounded-md transition-all duration-200 ease-out flex items-center gap-1 cursor-pointer active:scale-[0.99]"
+                    className="px-3 py-1 bg-zinc-900 hover:bg-[#34D399] text-white text-xs font-mono font-bold rounded-md transition-all flex items-center gap-1 cursor-pointer"
                   >
                     DETAIL AD <ChevronRight className="w-3.5 h-3.5" />
                   </button>
@@ -1079,10 +911,10 @@ export default function SearchView({
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white border border-zinc-200/80 rounded-xl space-y-2">
+          <div className="text-center py-12 bg-white border border-zinc-200 rounded-xl space-y-2">
             <Briefcase className="w-8 h-8 text-zinc-400 mx-auto" />
             <p className="text-xs text-zinc-600 font-mono">No active jobs found matching your criteria.</p>
-            <button onClick={clearFilters} className="text-xs font-mono font-black text-[#34D399] hover:underline cursor-pointer active:scale-[0.99]">RESET FILTER PARAMS</button>
+            <button onClick={clearFilters} className="text-xs font-mono font-black text-[#34D399] hover:underline cursor-pointer">RESET FILTER PARAMS</button>
           </div>
         )
       )}
