@@ -22,6 +22,7 @@ interface MessagingViewProps {
   jobs: JobProfile[];
   companies: CompanyProfile[];
   onSendMessage: (matchId: string, text: string, attachmentType?: 'image' | 'document' | 'voice', attachmentName?: string) => void;
+  onMessagesRead: (matchId: string) => void | Promise<void>;
   onNavigateBack: () => void;
   onStartVideoCall?: (matchId: string) => void;
 }
@@ -35,6 +36,7 @@ export default function MessagingView({
   jobs,
   companies,
   onSendMessage,
+  onMessagesRead,
   onNavigateBack,
   onStartVideoCall
 }: MessagingViewProps) {
@@ -82,16 +84,21 @@ export default function MessagingView({
 
   const currentMatchMessages = messages.filter(msg => msg.matchId === activeMatchId);
 
-  // Mark messages as read locally
+  // Persist incoming messages as read when the conversation is opened.
   useEffect(() => {
-    if (activeMatchId && messages.length > 0) {
-      currentMatchMessages.forEach(m => {
-        if (!m.isRead && m.sender !== userType) {
-          m.isRead = true; // Mutating client-side for immediate read feedback
-        }
-      });
+    if (!activeMatchId) return;
+
+    const hasUnreadIncomingMessages = messages.some(
+      message =>
+        message.matchId === activeMatchId &&
+        !message.isRead &&
+        message.sender !== userType
+    );
+
+    if (hasUnreadIncomingMessages) {
+      void onMessagesRead(activeMatchId);
     }
-  }, [activeMatchId, messages, userType]);
+  }, [activeMatchId, messages, userType, onMessagesRead]);
 
   // Push notifications simulations
   const triggerToast = (title: string, message: string) => {

@@ -958,6 +958,26 @@ export async function markMessagesAsReadForUser(
 }
 
 
+export async function markMessagesAsReadForMatch(
+  matchId: string,
+  userId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('messages')
+    .update({
+      read: true,
+      is_read: true,
+    })
+    .eq('match_id', matchId)
+    .eq('recipient_id', userId)
+    .or('read.eq.false,is_read.eq.false');
+
+  if (error) {
+    throw error;
+  }
+}
+
+
 export async function fetchMessages(matchId: string): Promise<Message[]> {
   const { data, error } = await supabase
     .from('messages')
@@ -972,9 +992,12 @@ export async function fetchMessages(matchId: string): Promise<Message[]> {
     id: msg.id,
     matchId: msg.match_id,
     sender: msg.sender,
-    text: msg.text,
-    timestamp: msg.timestamp,
-    isRead: msg.is_read,
+    text: msg.message || msg.text || '',
+    timestamp: msg.created_at || msg.timestamp,
+    isRead:
+      msg.read !== undefined
+        ? Boolean(msg.read)
+        : Boolean(msg.is_read),
     attachmentType: msg.attachment_type,
     attachmentName: msg.attachment_name,
   }));
@@ -995,9 +1018,12 @@ export async function fetchMessagesForMatches(matchIds: string[]): Promise<Messa
     id: msg.id,
     matchId: msg.match_id,
     sender: msg.sender,
-    text: msg.text,
-    timestamp: msg.timestamp,
-    isRead: msg.is_read,
+    text: msg.message || msg.text || '',
+    timestamp: msg.created_at || msg.timestamp,
+    isRead:
+      msg.read !== undefined
+        ? Boolean(msg.read)
+        : Boolean(msg.is_read),
     attachmentType: msg.attachment_type,
     attachmentName: msg.attachment_name,
   }));
