@@ -22,7 +22,7 @@ interface MessagingViewProps {
   jobs: JobProfile[];
   companies: CompanyProfile[];
   onSendMessage: (matchId: string, text: string, attachmentType?: 'image' | 'document' | 'voice', attachmentName?: string) => void;
-  onMessagesRead: (matchId: string) => void | Promise<void>;
+  onMessagesRead?: (matchId: string) => void | Promise<void>;
   onNavigateBack: () => void;
   onStartVideoCall?: (matchId: string) => void;
 }
@@ -95,7 +95,10 @@ export default function MessagingView({
         message.sender !== userType
     );
 
-    if (hasUnreadIncomingMessages) {
+    if (
+      hasUnreadIncomingMessages &&
+      typeof onMessagesRead === 'function'
+    ) {
       void onMessagesRead(activeMatchId);
     }
   }, [activeMatchId, messages, userType, onMessagesRead]);
