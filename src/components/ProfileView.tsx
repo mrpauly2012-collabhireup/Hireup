@@ -679,13 +679,13 @@ export default function ProfileView({
       )}
 
       {/* HEADER SECTION */}
-      <div className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-xs flex flex-col lg:flex-row items-center justify-between gap-6">
+      <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-6">
         
         {/* Profile Avatar Frame & Basic description */}
         <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left w-full lg:w-auto">
           
           {/* Avatar frame */}
-          <div className="w-28 h-28 md:w-32 md:h-32 rounded-3xl overflow-hidden border border-zinc-200 bg-zinc-50 relative group flex items-center justify-center flex-shrink-0 shadow-inner">
+          <div className="w-28 h-28 md:w-32 md:h-32 rounded-3xl overflow-hidden border border-zinc-200/80 bg-zinc-50 relative group flex items-center justify-center flex-shrink-0 shadow-inner">
             <img 
               src={userType === 'worker' 
                 ? (profilePhotoUrl || workerAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80') 
@@ -711,11 +711,11 @@ export default function ProfileView({
               <h2 className="text-2xl font-black font-sans text-zinc-900 tracking-tight">
                 {userType === 'worker' ? workerName : companyName}
               </h2>
-              <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-[#10B981] rounded-lg text-[10px] font-mono font-bold uppercase tracking-wide">
+              <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-[#10B981] rounded-xl text-[10px] font-mono font-bold uppercase tracking-wide">
                 {userType === 'worker' ? 'Worker Profile' : 'Contractor Profile'}
               </span>
               {(userType === 'worker' ? workerProfile.verified : companyProfile.verified) && (
-                <span className="px-2 py-1 bg-zinc-900 text-[#34D399] rounded-lg text-[9px] font-mono font-bold uppercase tracking-wide flex items-center gap-1">
+                <span className="px-2 py-1 bg-zinc-900 text-[#34D399] rounded-xl text-[9px] font-mono font-bold uppercase tracking-wide flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5" /> PLATINUM VERIFIED
                 </span>
               )}
@@ -755,7 +755,7 @@ export default function ProfileView({
           <div className="relative flex-1 sm:flex-initial">
             <button 
               type="button" 
-              className="w-full sm:w-auto px-4 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-mono font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5 border border-zinc-200"
+              className="w-full sm:w-auto px-4 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-mono font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer active:scale-[0.98] transition-all duration-200 ease-out flex items-center justify-center gap-1.5 border border-zinc-200/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             >
               <Upload className="w-3.5 h-3.5" /> {userType === 'worker' ? 'Change Photo' : 'Change Logo'}
             </button>
@@ -766,7 +766,7 @@ export default function ProfileView({
                 const file = e.target.files?.[0];
                 if (file) handleUploadSingleFile(file, userType === 'worker' ? 'profile-pictures' : 'company-logos', userType === 'worker' ? 'avatar' : 'logo');
               }}
-              className="absolute inset-0 opacity-0 cursor-pointer" 
+              className="absolute inset-0 opacity-0 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2" 
             />
           </div>
 
@@ -775,7 +775,7 @@ export default function ProfileView({
             type="button" 
             onClick={userType === 'worker' ? handleRemovePhoto : handleRemoveLogo}
             disabled={userType === 'worker' ? !profilePhotoUrl : !companyLogoUrl}
-            className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-600 font-mono font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-600 font-mono font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer active:scale-[0.98] transition-all duration-200 ease-out flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
           >
             <X className="w-3.5 h-3.5" /> Remove
           </button>
@@ -784,7 +784,7 @@ export default function ProfileView({
           <button 
             type="button" 
             onClick={userType === 'worker' ? handleSaveWorker : handleSaveCompany}
-            className="px-6 py-2.5 bg-[#34D399] hover:bg-[#10B981] text-white font-mono font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-sm shadow-[#34D399]/10"
+            className="px-6 py-2.5 bg-[#34D399] hover:bg-[#10B981] text-white font-mono font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer active:scale-[0.98] transition-all duration-200 ease-out flex items-center justify-center gap-1.5 shadow-sm shadow-[#34D399]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
           >
             <Check className="w-4 h-4" /> Save Changes
           </button>
@@ -792,13 +792,13 @@ export default function ProfileView({
       </div>
 
       {/* VIEW / EDIT MODE TOGGLE */}
-      <div className="flex bg-white p-1.5 rounded-2xl border border-zinc-200 shadow-sm max-w-sm">
+      <div className="flex bg-white p-1.5 rounded-2xl border border-zinc-200/80 shadow-sm max-w-sm">
         <button
           type="button"
           onClick={() => setProfileMode('live')}
-          className={`flex-1 py-2 px-4 rounded-xl font-mono text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 py-2 px-4 rounded-xl font-mono text-[10px] font-black uppercase tracking-wider transition-all duration-200 ease-out flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] ${
             profileMode === 'live'
-              ? 'bg-zinc-900 text-white shadow-xs'
+              ? 'bg-zinc-900 text-white shadow-sm'
               : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50'
           }`}
         >
@@ -807,9 +807,9 @@ export default function ProfileView({
         <button
           type="button"
           onClick={() => setProfileMode('edit')}
-          className={`flex-1 py-2 px-4 rounded-xl font-mono text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 py-2 px-4 rounded-xl font-mono text-[10px] font-black uppercase tracking-wider transition-all duration-200 ease-out flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] ${
             profileMode === 'edit'
-              ? 'bg-zinc-900 text-white shadow-xs'
+              ? 'bg-zinc-900 text-white shadow-sm'
               : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50'
           }`}
         >
@@ -829,7 +829,7 @@ export default function ProfileView({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               
               {/* Jobs Completed Card */}
-              <div className="bg-white border border-zinc-200 rounded-3xl p-5 flex items-center gap-4 shadow-xs">
+              <div className="bg-white border border-zinc-200/80 rounded-3xl p-5 flex items-center gap-4 shadow-sm">
                 <div className="p-3 bg-emerald-50 rounded-2xl text-[#10B981]">
                   <ClipboardCheck className="w-6 h-6" />
                 </div>
@@ -846,7 +846,7 @@ export default function ProfileView({
               </div>
 
               {/* Experience / Sizing Card */}
-              <div className="bg-white border border-zinc-200 rounded-3xl p-5 flex items-center gap-4 shadow-xs">
+              <div className="bg-white border border-zinc-200/80 rounded-3xl p-5 flex items-center gap-4 shadow-sm">
                 <div className="p-3 bg-[#34D399]/10 text-[#10B981] rounded-2xl">
                   {userType === 'worker' ? <Clock className="w-6 h-6" /> : <Users className="w-6 h-6" />}
                 </div>
@@ -861,7 +861,7 @@ export default function ProfileView({
               </div>
 
               {/* Trust Score / Reputation Meter Card */}
-              <div className="bg-white border border-zinc-200 rounded-3xl p-5 flex items-center gap-4 shadow-xs">
+              <div className="bg-white border border-zinc-200/80 rounded-3xl p-5 flex items-center gap-4 shadow-sm">
                 <div className="p-3 bg-zinc-900 rounded-2xl text-[#34D399]">
                   <Sparkles className="w-6 h-6" />
                 </div>
@@ -875,7 +875,7 @@ export default function ProfileView({
             </div>
 
             {/* PROFESSIONAL BIOGRAPHY */}
-            <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-4">
+            <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-4">
               <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-2 border-b border-zinc-100 pb-3">
                 <FileText className="w-4 h-4 text-[#10B981]" />
                 {userType === 'worker' ? 'Professional Statement' : 'Corporate Profile'}
@@ -888,7 +888,7 @@ export default function ProfileView({
             </div>
 
             
-      <section className="bg-white text-black rounded-3xl p-6 md:p-8 border border-zinc-200 shadow-sm">
+      <section className="bg-white text-black rounded-3xl p-6 md:p-8 border border-zinc-200/80 shadow-sm">
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1">
             <div className="flex items-center gap-2">
@@ -941,7 +941,7 @@ export default function ProfileView({
                   ['Verification', companyProfile.verified ? 100 : 35],
                 ]
             ).map(([label, value]) => (
-              <div key={String(label)} className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+              <div key={String(label)} className="bg-zinc-50 border border-zinc-200/80 rounded-xl p-3">
                 <p className="text-[9px] font-mono font-black text-black uppercase">
                   {label}
                 </p>
@@ -971,7 +971,7 @@ export default function ProfileView({
                     key={item.label}
                     type="button"
                     onClick={() => setProfileMode('edit')}
-                    className="flex items-center justify-between p-3 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-xl text-left"
+                    className="flex items-center justify-between p-3 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/80 rounded-xl text-left"
                   >
                     <span className="text-xs font-bold text-black">{item.label}</span>
                     <span className="text-xs font-mono font-black text-[#34D399]">
@@ -988,7 +988,7 @@ export default function ProfileView({
             {userType === 'worker' && (
               <>
                 {/* Qualifications & Cards */}
-                <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-4">
+                <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-4">
                   <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-2 border-b border-zinc-100 pb-3">
                     <Award className="w-4 h-4 text-[#10B981]" />
                     Mandated Qualifications & Trade Cards
@@ -1012,7 +1012,7 @@ export default function ProfileView({
                 </div>
 
                 {/* Scanned Licences & Certifications Previews */}
-                <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-4">
+                <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-4">
                   <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-2 border-b border-zinc-100 pb-3">
                     <FileCheck className="w-4 h-4 text-[#10B981]" />
                     Verified License Badges & Scans
@@ -1024,7 +1024,7 @@ export default function ProfileView({
                       {workerLicences.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                           {workerLicences.map((lic, i) => (
-                            <span key={i} className="px-2.5 py-1 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-lg text-[10px] font-mono font-bold uppercase">
+                            <span key={i} className="px-2.5 py-1 bg-zinc-100 border border-zinc-200/80 text-zinc-700 rounded-xl text-[10px] font-mono font-bold uppercase">
                               🪪 {lic}
                             </span>
                           ))}
@@ -1040,7 +1040,7 @@ export default function ProfileView({
                               href={url} 
                               target="_blank" 
                               rel="noreferrer"
-                              className="p-3 bg-emerald-50/50 hover:bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-between text-xs text-emerald-800 font-medium transition-all group"
+                              className="p-3 bg-emerald-50/50 hover:bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-between text-xs text-emerald-800 font-medium transition-all duration-200 ease-out group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                             >
                               <span className="flex items-center gap-2 truncate">
                                 <FileCheck className="w-4 h-4 text-[#10B981] flex-shrink-0" />
@@ -1053,7 +1053,7 @@ export default function ProfileView({
                             <div 
                               key={`lic-img-${i}`}
                               onClick={() => setLightboxImage(url)}
-                              className="p-3 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-xl flex items-center justify-between text-xs text-zinc-700 font-medium transition-all cursor-pointer group"
+                              className="p-3 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/80 rounded-xl flex items-center justify-between text-xs text-zinc-700 font-medium transition-all duration-200 ease-out cursor-pointer active:scale-[0.98] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                             >
                               <span className="flex items-center gap-2 truncate">
                                 <ImageIcon className="w-4 h-4 text-[#10B981] flex-shrink-0" />
@@ -1074,7 +1074,7 @@ export default function ProfileView({
                 </div>
 
                 {/* Chronological Work History */}
-                <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-5">
+                <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-5">
                   <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-2 border-b border-zinc-100 pb-3">
                     <Calendar className="w-4 h-4 text-[#10B981]" />
                     Chronological On-site History
@@ -1083,7 +1083,7 @@ export default function ProfileView({
                     <div className="border-l-2 border-zinc-200 ml-3 pl-6 space-y-6">
                       {workerProfile.workHistory.map((hist) => (
                         <div key={hist.id} className="relative">
-                          <span className="absolute -left-[31px] top-1 bg-[#34D399] w-4.5 h-4.5 rounded-full border-4 border-white shadow-xs" />
+                          <span className="absolute -left-[31px] top-1 bg-[#34D399] w-4.5 h-4.5 rounded-full border-4 border-white shadow-sm" />
                           <div>
                             <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">{hist.duration}</span>
                             <h4 className="text-sm font-bold text-zinc-900 mt-0.5">{hist.role}</h4>
@@ -1104,25 +1104,25 @@ export default function ProfileView({
             {userType === 'employer' && (
               <>
                 {/* Corporate compliance: Companies House, VAT, PLI */}
-                <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-4">
+                <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-4">
                   <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-2 border-b border-zinc-100 pb-3">
                     <ShieldCheck className="w-4 h-4 text-[#10B981]" />
                     Corporate Compliance & Insurances
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-2xl space-y-1">
+                    <div className="p-4 bg-zinc-50 border border-zinc-200/80 rounded-2xl space-y-1">
                       <span className="text-[10px] font-mono text-zinc-400 uppercase font-bold">Companies House Registration</span>
                       <p className="text-xs font-bold text-zinc-800">{companyHouseNumber || "Not Registered"}</p>
                     </div>
-                    <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-2xl space-y-1">
+                    <div className="p-4 bg-zinc-50 border border-zinc-200/80 rounded-2xl space-y-1">
                       <span className="text-[10px] font-mono text-zinc-400 uppercase font-bold">VAT Number</span>
                       <p className="text-xs font-bold text-zinc-800">{companyVatNumber || "Not VAT Registered"}</p>
                     </div>
-                    <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-2xl space-y-1">
+                    <div className="p-4 bg-zinc-50 border border-zinc-200/80 rounded-2xl space-y-1">
                       <span className="text-[10px] font-mono text-zinc-400 uppercase font-bold">Public Liability Insurance</span>
                       <p className="text-xs font-bold text-zinc-800">{publicLiabilityInsurance || companyInsuranceStatus || "Liability Insured"}</p>
                     </div>
-                    <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-2xl space-y-1">
+                    <div className="p-4 bg-zinc-50 border border-zinc-200/80 rounded-2xl space-y-1">
                       <span className="text-[10px] font-mono text-zinc-400 uppercase font-bold">Employers Liability Insurance</span>
                       <p className="text-xs font-bold text-zinc-800">{employersLiabilityInsurance || "Employers Insured"}</p>
                     </div>
@@ -1130,7 +1130,7 @@ export default function ProfileView({
                 </div>
 
                 {/* Active Vacancies */}
-                <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-4">
+                <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-4">
                   <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-2 border-b border-zinc-100 pb-3">
                     <Briefcase className="w-4 h-4 text-[#10B981]" />
                     Active Site Vacancies at this Firm
@@ -1138,7 +1138,7 @@ export default function ProfileView({
                   {jobs.filter(j => j.companyId === companyProfile.id).length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       {jobs.filter(j => j.companyId === companyProfile.id).map((job) => (
-                        <div key={job.id} className="p-4 bg-zinc-50 border border-zinc-250 hover:border-emerald-500 rounded-2xl transition-all">
+                        <div key={job.id} className="p-4 bg-zinc-50 border border-zinc-250 hover:border-emerald-500 rounded-2xl transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2">
                           <span className="px-2 py-0.5 bg-zinc-900 text-[#34D399] rounded text-[8px] font-mono font-bold uppercase">{job.trade}</span>
                           <h4 className="text-sm font-bold text-zinc-900 mt-2">{job.title}</h4>
                           <p className="text-xs text-zinc-500 font-medium mt-1">{job.location} • {job.duration}</p>
@@ -1157,7 +1157,7 @@ export default function ProfileView({
             )}
 
             {/* REVIEWS & RATINGS */}
-            <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-6">
+            <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-6">
               <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
                 <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-2">
                   <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
@@ -1241,7 +1241,7 @@ export default function ProfileView({
           <div className="lg:col-span-4 space-y-6">
             
             {/* WORKER TOOLS / CONTRACTOR BENEFITS */}
-            <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-4">
+            <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-4">
               <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-2 border-b border-zinc-100 pb-3">
                 {userType === 'worker' ? <Wrench className="w-4 h-4 text-[#10B981]" /> : <Award className="w-4 h-4 text-[#10B981]" />}
                 {userType === 'worker' ? 'Active Tools & Transport' : 'Corporate Perks & Offerings'}
@@ -1250,12 +1250,12 @@ export default function ProfileView({
                 <div className="space-y-3">
                   <div className="flex flex-wrap gap-1.5">
                     {ownTools && (
-                      <span className="px-2.5 py-1 bg-zinc-900 text-[#34D399] border border-zinc-800 rounded-lg text-[10px] font-mono font-bold uppercase">
+                      <span className="px-2.5 py-1 bg-zinc-900 text-[#34D399] border border-zinc-800 rounded-xl text-[10px] font-mono font-bold uppercase">
                         🛠 OWN POWER TOOLS
                       </span>
                     )}
                     {ownVan && (
-                      <span className="px-2.5 py-1 bg-zinc-900 text-[#34D399] border border-zinc-800 rounded-lg text-[10px] font-mono font-bold uppercase">
+                      <span className="px-2.5 py-1 bg-zinc-900 text-[#34D399] border border-zinc-800 rounded-xl text-[10px] font-mono font-bold uppercase">
                         🚚 OWN COMMERCIAL VAN
                       </span>
                     )}
@@ -1263,7 +1263,7 @@ export default function ProfileView({
                   {workerProfile.toolsAndTransport && workerProfile.toolsAndTransport.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5">
                       {workerProfile.toolsAndTransport.map((tool, i) => (
-                        <span key={i} className="px-2 py-1 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-lg text-[10px] font-mono font-bold uppercase">
+                        <span key={i} className="px-2 py-1 bg-zinc-100 border border-zinc-200/80 text-zinc-700 rounded-xl text-[10px] font-mono font-bold uppercase">
                           {tool}
                         </span>
                       ))}
@@ -1276,7 +1276,7 @@ export default function ProfileView({
                 <div className="flex flex-wrap gap-1.5">
                   {companyBenefits && companyBenefits.length > 0 ? (
                     companyBenefits.map((perk, i) => (
-                      <span key={i} className="px-2.5 py-1.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-lg text-[10px] font-mono font-bold uppercase">
+                      <span key={i} className="px-2.5 py-1.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-xl text-[10px] font-mono font-bold uppercase">
                         🎁 {perk}
                       </span>
                     ))
@@ -1288,7 +1288,7 @@ export default function ProfileView({
             </div>
 
             {/* PORTFOLIO / SITE PROJECT GALLERY */}
-            <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-4">
+            <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-4">
               <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-2 border-b border-zinc-100 pb-3">
                 <ImageIcon className="w-4 h-4 text-[#10B981]" />
                 {userType === 'worker' ? 'Work Portfolio Gallery' : 'Company Project Gallery'}
@@ -1300,7 +1300,7 @@ export default function ProfileView({
                     <div 
                       key={i} 
                       onClick={() => setLightboxImage(url)}
-                      className="relative aspect-square rounded-2xl overflow-hidden border border-zinc-100 bg-zinc-50 shadow-xs cursor-pointer group"
+                      className="relative aspect-square rounded-2xl overflow-hidden border border-zinc-100 bg-zinc-50 shadow-sm cursor-pointer active:scale-[0.98] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                     >
                       <img 
                         src={url} 
@@ -1323,7 +1323,7 @@ export default function ProfileView({
             </div>
 
             {/* PREFERENCES / MAIN CONTACTS */}
-            <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-4">
+            <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-4">
               <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider flex items-center gap-2 border-b border-zinc-100 pb-3">
                 <Phone className="w-4 h-4 text-[#10B981]" />
                 {userType === 'worker' ? 'Employment preferences' : 'Corporate Contact Details'}
@@ -1372,7 +1372,7 @@ export default function ProfileView({
           <div className="lg:col-span-8 space-y-6">
             
             {/* SECTION 2: BASIC DETAILS CARD */}
-            <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-5">
+            <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-5">
               <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
                 <Building className="w-5 h-5 text-emerald-500" />
                 <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider">
@@ -1389,7 +1389,7 @@ export default function ProfileView({
                       type="text" 
                       value={workerName}
                       onChange={(e) => setWorkerName(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       placeholder="Enter full name..."
                     />
                   </div>
@@ -1400,7 +1400,7 @@ export default function ProfileView({
                       type="text" 
                       value={workerPhone}
                       onChange={(e) => setWorkerPhone(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       placeholder="Enter phone number..."
                     />
                   </div>
@@ -1422,7 +1422,7 @@ export default function ProfileView({
                     <select
                       value={workerTrade}
                       onChange={(e) => setWorkerTrade(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                     >
                       <option value="">Select Main Trade...</option>
                       {TRADES_CATEGORIES.map((cat) => (
@@ -1437,7 +1437,7 @@ export default function ProfileView({
                       type="text" 
                       value={workerSubcategory}
                       onChange={(e) => setWorkerSubcategory(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       placeholder="e.g. Solar Fitter, Domestic Cabling, Alarm specialist..."
                     />
                   </div>
@@ -1448,7 +1448,7 @@ export default function ProfileView({
                       value={workerAbout}
                       onChange={(e) => setWorkerAbout(e.target.value)}
                       rows={4}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all resize-none"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       placeholder="Tell contractors about your professional experience, work ethics, and on-site background..."
                     />
                   </div>
@@ -1462,7 +1462,7 @@ export default function ProfileView({
                       type="text" 
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                     />
                   </div>
 
@@ -1472,7 +1472,7 @@ export default function ProfileView({
                       type="text" 
                       value={contactName}
                       onChange={(e) => setContactName(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       placeholder="Contact Name..."
                     />
                   </div>
@@ -1483,7 +1483,7 @@ export default function ProfileView({
                       type="text" 
                       value={contactPhone}
                       onChange={(e) => setContactPhone(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                     />
                   </div>
 
@@ -1505,7 +1505,7 @@ export default function ProfileView({
                       type="text" 
                       value={companyIndustry}
                       onChange={(e) => setCompanyIndustry(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       placeholder="e.g. Civil Engineering, Residential Construction..."
                     />
                   </div>
@@ -1516,7 +1516,7 @@ export default function ProfileView({
                       type="text" 
                       value={companySize}
                       onChange={(e) => setCompanySize(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                     />
                   </div>
 
@@ -1526,7 +1526,7 @@ export default function ProfileView({
                       type="text" 
                       value={companyWebsite}
                       onChange={(e) => setCompanyWebsite(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       placeholder="e.g. https://apexbuild.co.uk"
                     />
                   </div>
@@ -1537,7 +1537,7 @@ export default function ProfileView({
                       type="text" 
                       value={contactEmail}
                       onChange={(e) => setContactEmail(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       placeholder="e.g. mail@firm.com"
                     />
                   </div>
@@ -1548,7 +1548,7 @@ export default function ProfileView({
                       type="text" 
                       value={businessAddress}
                       onChange={(e) => setBusinessAddress(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       placeholder="Full mailing address..."
                     />
                   </div>
@@ -1559,7 +1559,7 @@ export default function ProfileView({
                       value={companyDesc}
                       onChange={(e) => setCompanyDesc(e.target.value)}
                       rows={4}
-                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all resize-none"
+                      className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       placeholder="Tell candidates about your ongoing construction developments, site values, and corporate focus..."
                     />
                   </div>
@@ -1568,7 +1568,7 @@ export default function ProfileView({
             </div>
 
             {/* SECTION 3: WORK DETAILS CARD */}
-            <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-5">
+            <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-5">
               <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
                 <Wrench className="w-5 h-5 text-emerald-500" />
                 <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider">
@@ -1586,7 +1586,7 @@ export default function ProfileView({
                         type="text" 
                         value={workerHourlyRate}
                         onChange={(e) => setWorkerHourlyRate(e.target.value)}
-                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       />
                     </div>
 
@@ -1596,7 +1596,7 @@ export default function ProfileView({
                         type="text" 
                         value={workerDayRate}
                         onChange={(e) => setWorkerDayRate(e.target.value)}
-                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       />
                     </div>
 
@@ -1605,7 +1605,7 @@ export default function ProfileView({
                       <select
                         value={workerExperience}
                         onChange={(e) => setWorkerExperience(e.target.value)}
-                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       >
                         <option value="1 Year">1 Year</option>
                         <option value="2 Years">2 Years</option>
@@ -1622,7 +1622,7 @@ export default function ProfileView({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       
                       {/* Own tools check */}
-                      <label className="flex items-center gap-3 p-4 border border-zinc-200 hover:border-[#34D399]/45 rounded-2xl bg-zinc-50 cursor-pointer select-none transition-all">
+                      <label className="flex items-center gap-3 p-4 border border-zinc-200/80 hover:border-[#34D399]/45 rounded-2xl bg-zinc-50 cursor-pointer active:scale-[0.98] select-none transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2">
                         <input 
                           type="checkbox" 
                           checked={ownTools}
@@ -1636,7 +1636,7 @@ export default function ProfileView({
                       </label>
 
                       {/* Own van check */}
-                      <label className="flex items-center gap-3 p-4 border border-zinc-200 hover:border-[#34D399]/45 rounded-2xl bg-zinc-50 cursor-pointer select-none transition-all">
+                      <label className="flex items-center gap-3 p-4 border border-zinc-200/80 hover:border-[#34D399]/45 rounded-2xl bg-zinc-50 cursor-pointer active:scale-[0.98] select-none transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2">
                         <input 
                           type="checkbox" 
                           checked={ownVan}
@@ -1701,7 +1701,7 @@ export default function ProfileView({
                         value={companyHouseNumber}
                         onChange={(e) => setCompanyHouseNumber(e.target.value)}
                         placeholder="e.g. 08123456"
-                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       />
                     </div>
 
@@ -1712,7 +1712,7 @@ export default function ProfileView({
                         value={companyVatNumber}
                         onChange={(e) => setCompanyVatNumber(e.target.value)}
                         placeholder="e.g. GB 123 4567 89"
-                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       />
                     </div>
 
@@ -1723,7 +1723,7 @@ export default function ProfileView({
                         value={companyInsuranceStatus}
                         onChange={(e) => setCompanyInsuranceStatus(e.target.value)}
                         placeholder="e.g. £10M Public Liability"
-                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       />
                     </div>
 
@@ -1734,7 +1734,7 @@ export default function ProfileView({
                         value={publicLiabilityInsurance}
                         onChange={(e) => setPublicLiabilityInsurance(e.target.value)}
                         placeholder="e.g. £5,000,000 Cover"
-                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       />
                     </div>
 
@@ -1745,7 +1745,7 @@ export default function ProfileView({
                         value={employersLiabilityInsurance}
                         onChange={(e) => setEmployersLiabilityInsurance(e.target.value)}
                         placeholder="e.g. £10,000,000 Cover"
-                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       />
                     </div>
 
@@ -1756,7 +1756,7 @@ export default function ProfileView({
                         value={postcode}
                         onChange={(e) => setPostcode(e.target.value)}
                         placeholder="e.g. SW1A 1AA"
-                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all"
+                        className="w-full p-3 bg-zinc-50 focus:bg-white border border-zinc-200/80 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       />
                     </div>
                   </div>
@@ -1795,7 +1795,7 @@ export default function ProfileView({
           <div className="lg:col-span-4 space-y-6">
             
             {/* SECTION 4: GALLERY SECTION CARD */}
-            <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-5">
+            <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-5">
               <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                 <div className="flex items-center gap-2">
                   <ImageIcon className="w-5 h-5 text-emerald-500" />
@@ -1808,7 +1808,7 @@ export default function ProfileView({
                 <div className="relative">
                   <button 
                     type="button"
-                    className="px-2.5 py-1.5 bg-emerald-50 border border-emerald-100 hover:bg-emerald-100 text-[#10B981] rounded-xl text-[10px] font-mono font-bold uppercase transition-all flex items-center gap-1 cursor-pointer"
+                    className="px-2.5 py-1.5 bg-emerald-50 border border-emerald-100 hover:bg-emerald-100 text-[#10B981] rounded-xl text-[10px] font-mono font-bold uppercase transition-all duration-200 ease-out flex items-center gap-1 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Images
                   </button>
@@ -1823,7 +1823,7 @@ export default function ProfileView({
                         await handleUploadSingleFile(files[i], userType === 'worker' ? 'work-gallery' : 'company-gallery', userType === 'worker' ? 'gallery' : 'company_gallery');
                       }
                     }} 
-                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                    className="absolute inset-0 opacity-0 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2" 
                   />
                 </div>
               </div>
@@ -1835,7 +1835,7 @@ export default function ProfileView({
                 {(userType === 'worker' ? galleryImages : companyGalleryImages).length > 0 ? (
                   <div className="grid grid-cols-2 gap-3">
                     {(userType === 'worker' ? galleryImages : companyGalleryImages).map((imgUrl, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden group border border-zinc-100 bg-zinc-50 shadow-xs">
+                      <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden group border border-zinc-100 bg-zinc-50 shadow-sm">
                         <img 
                           src={imgUrl} 
                           alt="Gallery work sample" 
@@ -1850,7 +1850,7 @@ export default function ProfileView({
                           <div className="relative w-full">
                             <button 
                               type="button"
-                              className="w-full py-1.5 bg-white hover:bg-zinc-100 text-zinc-800 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer"
+                              className="w-full py-1.5 bg-white hover:bg-zinc-100 text-zinc-800 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                             >
                               Replace
                             </button>
@@ -1858,7 +1858,7 @@ export default function ProfileView({
                               type="file" 
                               accept="image/*" 
                               onChange={(e) => handleReplaceGalleryImage(e, userType === 'worker' ? 'work-gallery' : 'company-gallery', userType === 'worker' ? 'gallery' : 'company_gallery', idx)} 
-                              className="absolute inset-0 opacity-0 cursor-pointer" 
+                              className="absolute inset-0 opacity-0 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2" 
                             />
                           </div>
 
@@ -1866,7 +1866,7 @@ export default function ProfileView({
                           <button 
                             type="button"
                             onClick={() => handleRemoveFile(imgUrl, userType === 'worker' ? 'gallery' : 'company_gallery')}
-                            className="w-full py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer"
+                            className="w-full py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                           >
                             <Trash2 className="w-3 h-3" /> Remove
                           </button>
@@ -1888,7 +1888,7 @@ export default function ProfileView({
             </div>
 
             {/* SECTION 5: LEGAL & SCAN UPLOADS */}
-            <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs space-y-5">
+            <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 shadow-sm space-y-5">
               <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
                 <FileCheck className="w-5 h-5 text-emerald-500" />
                 <h3 className="text-xs font-mono font-black text-zinc-900 uppercase tracking-wider">
@@ -1905,7 +1905,7 @@ export default function ProfileView({
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-zinc-800">Primary Trades Resume (CV)</span>
                       <div className="relative">
-                        <button type="button" className="text-[11px] font-mono font-bold text-[#10B981] uppercase tracking-wider hover:underline cursor-pointer">
+                        <button type="button" className="text-[11px] font-mono font-bold text-[#10B981] uppercase tracking-wider hover:underline cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2">
                           Upload CV
                         </button>
                         <input 
@@ -1915,12 +1915,12 @@ export default function ProfileView({
                             const file = e.target.files?.[0];
                             if (file) handleUploadSingleFile(file, 'cvs', 'cv');
                           }}
-                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                          className="absolute inset-0 opacity-0 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2" 
                         />
                       </div>
                     </div>
                     {cvUrl ? (
-                      <div className="flex items-center justify-between p-2 bg-emerald-50 border border-emerald-100 rounded-lg">
+                      <div className="flex items-center justify-between p-2 bg-emerald-50 border border-emerald-100 rounded-xl">
                         <a href={cvUrl} target="_blank" rel="noreferrer" className="text-[#10B981] font-bold underline truncate flex-1 text-[11px] font-mono">
                           📄 Tradesman_CV.pdf
                         </a>
@@ -1935,7 +1935,7 @@ export default function ProfileView({
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-zinc-800">CSCS/ECS Qualification Files</span>
                       <div className="relative">
-                        <button type="button" className="text-[11px] font-mono font-bold text-[#10B981] uppercase tracking-wider hover:underline cursor-pointer">
+                        <button type="button" className="text-[11px] font-mono font-bold text-[#10B981] uppercase tracking-wider hover:underline cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2">
                           Add Certificate
                         </button>
                         <input 
@@ -1945,14 +1945,14 @@ export default function ProfileView({
                             const file = e.target.files?.[0];
                             if (file) handleUploadSingleFile(file, 'documents', 'certificates');
                           }}
-                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                          className="absolute inset-0 opacity-0 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2" 
                         />
                       </div>
                     </div>
                     {certificateFiles.length > 0 ? (
                       <div className="space-y-1.5">
                         {certificateFiles.map((certUrl, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 bg-zinc-50 border border-zinc-200 rounded-lg">
+                          <div key={i} className="flex items-center justify-between p-2 bg-zinc-50 border border-zinc-200/80 rounded-xl">
                             <a href={certUrl} target="_blank" rel="noreferrer" className="text-[#10B981] underline truncate flex-1 text-[11px] font-mono">
                               Certificate #{i + 1}
                             </a>
@@ -1976,7 +1976,7 @@ export default function ProfileView({
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-zinc-800">Scanned Licence Badges</span>
                       <div className="relative">
-                        <button type="button" className="text-[11px] font-mono font-bold text-[#10B981] uppercase tracking-wider hover:underline cursor-pointer">
+                        <button type="button" className="text-[11px] font-mono font-bold text-[#10B981] uppercase tracking-wider hover:underline cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2">
                           Add Licence Scan
                         </button>
                         <input 
@@ -1986,14 +1986,14 @@ export default function ProfileView({
                             const file = e.target.files?.[0];
                             if (file) handleUploadSingleFile(file, 'documents', 'licences');
                           }}
-                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                          className="absolute inset-0 opacity-0 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2" 
                         />
                       </div>
                     </div>
                     {licenceImages.length > 0 ? (
                       <div className="space-y-1.5">
                         {licenceImages.map((licUrl, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 bg-zinc-50 border border-zinc-200 rounded-lg">
+                          <div key={i} className="flex items-center justify-between p-2 bg-zinc-50 border border-zinc-200/80 rounded-xl">
                             <a href={licUrl} target="_blank" rel="noreferrer" className="text-[#10B981] underline truncate flex-1 text-[11px] font-mono">
                               Licence Scan #{i + 1}
                             </a>
@@ -2019,7 +2019,7 @@ export default function ProfileView({
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-zinc-800">Verification & Legal documents</span>
                       <div className="relative">
-                        <button type="button" className="text-[11px] font-mono font-bold text-[#10B981] uppercase tracking-wider hover:underline cursor-pointer">
+                        <button type="button" className="text-[11px] font-mono font-bold text-[#10B981] uppercase tracking-wider hover:underline cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2">
                           Add Document
                         </button>
                         <input 
@@ -2029,14 +2029,14 @@ export default function ProfileView({
                             const file = e.target.files?.[0];
                             if (file) handleUploadSingleFile(file, 'documents', 'company_docs');
                           }}
-                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                          className="absolute inset-0 opacity-0 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2" 
                         />
                       </div>
                     </div>
                     {verificationDocuments.length > 0 ? (
                       <div className="space-y-1.5">
                         {verificationDocuments.map((docUrl, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 bg-zinc-50 border border-zinc-200 rounded-lg">
+                          <div key={i} className="flex items-center justify-between p-2 bg-zinc-50 border border-zinc-200/80 rounded-xl">
                             <a href={docUrl} target="_blank" rel="noreferrer" className="text-[#10B981] underline truncate flex-1 text-[11px] font-mono">
                               Verification Doc #{i + 1}
                             </a>
@@ -2070,7 +2070,7 @@ export default function ProfileView({
           <button 
             type="button" 
             onClick={() => setLightboxImage(null)}
-            className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white cursor-pointer"
+            className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
           >
             <X className="w-6 h-6" />
           </button>

@@ -459,16 +459,16 @@ export default function SwipeView({
     <div id="swipe_view" className="flex flex-col h-[calc(100vh-130px)] max-w-lg mx-auto relative justify-between pb-4">
       
       {/* View Mode Toggle Segmented Control */}
-      <div className="flex bg-zinc-100 p-1 rounded-xl border border-zinc-200 shadow-inner">
+      <div className="flex bg-zinc-100 p-1 rounded-xl border border-zinc-200/80 shadow-inner">
         <button
           onClick={() => {}}
-          className="flex-1 py-1.5 text-xs font-mono font-black rounded-lg transition-all uppercase flex items-center justify-center gap-1.5 bg-[#34D399] text-white shadow-xs"
+          className="flex-1 py-1.5 text-xs font-mono font-black rounded-xl transition-all duration-200 ease-out uppercase flex items-center justify-center gap-1.5 bg-[#34D399] text-white shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
         >
           <Heart className="w-3.5 h-3.5 fill-current text-white" /> Card Swipe
         </button>
         <button
           onClick={() => onNavigate('search')}
-          className="flex-1 py-1.5 text-xs font-mono font-black rounded-lg transition-all uppercase flex items-center justify-center gap-1.5 text-zinc-500 hover:text-zinc-950 cursor-pointer"
+          className="flex-1 py-1.5 text-xs font-mono font-black rounded-xl transition-all duration-200 ease-out uppercase flex items-center justify-center gap-1.5 text-zinc-500 hover:text-zinc-950 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
         >
           <MapPin className="w-3.5 h-3.5 text-zinc-400" /> Search Filters & Map
         </button>
@@ -476,16 +476,16 @@ export default function SwipeView({
 
       {/* Change View Switcher Toggle (For both workers and contractors) */}
       {onJobsViewModeChange && (
-        <div className="flex bg-white p-1 rounded-xl border border-zinc-200 mt-2 shadow-xs items-center">
+        <div className="flex bg-white p-1 rounded-xl border border-zinc-200/80 mt-2 shadow-sm items-center">
           <span className="text-[10px] font-mono font-extrabold text-zinc-400 uppercase tracking-widest pl-3 pr-2 select-none">
             Change View:
           </span>
           <div className="flex flex-1 gap-1">
             <button
               onClick={() => onJobsViewModeChange('card')}
-              className={`flex-1 py-1.5 text-[11px] font-mono font-black rounded-lg transition-all uppercase flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`flex-1 py-1.5 text-[11px] font-mono font-black rounded-xl transition-all duration-200 ease-out uppercase flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] ${
                 jobsViewMode === 'card'
-                  ? 'bg-zinc-950 text-white shadow-xs'
+                  ? 'bg-zinc-950 text-white shadow-sm'
                   : 'text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50'
               }`}
             >
@@ -493,9 +493,9 @@ export default function SwipeView({
             </button>
             <button
               onClick={() => onJobsViewModeChange('list')}
-              className={`flex-1 py-1.5 text-[11px] font-mono font-black rounded-lg transition-all uppercase flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`flex-1 py-1.5 text-[11px] font-mono font-black rounded-xl transition-all duration-200 ease-out uppercase flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] ${
                 jobsViewMode === 'list'
-                  ? 'bg-[#34D399] text-white shadow-xs'
+                  ? 'bg-[#34D399] text-white shadow-sm'
                   : 'text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50'
               }`}
             >
@@ -506,7 +506,7 @@ export default function SwipeView({
       )}
 
       {/* Top Filter Bar Indicator */}
-      <div className="flex justify-between items-center bg-white border border-zinc-200 rounded-xl px-4 py-2 text-zinc-800 shadow-sm mt-2">
+      <div className="flex justify-between items-center bg-white border border-zinc-200/80 rounded-xl px-4 py-2 text-zinc-800 shadow-sm mt-2">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-[#10B981] rounded-full animate-pulse" />
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">
@@ -515,7 +515,7 @@ export default function SwipeView({
         </div>
         <button 
           onClick={() => onNavigate('search')}
-          className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#10B981] hover:text-[#34D399] transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#10B981] hover:text-[#34D399] transition-colors duration-200 ease-out cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
         >
           <SlidersHorizontal className="w-3.5 h-3.5" /> FILTERS
         </button>
@@ -529,7 +529,7 @@ export default function SwipeView({
             {userType === 'employer' ? (
               /* Employer: scrolling feed of Workers */
               workers.length === 0 ? (
-                <div className="bg-white border border-zinc-200 rounded-2xl p-6 text-center space-y-4 py-12 flex flex-col items-center justify-center">
+                <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 text-center space-y-4 py-12 flex flex-col items-center justify-center">
                   <div className="p-4 bg-zinc-50 rounded-full text-[#10B981] border border-emerald-100">
                     <Wrench className="w-10 h-10 stroke-[1.5]" />
                   </div>
@@ -546,7 +546,7 @@ export default function SwipeView({
                     return (
                       <div 
                         key={worker.id} 
-                        className="bg-white border border-zinc-200 rounded-xl p-4 shadow-xs hover:border-[#34D399] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        className="bg-white border border-zinc-200/80 rounded-xl p-4 shadow-sm hover:border-[#34D399] transition-all duration-200 ease-out flex flex-col sm:flex-row sm:items-center justify-between gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       >
                         <div className="space-y-1.5 flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -556,7 +556,7 @@ export default function SwipeView({
                             </span>
                             <h4 
                               onClick={() => onSelectWorker(worker)}
-                              className="text-base font-bold text-zinc-900 hover:text-[#10B981] transition-colors cursor-pointer truncate"
+                              className="text-base font-bold text-zinc-900 hover:text-[#10B981] transition-colors duration-200 ease-out cursor-pointer active:scale-[0.98] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                             >
                               {worker.name}
                             </h4>
@@ -597,17 +597,17 @@ export default function SwipeView({
                         <div className="flex sm:flex-col gap-2 flex-shrink-0 min-w-[120px]">
                           <button 
                             onClick={() => onSelectWorker(worker)}
-                            className="flex-1 sm:w-full py-2 px-3 border border-zinc-200 hover:bg-zinc-50 text-zinc-700 font-mono text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            className="flex-1 sm:w-full py-2 px-3 border border-zinc-200/80 hover:bg-zinc-50 text-zinc-700 font-mono text-[11px] font-bold rounded-xl transition-all duration-200 ease-out flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                           >
                             <Eye className="w-3.5 h-3.5 text-zinc-400" /> PROFILE
                           </button>
                           <button 
                             onClick={() => handleShortlistWorker(worker)}
                             disabled={isApplied}
-                            className={`flex-1 sm:w-full py-2 px-3 font-mono text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                            className={`flex-1 sm:w-full py-2 px-3 font-mono text-[11px] font-bold rounded-xl transition-all duration-200 ease-out flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98] ${
                               isApplied 
                                 ? 'bg-emerald-50 border border-emerald-200 text-[#10B981] cursor-default' 
-                                : 'bg-[#34D399] hover:bg-[#10B981] text-white shadow-xs'
+                                : 'bg-[#34D399] hover:bg-[#10B981] text-white shadow-sm'
                             }`}
                           >
                             {isApplied ? (
@@ -629,7 +629,7 @@ export default function SwipeView({
             ) : (
               /* Worker: scrolling feed of Jobs */
               jobDeck.length === 0 ? (
-                <div className="bg-white border border-zinc-200 rounded-2xl p-6 text-center space-y-4 py-12 flex flex-col items-center justify-center">
+                <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 text-center space-y-4 py-12 flex flex-col items-center justify-center">
                   <div className="p-4 bg-zinc-50 rounded-full text-zinc-400 border border-zinc-100">
                     <Briefcase className="w-10 h-10 stroke-[1.5]" />
                   </div>
@@ -647,7 +647,7 @@ export default function SwipeView({
                     return (
                       <div 
                         key={job.id} 
-                        className="bg-white border border-zinc-200 rounded-xl p-4 shadow-xs hover:border-[#34D399] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        className="bg-white border border-zinc-200/80 rounded-xl p-4 shadow-sm hover:border-[#34D399] transition-all duration-200 ease-out flex flex-col sm:flex-row sm:items-center justify-between gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       >
                         <div className="space-y-1.5 flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -657,7 +657,7 @@ export default function SwipeView({
                             </span>
                             <h4 
                               onClick={() => onSelectJob(job)}
-                              className="text-base font-bold text-zinc-900 hover:text-[#10B981] transition-colors cursor-pointer truncate"
+                              className="text-base font-bold text-zinc-900 hover:text-[#10B981] transition-colors duration-200 ease-out cursor-pointer active:scale-[0.98] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                             >
                               {job.title}
                             </h4>
@@ -700,17 +700,17 @@ export default function SwipeView({
                         <div className="flex sm:flex-col gap-2 flex-shrink-0 min-w-[120px]">
                           <button 
                             onClick={() => onSelectJob(job)}
-                            className="flex-1 sm:w-full py-2 px-3 border border-zinc-200 hover:bg-zinc-50 text-zinc-700 font-mono text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            className="flex-1 sm:w-full py-2 px-3 border border-zinc-200/80 hover:bg-zinc-50 text-zinc-700 font-mono text-[11px] font-bold rounded-xl transition-all duration-200 ease-out flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                           >
                             <Eye className="w-3.5 h-3.5 text-zinc-400" /> DETAILS
                           </button>
                           <button 
                             onClick={() => handleApplyJob(job)}
                             disabled={isApplied}
-                            className={`flex-1 sm:w-full py-2 px-3 font-mono text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                            className={`flex-1 sm:w-full py-2 px-3 font-mono text-[11px] font-bold rounded-xl transition-all duration-200 ease-out flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98] ${
                               isApplied 
                                 ? 'bg-emerald-50 border border-emerald-200 text-[#10B981] cursor-default' 
-                                : 'bg-[#34D399] hover:bg-[#10B981] text-white shadow-xs'
+                                : 'bg-[#34D399] hover:bg-[#10B981] text-white shadow-sm'
                             }`}
                           >
                             {isApplied ? (
@@ -740,7 +740,7 @@ export default function SwipeView({
                 key="empty-deck"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-white border border-zinc-200 rounded-2xl p-6 text-center space-y-4 max-w-md w-full shadow-sm flex flex-col items-center justify-center py-12"
+                className="bg-white border border-zinc-200/80 rounded-2xl p-6 text-center space-y-4 max-w-md w-full shadow-sm flex flex-col items-center justify-center py-12"
               >
                 <div className="p-4 bg-emerald-50 rounded-full text-[#10B981] border border-emerald-100">
                   <Wrench className="w-12 h-12 stroke-[1.5]" />
@@ -756,13 +756,13 @@ export default function SwipeView({
                 <div className="flex gap-3 pt-2">
                   <button 
                     onClick={resetDeck}
-                    className="px-4 py-2 text-xs font-mono font-bold bg-zinc-900 hover:bg-[#34D399] hover:text-white text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                    className="px-4 py-2 text-xs font-mono font-bold bg-zinc-900 hover:bg-[#34D399] hover:text-white text-white rounded-xl transition-all duration-200 ease-out flex items-center gap-1.5 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                   >
                     <RefreshCw className="w-3.5 h-3.5" /> RE-EVALUATE DECK
                   </button>
                   <button 
                     onClick={() => onNavigate('search')}
-                    className="px-4 py-2 text-xs font-mono font-bold bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-lg border border-zinc-200 transition-all"
+                    className="px-4 py-2 text-xs font-mono font-bold bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl border border-zinc-200/80 transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                   >
                     BROADEN RADIUS
                   </button>
@@ -779,7 +779,7 @@ export default function SwipeView({
                     drag="x"
                     dragConstraints={{ left: 0, right: 0 }}
                     onDragEnd={handleDragEnd}
-                    className="absolute bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-lg h-full w-full flex flex-col justify-between cursor-grab active:cursor-grabbing max-h-[580px]"
+                    className="absolute bg-white border border-zinc-200/80 rounded-2xl overflow-hidden shadow-lg h-full w-full flex flex-col justify-between cursor-grab active:cursor-grabbing max-h-[580px]"
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -789,10 +789,10 @@ export default function SwipeView({
                       <Sparkles className="w-3.5 h-3.5 text-[#34D399]" />
                       {getSwipeWorkerMatch(worker).score}% match
                     </div>
-                    <motion.div style={{ opacity: opacityRight }} className="absolute top-8 left-8 border-4 border-emerald-500 text-emerald-500 font-mono font-black text-2xl px-4 py-1.5 rounded-lg transform -rotate-12 z-30 pointer-events-none uppercase">
+                    <motion.div style={{ opacity: opacityRight }} className="absolute top-8 left-8 border-4 border-emerald-500 text-emerald-500 font-mono font-black text-2xl px-4 py-1.5 rounded-xl transform -rotate-12 z-30 pointer-events-none uppercase">
                       SHORTLIST
                     </motion.div>
-                    <motion.div style={{ opacity: opacityLeft }} className="absolute top-8 right-8 border-4 border-zinc-500 text-zinc-500 font-mono font-black text-2xl px-4 py-1.5 rounded-lg transform rotate-12 z-30 pointer-events-none uppercase">
+                    <motion.div style={{ opacity: opacityLeft }} className="absolute top-8 right-8 border-4 border-zinc-500 text-zinc-500 font-mono font-black text-2xl px-4 py-1.5 rounded-xl transform rotate-12 z-30 pointer-events-none uppercase">
                       SKIP
                     </motion.div>
 
@@ -832,7 +832,7 @@ export default function SwipeView({
                               </h2>
                               <p className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wide">{worker.trade}</p>
                             </div>
-                            <span className="text-xs font-mono font-bold text-amber-500 px-2.5 py-1 bg-amber-50/50 border border-amber-100 rounded-lg flex items-center gap-1">
+                            <span className="text-xs font-mono font-bold text-amber-500 px-2.5 py-1 bg-amber-50/50 border border-amber-100 rounded-xl flex items-center gap-1">
                               ⭐ {worker.rating} ({worker.reviewsCount})
                             </span>
                           </div>
@@ -841,7 +841,7 @@ export default function SwipeView({
                           </div>
                         </div>
 
-                        <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-3 flex justify-between items-center">
+                        <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-3 flex justify-between items-center">
                           <span className="text-xs font-mono font-bold text-zinc-500 uppercase">PAY EXPECTATIONS</span>
                           <span className="text-sm font-mono font-black text-[#10B981]">{worker.payRate}</span>
                         </div>
@@ -884,7 +884,7 @@ export default function SwipeView({
                           <h4 className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider">TOOLS & TRANSPORT</h4>
                           <div className="flex flex-wrap gap-1">
                             {worker.toolsAndTransport.map((t, idx) => (
-                              <span key={idx} className="px-2 py-0.5 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded text-[9px] font-mono font-bold uppercase">
+                              <span key={idx} className="px-2 py-0.5 bg-zinc-100 border border-zinc-200/80 text-zinc-700 rounded text-[9px] font-mono font-bold uppercase">
                                 {t}
                               </span>
                             ))}
@@ -897,7 +897,7 @@ export default function SwipeView({
                       <span className="text-[11px] font-mono font-bold text-zinc-400">TAP PROFILE FOR DETAILED CV</span>
                       <button 
                         onClick={() => onSelectWorker(worker)}
-                        className="px-3 py-1.5 bg-zinc-900 hover:bg-[#34D399] hover:text-white text-white font-mono text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-zinc-900 hover:bg-[#34D399] hover:text-white text-white font-mono text-xs font-bold rounded-xl transition-all duration-200 ease-out flex items-center gap-1 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       >
                         <Eye className="w-3.5 h-3.5" /> VIEW PROFILE
                       </button>
@@ -918,23 +918,23 @@ export default function SwipeView({
                     drag="x"
                     dragConstraints={{ left: 0, right: 0 }}
                     onDragEnd={handleDragEnd}
-                    className="absolute bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-lg h-full w-full flex flex-col justify-between cursor-grab active:cursor-grabbing max-h-[580px]"
+                    className="absolute bg-white border border-zinc-200/80 rounded-2xl overflow-hidden shadow-lg h-full w-full flex flex-col justify-between cursor-grab active:cursor-grabbing max-h-[580px]"
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <motion.div style={{ opacity: opacityRight }} className="absolute top-8 left-8 border-4 border-emerald-500 text-emerald-500 font-mono font-black text-2xl px-4 py-1.5 rounded-lg transform -rotate-12 z-30 pointer-events-none uppercase">
+                    <motion.div style={{ opacity: opacityRight }} className="absolute top-8 left-8 border-4 border-emerald-500 text-emerald-500 font-mono font-black text-2xl px-4 py-1.5 rounded-xl transform -rotate-12 z-30 pointer-events-none uppercase">
                       APPLY / LIKE
                     </motion.div>
-                    <motion.div style={{ opacity: opacityLeft }} className="absolute top-8 right-8 border-4 border-zinc-500 text-zinc-500 font-mono font-black text-2xl px-4 py-1.5 rounded-lg transform rotate-12 z-30 pointer-events-none uppercase">
+                    <motion.div style={{ opacity: opacityLeft }} className="absolute top-8 right-8 border-4 border-zinc-500 text-zinc-500 font-mono font-black text-2xl px-4 py-1.5 rounded-xl transform rotate-12 z-30 pointer-events-none uppercase">
                       SKIP
                     </motion.div>
 
                     <div className="flex flex-col h-full overflow-hidden text-left">
                       <div className="relative h-52 bg-zinc-50 border-b border-zinc-200 flex-shrink-0 flex items-center justify-center px-5 pt-10 pb-5">
                         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                          <span className="px-2 py-0.5 bg-white border border-zinc-200 rounded text-[9px] font-mono font-black text-zinc-950 uppercase tracking-wider">
+                          <span className="px-2 py-0.5 bg-white border border-zinc-200/80 rounded text-[9px] font-mono font-black text-zinc-950 uppercase tracking-wider">
                             {job.employmentType}
                           </span>
                           {isUrgent && (
@@ -982,7 +982,7 @@ export default function SwipeView({
                                 <span className="text-amber-500 font-extrabold">{getCompanyRatingString(job.companyId)}</span>
                               </p>
                             </div>
-                            <span className="text-xs font-mono font-black text-[#10B981] px-2.5 py-1 bg-emerald-50 border border-emerald-100 rounded-lg whitespace-nowrap">
+                            <span className="text-xs font-mono font-black text-[#10B981] px-2.5 py-1 bg-emerald-50 border border-emerald-100 rounded-xl whitespace-nowrap">
                               {job.payRate}
                             </span>
                           </div>
@@ -1014,7 +1014,7 @@ export default function SwipeView({
                           <h4 className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider">REQUIRED CERTIFICATIONS</h4>
                           <div className="flex flex-wrap gap-1">
                             {job.qualifications.map((q, idx) => (
-                              <span key={idx} className="px-2 py-0.5 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded text-[9px] font-mono font-bold uppercase">
+                              <span key={idx} className="px-2 py-0.5 bg-zinc-100 border border-zinc-200/80 text-zinc-700 rounded text-[9px] font-mono font-bold uppercase">
                                 {q}
                               </span>
                             ))}
@@ -1029,7 +1029,7 @@ export default function SwipeView({
                       </span>
                       <button 
                         onClick={() => onSelectJob(job)}
-                        className="px-3 py-1.5 bg-zinc-900 hover:bg-[#34D399] hover:text-white text-white font-mono text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-zinc-900 hover:bg-[#34D399] hover:text-white text-white font-mono text-xs font-bold rounded-xl transition-all duration-200 ease-out flex items-center gap-1 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       >
                         <Eye className="w-3.5 h-3.5" /> {(job as any).isContractorOpportunity ? "VIEW PROFILE" : "VIEW JOB"}
                       </button>
@@ -1048,7 +1048,7 @@ export default function SwipeView({
           {/* Skip Button */}
           <button 
             onClick={() => handleSwipe('left')}
-            className="w-14 h-14 bg-white border border-zinc-200 text-zinc-400 hover:text-zinc-900 hover:border-zinc-400 rounded-full flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer"
+            className="w-14 h-14 bg-white border border-zinc-200/80 text-zinc-400 hover:text-zinc-900 hover:border-zinc-400 rounded-full flex items-center justify-center transition-all duration-200 ease-out shadow-md active:scale-95 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             title="Skip / Pass"
           >
             <X className="w-6 h-6 stroke-[2.5]" />
@@ -1063,7 +1063,7 @@ export default function SwipeView({
                 onSelectJob(jobDeck[currentIndex]);
               }
             }}
-            className="w-12 h-12 bg-zinc-900 text-zinc-400 hover:text-amber-400 border border-zinc-800 rounded-full flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer"
+            className="w-12 h-12 bg-zinc-900 text-zinc-400 hover:text-amber-400 border border-zinc-800 rounded-full flex items-center justify-center transition-all duration-200 ease-out shadow-md active:scale-95 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             title={userType === 'employer' ? "Shortlist / Favourite" : "View Contract Details"}
           >
             {userType === 'employer' ? (
@@ -1076,7 +1076,7 @@ export default function SwipeView({
           {/* Like / Apply / Match Button */}
           <button 
             onClick={() => handleSwipe('right')}
-            className="w-14 h-14 bg-[#34D399] hover:bg-[#10B981] text-white rounded-full flex items-center justify-center transition-all shadow-lg shadow-[#34D399]/25 active:scale-95 cursor-pointer"
+            className="w-14 h-14 bg-[#34D399] hover:bg-[#10B981] text-white rounded-full flex items-center justify-center transition-all duration-200 ease-out shadow-lg shadow-[#34D399]/25 active:scale-95 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             title={userType === 'employer' ? "Match Candidate" : "Apply to Opportunity"}
           >
             <Heart className="w-6 h-6 stroke-[2.5] fill-current text-white" />
@@ -1151,7 +1151,7 @@ export default function SwipeView({
                     setCelebrationMatch(null);
                     onNavigate('chats');
                   }}
-                  className="w-full py-3 bg-[#34D399] hover:bg-[#10B981] text-zinc-950 font-mono font-black text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/10"
+                  className="w-full py-3 bg-[#34D399] hover:bg-[#10B981] text-zinc-950 font-mono font-black text-xs rounded-xl transition-all duration-200 ease-out flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] shadow-lg shadow-emerald-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                 >
                   <MessageSquare className="w-4 h-4 fill-current" /> INTRODUCE VIA LIVE CHAT
                 </button>
@@ -1160,13 +1160,13 @@ export default function SwipeView({
                     setCelebrationMatch(null);
                     onNavigate('interviews');
                   }}
-                  className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-mono font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-mono font-bold text-xs rounded-xl transition-all duration-200 ease-out flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                 >
                   <Calendar className="w-4 h-4" /> SCHEDULE SITE INTERVIEW
                 </button>
                 <button 
                   onClick={() => setCelebrationMatch(null)}
-                  className="w-full py-2 text-zinc-500 hover:text-zinc-300 font-mono text-xs font-medium transition-all cursor-pointer"
+                  className="w-full py-2 text-zinc-500 hover:text-zinc-300 font-mono text-xs font-medium transition-all duration-200 ease-out cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                 >
                   KEEP SWIPING
                 </button>

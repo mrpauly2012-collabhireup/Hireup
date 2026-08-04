@@ -118,7 +118,7 @@ export default function MatchesView({
             return (
               <div
                 key={match.matchId}
-                className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm hover:border-[#34D399]/30 transition-all flex flex-col justify-between"
+                className="bg-white border border-zinc-200/80 rounded-xl overflow-hidden shadow-md hover:border-[#34D399]/30 transition-all duration-200 ease-out flex flex-col justify-between"
               >
                 <div className="p-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
                   <span className="text-[10px] font-mono font-bold text-zinc-400">
@@ -139,7 +139,7 @@ export default function MatchesView({
                 <div className="p-4 flex gap-3">
                   {userType === 'employer' ? (
                     <>
-                      <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-zinc-100 border">
+                      <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-zinc-100 border">
                         {workerAvatar ? (
                           <img
                             src={workerAvatar}
@@ -174,7 +174,7 @@ export default function MatchesView({
                     </>
                   ) : (
                     <>
-                      <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-white border flex items-center justify-center p-1.5">
+                      <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-white border flex items-center justify-center p-1.5">
                         {contractorLogo ? (
                           <img
                             src={contractorLogo}
@@ -208,7 +208,7 @@ export default function MatchesView({
                   )}
                 </div>
 
-                <div className="mx-4 p-2.5 bg-zinc-50 border border-zinc-100 rounded-lg text-xs flex gap-2 items-start">
+                <div className="mx-4 p-2.5 bg-zinc-50 border border-zinc-100 rounded-xl text-xs flex gap-2 items-start">
                   <span className="text-[#34D399] text-xs font-black">💬</span>
 
                   <div className="space-y-0.5 min-w-0">
@@ -233,7 +233,7 @@ export default function MatchesView({
                         onSelectCompany(company);
                       }
                     }}
-                    className="flex-1 py-2 border border-zinc-200 hover:border-zinc-300 text-zinc-700 bg-zinc-50 hover:bg-zinc-100 text-xs font-mono font-bold rounded-lg transition-all cursor-pointer"
+                    className="flex-1 py-2 border border-zinc-200/80 hover:border-zinc-300 text-zinc-700 bg-zinc-50 hover:bg-zinc-100 text-xs font-mono font-bold rounded-xl transition-all duration-200 ease-out cursor-pointer active:scale-[0.99]"
                   >
                     {userType === 'employer'
                       ? 'VIEW PROFILE'
@@ -244,7 +244,7 @@ export default function MatchesView({
 
                   <button
                     onClick={() => onNavigate('messages', match.matchId)}
-                    className="flex-1 py-2 bg-[#34D399] hover:bg-[#10B981] text-white text-xs font-mono font-bold rounded-lg transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                    className="flex-1 py-2 bg-[#34D399] hover:bg-[#10B981] text-white text-xs font-mono font-bold rounded-xl transition-all duration-200 ease-out flex items-center justify-center gap-1 shadow-md cursor-pointer active:scale-[0.99]"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
                     OPEN CHAT
@@ -255,7 +255,7 @@ export default function MatchesView({
           })}
         </div>
       ) : (
-        <div className="text-center py-16 bg-white border border-zinc-200 rounded-xl space-y-4 max-w-md mx-auto">
+        <div className="text-center py-16 bg-white border border-zinc-200/80 rounded-xl space-y-4 max-w-md mx-auto">
           <div className="p-4 bg-emerald-50 rounded-full text-[#10B981] w-14 h-14 mx-auto flex items-center justify-center">
             <Heart className="w-7 h-7" />
           </div>
@@ -273,7 +273,7 @@ export default function MatchesView({
 
           <button
             onClick={() => onNavigate('swipe')}
-            className="px-4 py-2 bg-zinc-900 hover:bg-[#34D399] text-white font-mono text-xs font-bold rounded-lg transition-all cursor-pointer"
+            className="px-4 py-2 bg-zinc-900 hover:bg-[#34D399] text-white font-mono text-xs font-bold rounded-xl transition-all duration-200 ease-out cursor-pointer active:scale-[0.99]"
           >
             LAUNCH SWIPE DECK
           </button>

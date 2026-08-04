@@ -72,7 +72,7 @@ const statusClasses: Record<ApplicationStatus, string> = {
   offered: 'bg-emerald-50 border-emerald-200 text-emerald-800',
   hired: 'bg-green-100 border-green-300 text-green-900',
   rejected: 'bg-red-50 border-red-200 text-red-700',
-  withdrawn: 'bg-zinc-100 border-zinc-200 text-zinc-600',
+  withdrawn: 'bg-zinc-100 border-zinc-200/80 text-zinc-600',
 };
 
 export default function ApplicationsView({
@@ -185,10 +185,10 @@ export default function ApplicationsView({
             key={filter}
             type="button"
             onClick={() => setActiveFilter(filter)}
-            className={`flex-shrink-0 px-3 py-2 rounded-xl border text-[10px] font-mono font-black uppercase transition-all ${
+            className={`flex-shrink-0 px-3 py-2 rounded-xl border text-[10px] font-mono font-black uppercase transition-all duration-200 ease-out ${
               activeFilter === filter
                 ? 'bg-[#34D399] border-[#34D399] text-zinc-950'
-                : 'bg-white border-zinc-200 text-zinc-700 hover:border-zinc-300'
+                : 'bg-white border-zinc-200/80 text-zinc-700 hover:border-zinc-300'
             }`}
           >
             {filter === 'all' ? 'All' : STATUS_LABELS[filter]}
@@ -200,11 +200,11 @@ export default function ApplicationsView({
       </div>
 
       {loading ? (
-        <div className="bg-white border border-zinc-200 rounded-2xl p-10 text-center text-sm text-zinc-600">
+        <div className="bg-white border border-zinc-200/80 rounded-2xl p-10 text-center text-sm text-zinc-600">
           Loading applications…
         </div>
       ) : visibleApplications.length === 0 ? (
-        <div className="bg-white border border-zinc-200 rounded-2xl p-10 text-center">
+        <div className="bg-white border border-zinc-200/80 rounded-2xl p-10 text-center">
           <div className="w-14 h-14 rounded-full bg-emerald-50 text-[#10B981] flex items-center justify-center mx-auto">
             {userType === 'worker' ? (
               <Briefcase className="w-7 h-7" />
@@ -246,10 +246,10 @@ export default function ApplicationsView({
             return (
               <article
                 key={application.id}
-                className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm"
+                className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden shadow-md"
               >
                 <div className="p-4 md:p-5 flex flex-col md:flex-row md:items-start gap-4">
-                  <div className="w-16 h-16 rounded-2xl border border-zinc-200 bg-zinc-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <div className="w-16 h-16 rounded-2xl border border-zinc-200/80 bg-zinc-50 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {userType === 'worker' ? (
                       job.companyLogo ? (
                         <img
@@ -330,7 +330,7 @@ export default function ApplicationsView({
                         ? onSelectJob(job)
                         : worker && onSelectWorker(worker)
                     }
-                    className="flex-1 py-2.5 rounded-xl bg-white border border-zinc-200 text-zinc-950 text-xs font-mono font-black uppercase flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2.5 rounded-xl bg-white border border-zinc-200/80 text-zinc-950 text-xs font-mono font-black uppercase flex items-center justify-center gap-1.5"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     {userType === 'worker' ? 'View Job' : 'View Worker'}
@@ -368,7 +368,7 @@ export default function ApplicationsView({
                             event.target.value as ApplicationStatus
                           )
                         }
-                        className="flex-grow px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-950 text-xs font-bold outline-none focus:border-[#34D399]"
+                        className="flex-grow px-3 py-2.5 rounded-xl border border-zinc-200/80 bg-white text-zinc-950 text-xs font-bold outline-none focus:border-[#34D399]"
                       >
                         {CONTRACTOR_STATUS_OPTIONS.map(status => (
                           <option key={status} value={status}>

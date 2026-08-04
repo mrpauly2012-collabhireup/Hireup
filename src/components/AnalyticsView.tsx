@@ -202,7 +202,7 @@ export default function AnalyticsView({
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {performanceCards.map(([label, value, Icon]: any) => (
-          <div key={label} className="bg-white border border-zinc-200 rounded-xl p-4">
+          <div key={label} className="bg-white border border-zinc-200/80 rounded-xl p-4">
             <Icon className="w-5 h-5 text-[#10B981]" />
             <p className="text-2xl font-black mt-3">{value}{typeof value === 'number' && String(label).includes('rate') || String(label).includes('conversion') || String(label).includes('strength') || String(label).includes('match') ? '%' : ''}</p>
             <p className="text-[9px] font-mono font-black text-zinc-500 uppercase mt-1">{label}</p>
@@ -210,7 +210,7 @@ export default function AnalyticsView({
         ))}
       </div>
 
-      <div className="bg-white border border-zinc-200 rounded-xl p-5">
+      <div className="bg-white border border-zinc-200/80 rounded-xl p-5">
         <h3 className="text-sm font-black">
           {userType === 'worker' ? 'Top AI job matches' : 'Top AI candidate matches'}
         </h3>
@@ -229,7 +229,7 @@ export default function AnalyticsView({
       </div>
 
       {userType === 'employer' && (
-        <div className="bg-white border border-zinc-200 rounded-xl p-5">
+        <div className="bg-white border border-zinc-200/80 rounded-xl p-5">
           <h3 className="text-sm font-black">Job performance</h3>
           <p className="text-xs text-zinc-500 mt-1">Matches, interviews and overall vacancy performance</p>
           <div className="h-72 mt-4">
@@ -247,13 +247,13 @@ export default function AnalyticsView({
         </div>
       )}
 
-      <div className="bg-white border border-zinc-200 rounded-xl p-5 shadow-sm space-y-4">
+      <div className="bg-white border border-zinc-200/80 rounded-xl p-5 shadow-md space-y-4">
         <div className="flex flex-col sm:flex-row justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold">Trade day-rate benchmarks</h3>
             <p className="text-xs text-zinc-500">Reference rates for the selected UK region</p>
           </div>
-          <div className="flex bg-zinc-100 p-1 rounded-lg">
+          <div className="flex bg-zinc-100 p-1 rounded-xl">
             {(['London', 'Midlands', 'North'] as const).map(region => (
               <button
                 key={region}

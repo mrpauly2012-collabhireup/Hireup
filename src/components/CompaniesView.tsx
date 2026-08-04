@@ -602,7 +602,7 @@ export default function CompaniesView({
         </div>
       </section>
 
-      <section className="bg-white border border-zinc-200 rounded-2xl p-4 space-y-4">
+      <section className="bg-white border border-zinc-200/80 rounded-2xl p-4 space-y-4">
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="w-4 h-4 text-[#10B981]" />
           <p className="text-[10px] font-mono font-black uppercase text-zinc-500">
@@ -622,7 +622,7 @@ export default function CompaniesView({
                   ? 'Search trade, skill, licence or location...'
                   : 'Search job title, company, trade or location...'
               }
-              className="w-full pl-9 pr-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-[#34D399]"
+              className="w-full pl-9 pr-3 py-3 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:border-[#34D399]"
             />
           </div>
 
@@ -639,7 +639,7 @@ export default function CompaniesView({
           <select
             value={tradeFilter}
             onChange={event => setTradeFilter(event.target.value)}
-            className="px-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
+            className="px-3 py-3 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs font-bold"
           >
             <option value="all">All trades</option>
             {availableTrades.map(trade => (
@@ -652,7 +652,7 @@ export default function CompaniesView({
           <select
             value={locationFilter}
             onChange={event => setLocationFilter(event.target.value)}
-            className="px-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
+            className="px-3 py-3 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs font-bold"
           >
             <option value="all">All locations</option>
             {availableLocations.map(location => (
@@ -665,7 +665,7 @@ export default function CompaniesView({
           <select
             value={minimumRating}
             onChange={event => setMinimumRating(event.target.value)}
-            className="px-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
+            className="px-3 py-3 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs font-bold"
           >
             <option value="all">Any rating</option>
             <option value="4">4.0+ rating</option>
@@ -689,10 +689,10 @@ export default function CompaniesView({
                   onClick={() =>
                     setAvailabilityFilter(value as AvailabilityFilter)
                   }
-                  className={`px-3 py-2 rounded-lg text-[10px] font-mono font-black uppercase border ${
+                  className={`px-3 py-2 rounded-xl text-[10px] font-mono font-black uppercase border ${
                     availabilityFilter === value
                       ? 'bg-[#34D399] border-[#34D399] text-zinc-950'
-                      : 'bg-white border-zinc-200 text-zinc-500'
+                      : 'bg-white border-zinc-200/80 text-zinc-500'
                   }`}
                 >
                   {label}
@@ -700,7 +700,7 @@ export default function CompaniesView({
               ))}
             </>
           ) : (
-            <span className="px-3 py-2 rounded-lg text-[10px] font-mono font-black uppercase border bg-amber-50 border-amber-200 text-zinc-950 flex items-center gap-1.5">
+            <span className="px-3 py-2 rounded-xl text-[10px] font-mono font-black uppercase border bg-amber-50 border-amber-200 text-zinc-950 flex items-center gap-1.5">
               <Star className="w-3.5 h-3.5 text-amber-500 fill-current" />
               Admin featured only
             </span>
@@ -736,10 +736,10 @@ export default function CompaniesView({
             }
           `}</style>
 
-          <div className="bg-white border border-zinc-200 rounded-2xl p-4">
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-4">
             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
               <div className="grid grid-cols-3 gap-2 flex-1">
-                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                <div className="bg-zinc-50 border border-zinc-200/80 rounded-xl p-3">
                   <p className="text-[8px] font-mono font-black text-zinc-400 uppercase">
                     Visible workers
                   </p>
@@ -767,9 +767,9 @@ export default function CompaniesView({
                 <button
                   type="button"
                   onClick={() => setWorkerDisplayMode('list')}
-                  className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-xl text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
                     workerDisplayMode === 'list'
-                      ? 'bg-white text-zinc-950 shadow-sm'
+                      ? 'bg-white text-zinc-950 shadow-md'
                       : 'text-zinc-500'
                   }`}
                 >
@@ -780,9 +780,9 @@ export default function CompaniesView({
                 <button
                   type="button"
                   onClick={() => setWorkerDisplayMode('split')}
-                  className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-xl text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
                     workerDisplayMode === 'split'
-                      ? 'bg-[#34D399] text-zinc-950 shadow-sm'
+                      ? 'bg-[#34D399] text-zinc-950 shadow-md'
                       : 'text-zinc-500'
                   }`}
                 >
@@ -793,9 +793,9 @@ export default function CompaniesView({
                 <button
                   type="button"
                   onClick={() => setWorkerDisplayMode('map')}
-                  className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-xl text-[10px] font-mono font-black uppercase flex items-center gap-1.5 ${
                     workerDisplayMode === 'map'
-                      ? 'bg-zinc-950 text-white shadow-sm'
+                      ? 'bg-zinc-950 text-white shadow-md'
                       : 'text-zinc-500'
                   }`}
                 >
@@ -808,8 +808,8 @@ export default function CompaniesView({
 
           {workerDisplayMode === 'split' && (
             <div className="grid grid-cols-1 2xl:grid-cols-[520px_minmax(0,1fr)] gap-4 items-start">
-              <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden 2xl:sticky 2xl:top-4">
-                <div className="px-4 py-3 border-b border-zinc-200">
+              <div className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden 2xl:sticky 2xl:top-4">
+                <div className="px-4 py-3 border-b border-zinc-200/80">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <p className="text-sm font-black flex items-center gap-2">
@@ -914,10 +914,10 @@ export default function CompaniesView({
                                   <button
                                     type="button"
                                     onClick={() => toggleSaved(worker.id)}
-                                    className={`flex-1 py-2 rounded-lg border text-[9px] font-mono font-black uppercase ${
+                                    className={`flex-1 py-2 rounded-xl border text-[9px] font-mono font-black uppercase ${
                                       isSaved
                                         ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                        : 'border-zinc-200 text-zinc-600'
+                                        : 'border-zinc-200/80 text-zinc-600'
                                     }`}
                                   >
                                     {isSaved ? 'Saved' : 'Save'}
@@ -926,7 +926,7 @@ export default function CompaniesView({
                                   <button
                                     type="button"
                                     onClick={() => onSelectWorker(worker)}
-                                    className="flex-1 py-2 bg-zinc-950 text-white rounded-lg text-[9px] font-mono font-black uppercase"
+                                    className="flex-1 py-2 bg-zinc-950 text-white rounded-xl text-[9px] font-mono font-black uppercase"
                                   >
                                     View Profile
                                   </button>
@@ -941,7 +941,7 @@ export default function CompaniesView({
                 </div>
               </div>
 
-              <div className="bg-zinc-100/60 border border-zinc-200 rounded-2xl p-3">
+              <div className="bg-zinc-100/60 border border-zinc-200/80 rounded-2xl p-3">
                 <div className="flex items-center justify-between px-1 pb-3">
                   <div>
                     <p className="text-sm font-black">Verified workers</p>
@@ -949,14 +949,14 @@ export default function CompaniesView({
                       Sorted by your strongest AI match
                     </p>
                   </div>
-                  <span className="px-2 py-1 bg-white border border-zinc-200 rounded-lg text-[9px] font-mono font-black">
+                  <span className="px-2 py-1 bg-white border border-zinc-200/80 rounded-xl text-[9px] font-mono font-black">
                     {filteredWorkers.length} RESULTS
                   </span>
                 </div>
 
                 <div className="h-[460px] overflow-y-auto space-y-2 pr-1">
                   {filteredWorkers.length === 0 ? (
-                    <div className="bg-white border border-zinc-200 border-dashed rounded-xl p-8 text-center">
+                    <div className="bg-white border border-zinc-200/80 border-dashed rounded-xl p-8 text-center">
                       <Users className="w-7 h-7 text-zinc-300 mx-auto" />
                       <p className="text-sm font-black mt-2">No workers found</p>
                     </div>
@@ -968,13 +968,13 @@ export default function CompaniesView({
                       return (
                         <article
                           key={`split-card-${worker.id}`}
-                          className="bg-white border border-zinc-200 rounded-xl p-2.5 hover:border-[#34D399] transition-all"
+                          className="bg-white border border-zinc-200/80 rounded-xl p-2.5 hover:border-[#34D399] transition-all duration-200 ease-out"
                         >
                           <div className="flex items-start gap-3">
                             <img
                               src={worker.profilePhotoUrl || worker.avatar}
                               alt={worker.name}
-                              className="w-12 h-12 rounded-xl object-cover border border-zinc-200 flex-shrink-0"
+                              className="w-12 h-12 rounded-xl object-cover border border-zinc-200/80 flex-shrink-0"
                               referrerPolicy="no-referrer"
                             />
 
@@ -989,7 +989,7 @@ export default function CompaniesView({
                                   </p>
                                 </div>
 
-                                <div className="bg-zinc-950 text-white rounded-lg px-2 py-1 text-center flex-shrink-0">
+                                <div className="bg-zinc-950 text-white rounded-xl px-2 py-1 text-center flex-shrink-0">
                                   <p className="text-[7px] font-mono text-[#34D399] uppercase">
                                     Match
                                   </p>
@@ -1017,7 +1017,7 @@ export default function CompaniesView({
                                 {(worker.qualifications || []).slice(0, 2).map(item => (
                                   <span
                                     key={item}
-                                    className="px-1.5 py-0.5 bg-zinc-50 border border-zinc-200 rounded text-[8px] font-mono font-bold text-zinc-600 truncate max-w-40"
+                                    className="px-1.5 py-0.5 bg-zinc-50 border border-zinc-200/80 rounded text-[8px] font-mono font-bold text-zinc-600 truncate max-w-40"
                                   >
                                     {item}
                                   </span>
@@ -1044,10 +1044,10 @@ export default function CompaniesView({
                               <button
                                 type="button"
                                 onClick={() => toggleSaved(worker.id)}
-                                className={`p-2 rounded-lg border ${
+                                className={`p-2 rounded-xl border ${
                                   isSaved
                                     ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                    : 'border-zinc-200 text-zinc-500'
+                                    : 'border-zinc-200/80 text-zinc-500'
                                 }`}
                                 title={isSaved ? 'Remove saved worker' : 'Save worker'}
                               >
@@ -1061,7 +1061,7 @@ export default function CompaniesView({
                               <button
                                 type="button"
                                 onClick={() => onSelectWorker(worker)}
-                                className="px-3 py-2 bg-zinc-950 text-white rounded-lg text-[9px] font-mono font-black uppercase"
+                                className="px-3 py-2 bg-zinc-950 text-white rounded-xl text-[9px] font-mono font-black uppercase"
                               >
                                 Profile
                               </button>
@@ -1077,8 +1077,8 @@ export default function CompaniesView({
           )}
 
           {workerDisplayMode === 'map' && (
-            <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-zinc-200">
+            <div className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-zinc-200/80">
                 <p className="text-sm font-black flex items-center gap-2">
                   <Navigation className="w-4 h-4 text-[#10B981]" />
                   Full Worker Availability Map
@@ -1113,7 +1113,7 @@ export default function CompaniesView({
                           <button
                             type="button"
                             onClick={() => onSelectWorker(worker)}
-                            className="w-full mt-3 py-2 bg-zinc-950 text-white rounded-lg text-[9px] font-mono font-black uppercase"
+                            className="w-full mt-3 py-2 bg-zinc-950 text-white rounded-xl text-[9px] font-mono font-black uppercase"
                           >
                             View Profile
                           </button>
@@ -1129,7 +1129,7 @@ export default function CompaniesView({
           {workerDisplayMode === 'list' && (
             <div className="space-y-4">
               {filteredWorkers.length === 0 ? (
-                <div className="bg-white border border-zinc-200 border-dashed rounded-2xl p-10 text-center">
+                <div className="bg-white border border-zinc-200/80 border-dashed rounded-2xl p-10 text-center">
                   <Users className="w-8 h-8 text-zinc-300 mx-auto" />
                   <h3 className="font-black mt-3">No verified workers found</h3>
                 </div>
@@ -1141,14 +1141,14 @@ export default function CompaniesView({
                   return (
                     <article
                       key={`list-card-${worker.id}`}
-                      className="bg-white border border-zinc-200 rounded-2xl p-5 hover:border-[#34D399] transition-all"
+                      className="bg-white border border-zinc-200/80 rounded-2xl p-5 hover:border-[#34D399] transition-all duration-200 ease-out"
                     >
                       <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-5">
                         <div className="flex gap-4 min-w-0">
                           <img
                             src={worker.profilePhotoUrl || worker.avatar}
                             alt={worker.name}
-                            className="w-20 h-20 rounded-2xl object-cover border border-zinc-200 flex-shrink-0"
+                            className="w-20 h-20 rounded-2xl object-cover border border-zinc-200/80 flex-shrink-0"
                             referrerPolicy="no-referrer"
                           />
 
@@ -1193,7 +1193,7 @@ export default function CompaniesView({
                           className={`px-3 py-2 rounded-xl border text-[10px] font-mono font-black uppercase ${
                             isSaved
                               ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                              : 'border-zinc-200 text-zinc-600'
+                              : 'border-zinc-200/80 text-zinc-600'
                           }`}
                         >
                           {isSaved ? 'Saved' : 'Save'}
@@ -1217,7 +1217,7 @@ export default function CompaniesView({
       ) : (
         <section className="space-y-5">
           {filteredFeaturedJobs.length === 0 ? (
-            <div className="bg-white border border-zinc-200 border-dashed rounded-2xl p-10 text-center">
+            <div className="bg-white border border-zinc-200/80 border-dashed rounded-2xl p-10 text-center">
               <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto">
                 <Star className="w-6 h-6 text-amber-500" />
               </div>
@@ -1236,13 +1236,13 @@ export default function CompaniesView({
                 return (
                   <article
                     key={job.id}
-                    className="bg-white border border-zinc-200 rounded-2xl overflow-hidden hover:border-[#34D399] hover:shadow-md transition-all"
+                    className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden hover:border-[#34D399] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out"
                   >
                     <div className="h-1.5 bg-[#34D399]" />
                     <div className="p-5">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3 min-w-0">
-                          <div className="w-14 h-14 rounded-xl bg-zinc-50 border border-zinc-200 p-2 flex-shrink-0 flex items-center justify-center">
+                          <div className="w-14 h-14 rounded-xl bg-zinc-50 border border-zinc-200/80 p-2 flex-shrink-0 flex items-center justify-center">
                             {job.companyLogo ? (
                               <img
                                 src={job.companyLogo}
@@ -1278,7 +1278,7 @@ export default function CompaniesView({
                           </div>
                         </div>
 
-                        <div className="bg-zinc-50 border border-zinc-200 text-black rounded-xl px-3 py-2 text-center flex-shrink-0">
+                        <div className="bg-zinc-50 border border-zinc-200/80 text-black rounded-xl px-3 py-2 text-center flex-shrink-0">
                           <p className="text-[7px] font-mono font-black text-black uppercase">
                             AI match
                           </p>
@@ -1287,25 +1287,25 @@ export default function CompaniesView({
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-5">
-                        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                        <div className="bg-zinc-50 border border-zinc-200/80 rounded-xl p-3">
                           <p className="text-[8px] font-mono font-black text-zinc-700 uppercase">Pay</p>
                           <p className="text-sm font-black text-zinc-950 mt-1">
                             {job.payRate || 'Competitive'}
                           </p>
                         </div>
-                        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                        <div className="bg-zinc-50 border border-zinc-200/80 rounded-xl p-3">
                           <p className="text-[8px] font-mono font-black text-zinc-700 uppercase">Start</p>
                           <p className="text-xs font-black text-zinc-950 mt-1">
                             {job.startDate || 'Immediate'}
                           </p>
                         </div>
-                        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                        <div className="bg-zinc-50 border border-zinc-200/80 rounded-xl p-3">
                           <p className="text-[8px] font-mono font-black text-zinc-700 uppercase">Duration</p>
                           <p className="text-xs font-black text-zinc-950 mt-1">
                             {job.duration || 'Ongoing'}
                           </p>
                         </div>
-                        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                        <div className="bg-zinc-50 border border-zinc-200/80 rounded-xl p-3">
                           <p className="text-[8px] font-mono font-black text-zinc-700 uppercase">Rating</p>
                           <p className="text-xs font-black text-zinc-950 mt-1 flex items-center gap-1">
                             <Star className="w-3 h-3 text-amber-500 fill-current" />
@@ -1347,7 +1347,7 @@ export default function CompaniesView({
                         </div>
                       )}
 
-                      <div className="mt-5 pt-4 border-t border-zinc-200 flex flex-col sm:flex-row gap-2">
+                      <div className="mt-5 pt-4 border-t border-zinc-200/80 flex flex-col sm:flex-row gap-2">
                         <button
                           type="button"
                           onClick={() => toggleSaved(job.id)}
@@ -1363,7 +1363,7 @@ export default function CompaniesView({
                         <button
                           type="button"
                           onClick={() => onSelectJob(job)}
-                          className="flex-1 px-4 py-2.5 border border-zinc-300 text-zinc-950 rounded-xl text-[10px] font-mono font-black uppercase flex items-center justify-center gap-1.5 hover:bg-zinc-50"
+                          className="flex-1 px-4 py-2.5 border border-zinc-300 text-zinc-950 rounded-xl text-[10px] font-mono font-black uppercase flex items-center justify-center gap-1.5 hover:bg-white"
                         >
                           <Eye className="w-3.5 h-3.5" />
                           View job

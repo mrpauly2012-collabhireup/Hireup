@@ -826,7 +826,7 @@ export default function AuthView({
         {/* LOGO & HEADING COMMON TO ALL SUB-VIEWS */}
         {!(view === 'landing' || view === 'signin') && (
           <div className="text-center">
-            <div className="inline-flex items-center justify-center mb-1 bg-white px-5 py-3 rounded-2xl border border-zinc-200 shadow-2xs">
+            <div className="inline-flex items-center justify-center mb-1 bg-white px-5 py-3 rounded-2xl border border-zinc-200/80 shadow-sm">
               <img
                 src={HIREUP_LOGO}
                 alt="HireUp Trades Recruitment"
@@ -846,12 +846,12 @@ export default function AuthView({
 
         {/* TEMPORARY POST-SIGNUP DEBUG PANEL OR REGISTERED EMAIL OR CORE VIEWS */}
         {showPostSignupDebug && signupDebugData ? (
-          <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-10 shadow-xl max-w-2xl mx-auto space-y-6 relative z-10 my-8">
-            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-[#10B981] mx-auto border border-emerald-100 shadow-xs">
+          <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 sm:p-10 shadow-xl max-w-2xl mx-auto space-y-6 relative z-10 my-8">
+            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-[#10B981] mx-auto border border-emerald-100 shadow-md">
               <Sparkles className="w-6 h-6" />
             </div>
             <div className="text-center space-y-2">
-              <span className="px-2.5 py-1 bg-emerald-50 text-[#10B981] border border-emerald-100 rounded-lg text-[11px] font-sans font-bold uppercase tracking-wider animate-pulse">
+              <span className="px-2.5 py-1 bg-emerald-50 text-[#10B981] border border-emerald-100 rounded-xl text-[11px] font-sans font-bold uppercase tracking-wider animate-pulse">
                 Signup Completed Successfully
               </span>
               <h2 className="text-2xl font-black text-zinc-900 font-sans tracking-tight mt-2">Temporary Debug Console</h2>
@@ -860,7 +860,7 @@ export default function AuthView({
               </p>
             </div>
 
-            <div className="border border-zinc-200 rounded-2xl overflow-hidden text-left font-sans text-[11px] divide-y divide-zinc-200 bg-zinc-50">
+            <div className="border border-zinc-200/80 rounded-2xl overflow-hidden text-left font-sans text-[11px] divide-y divide-zinc-200 bg-zinc-50">
               <div className="p-3.5 flex justify-between items-center gap-4">
                 <span className="text-zinc-400 uppercase font-black tracking-wider text-[11px]">Auth User ID:</span>
                 <span className="text-zinc-800 font-bold break-all select-all">{signupDebugData.userId}</span>
@@ -875,11 +875,11 @@ export default function AuthView({
               </div>
               <div className="p-3.5 flex justify-between gap-2 flex-col">
                 <span className="text-zinc-400 uppercase font-black tracking-wider text-[11px]">Upload Path:</span>
-                <span className="text-zinc-800 font-bold break-all select-all bg-zinc-100/70 px-2 py-1 rounded border border-zinc-200 mt-1">{signupDebugData.uploadPath}</span>
+                <span className="text-zinc-800 font-bold break-all select-all bg-zinc-100/70 px-2 py-1 rounded border border-zinc-200/80 mt-1">{signupDebugData.uploadPath}</span>
               </div>
               <div className="p-3.5 flex justify-between gap-2 flex-col">
                 <span className="text-zinc-400 uppercase font-black tracking-wider text-[11px]">Public URL:</span>
-                <span className="text-zinc-800 font-bold break-all select-all bg-zinc-100/70 px-2 py-1 rounded border border-zinc-200 mt-1">
+                <span className="text-zinc-800 font-bold break-all select-all bg-zinc-100/70 px-2 py-1 rounded border border-zinc-200/80 mt-1">
                   {signupDebugData.publicUrl ? (
                     <span className="text-zinc-700">{signupDebugData.publicUrl}</span>
                   ) : (
@@ -893,7 +893,7 @@ export default function AuthView({
               </div>
               <div className="p-3.5 flex justify-between gap-2 flex-col">
                 <span className="text-zinc-400 uppercase font-black tracking-wider text-[11px]">Database Value After Update (Re-fetched):</span>
-                <span className="text-zinc-800 font-bold break-all select-all bg-zinc-100/70 px-2 py-1 rounded border border-zinc-200 mt-1">
+                <span className="text-zinc-800 font-bold break-all select-all bg-zinc-100/70 px-2 py-1 rounded border border-zinc-200/80 mt-1">
                   {signupDebugData.dbValueAfterUpdate ? (
                     <span className="text-zinc-700">{signupDebugData.dbValueAfterUpdate}</span>
                   ) : (
@@ -946,18 +946,18 @@ export default function AuthView({
                 setShowPostSignupDebug(false);
                 onAuthSuccess(signupDebugData.session);
               }}
-              className="w-full py-4 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl font-sans text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-emerald-500/10"
+              className="w-full py-4 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl font-sans text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-200 ease-out cursor-pointer active:scale-[0.99] shadow-lg shadow-emerald-500/10"
             >
               PROCEED TO DASHBOARD <ArrowRight className="w-4 h-4 text-white" />
             </button>
           </div>
         ) : registeredEmail ? (
-          <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-10 shadow-lg max-w-lg mx-auto text-center space-y-6 animate-fade-in relative z-10 my-8">
-            <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center text-[#10B981] mx-auto border border-emerald-100 shadow-xs">
+          <div className="bg-white border border-zinc-200/80 rounded-3xl p-6 sm:p-10 shadow-lg max-w-lg mx-auto text-center space-y-6 animate-fade-in relative z-10 my-8">
+            <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center text-[#10B981] mx-auto border border-emerald-100 shadow-md">
               <Mail className="w-8 h-8" />
             </div>
             <div className="space-y-2">
-              <span className="px-2.5 py-1 bg-emerald-50 text-[#10B981] border border-emerald-100 rounded-lg text-[11px] font-sans font-bold uppercase tracking-wider animate-pulse">
+              <span className="px-2.5 py-1 bg-emerald-50 text-[#10B981] border border-emerald-100 rounded-xl text-[11px] font-sans font-bold uppercase tracking-wider animate-pulse">
                 Pre-Registration Complete
               </span>
               <h2 className="text-2xl font-bold text-zinc-900 font-sans mt-2">Check Your Email Inbox!</h2>
@@ -982,7 +982,7 @@ export default function AuthView({
                   setRegisteredEmail(null);
                   setView('signin');
                 }}
-                className="flex-1 py-3 bg-zinc-950 hover:bg-zinc-850 text-white font-sans text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs uppercase tracking-wider"
+                className="flex-1 py-3 bg-zinc-950 hover:bg-zinc-850 text-white font-sans text-xs font-bold rounded-xl transition-all duration-200 ease-out cursor-pointer active:scale-[0.99] shadow-md uppercase tracking-wider"
               >
                 Go to Sign In
               </button>
@@ -992,7 +992,7 @@ export default function AuthView({
                   setRegisteredEmail(null);
                   setView('landing');
                 }}
-                className="flex-1 py-3 border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 font-sans text-xs font-bold rounded-xl transition-all cursor-pointer uppercase tracking-wider"
+                className="flex-1 py-3 border border-zinc-200/80 bg-white hover:bg-white text-zinc-700 font-sans text-xs font-bold rounded-xl transition-all duration-200 ease-out cursor-pointer active:scale-[0.99] uppercase tracking-wider"
               >
                 Return Home
               </button>
@@ -1009,7 +1009,7 @@ export default function AuthView({
                 {/* Logo on Left */}
                 <button
                   type="button"
-                  className="w-36 h-14 flex items-center cursor-pointer"
+                  className="w-36 h-14 flex items-center cursor-pointer active:scale-[0.99]"
                   onClick={() => setView('landing')}
                   aria-label="Return to HireUp home"
                 >
@@ -1025,21 +1025,21 @@ export default function AuthView({
                   <button 
                     type="button" 
                     onClick={() => setShowAboutModal(true)} 
-                    className="hover:text-zinc-950 transition-colors cursor-pointer"
+                    className="hover:text-zinc-950 transition-colors duration-200 ease-out cursor-pointer active:scale-[0.99]"
                   >
                     About
                   </button>
                   <button 
                     type="button" 
                     onClick={() => setShowHelpModal(true)} 
-                    className="hover:text-zinc-950 transition-colors cursor-pointer"
+                    className="hover:text-zinc-950 transition-colors duration-200 ease-out cursor-pointer active:scale-[0.99]"
                   >
                     Help
                   </button>
                   <button 
                     type="button" 
                     onClick={() => setShowSignInModal(true)} 
-                    className="px-4 py-2 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl transition-all cursor-pointer shadow-xs uppercase font-sans text-xs font-black tracking-widest"
+                    className="px-4 py-2 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl transition-all duration-200 ease-out cursor-pointer active:scale-[0.99] shadow-md uppercase font-sans text-xs font-black tracking-widest"
                   >
                     Sign In
                   </button>
@@ -1048,7 +1048,7 @@ export default function AuthView({
             </nav>
 
             {/* HERO SECTION WITH LARGE FADED BACKGROUND IMAGE */}
-            <div className="relative rounded-3xl overflow-hidden min-h-[380px] sm:min-h-[420px] bg-zinc-950 border border-zinc-200 flex flex-col justify-end p-6 sm:p-10 shadow-lg">
+            <div className="relative rounded-3xl overflow-hidden min-h-[380px] sm:min-h-[420px] bg-zinc-950 border border-zinc-200/80 flex flex-col justify-end p-6 sm:p-10 shadow-lg">
               {/* Background Image of UK tradesworkers (faded) */}
               <img 
                 src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1600&auto=format&fit=crop&q=80" 
@@ -1085,9 +1085,9 @@ export default function AuthView({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
               
               {/* WORKER CARD */}
-              <div className="bg-zinc-50 border border-zinc-200 rounded-3xl p-6 sm:p-10 flex flex-col justify-between space-y-6 shadow-xs hover:shadow-md transition-all duration-300">
+              <div className="bg-zinc-50 border border-zinc-200/80 rounded-3xl p-6 sm:p-10 flex flex-col justify-between space-y-6 shadow-md hover:shadow-md transition-all duration-200 ease-out duration-300">
                 <div className="space-y-4 text-left">
-                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-xs border border-zinc-200/60">
+                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-md border border-zinc-200/80/60">
                     👷
                   </div>
                   <div>
@@ -1104,7 +1104,7 @@ export default function AuthView({
                 <button
                   type="button"
                   onClick={() => setView('signup_worker')}
-                  className="w-full py-4 px-6 bg-[#00F5A0] hover:bg-emerald-400 text-zinc-950 rounded-2xl font-sans text-xs font-black uppercase tracking-widest flex items-center justify-between transition-all cursor-pointer shadow-xs active:scale-[0.99] font-black"
+                  className="w-full py-4 px-6 bg-[#00F5A0] hover:bg-emerald-400 text-zinc-950 rounded-2xl font-sans text-xs font-black uppercase tracking-widest flex items-center justify-between transition-all duration-200 ease-out cursor-pointer active:scale-[0.99] shadow-md active:scale-[0.99] font-black"
                 >
                   <span>Find work</span>
                   <ArrowRight className="w-4 h-4 text-zinc-950" />
@@ -1112,9 +1112,9 @@ export default function AuthView({
               </div>
 
               {/* CONTRACTOR CARD */}
-              <div className="bg-zinc-50 border border-zinc-200 rounded-3xl p-6 sm:p-10 flex flex-col justify-between space-y-6 shadow-xs hover:shadow-md transition-all duration-300">
+              <div className="bg-zinc-50 border border-zinc-200/80 rounded-3xl p-6 sm:p-10 flex flex-col justify-between space-y-6 shadow-md hover:shadow-md transition-all duration-200 ease-out duration-300">
                 <div className="space-y-4 text-left">
-                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-xs border border-zinc-200/60">
+                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-md border border-zinc-200/80/60">
                     🏗️
                   </div>
                   <div>
@@ -1131,7 +1131,7 @@ export default function AuthView({
                 <button
                   type="button"
                   onClick={() => setView('signup_contractor')}
-                  className="w-full py-4 px-6 bg-[#00F5A0] hover:bg-emerald-400 text-zinc-950 rounded-2xl font-sans text-xs font-black uppercase tracking-widest flex items-center justify-between transition-all cursor-pointer shadow-xs active:scale-[0.99] font-black"
+                  className="w-full py-4 px-6 bg-[#00F5A0] hover:bg-emerald-400 text-zinc-950 rounded-2xl font-sans text-xs font-black uppercase tracking-widest flex items-center justify-between transition-all duration-200 ease-out cursor-pointer active:scale-[0.99] shadow-md active:scale-[0.99] font-black"
                 >
                   <span>Hire workers</span>
                   <ArrowRight className="w-4 h-4 text-zinc-950" />
@@ -1141,13 +1141,13 @@ export default function AuthView({
             </div>
 
             {/* EXISTING USER SECTION */}
-            <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-6 text-center max-w-xl mx-auto w-full shadow-2xs">
+            <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-6 text-center max-w-xl mx-auto w-full shadow-sm">
               <p className="text-xs font-bold text-zinc-700 font-sans">
                 Already have an account?{' '}
                 <button
                   type="button"
                   onClick={() => setShowSignInModal(true)}
-                  className="text-emerald-600 hover:text-emerald-700 underline font-black ml-1.5 uppercase tracking-wide cursor-pointer"
+                  className="text-emerald-600 hover:text-emerald-700 underline font-black ml-1.5 uppercase tracking-wide cursor-pointer active:scale-[0.99]"
                 >
                   Sign In
                 </button>
@@ -1177,11 +1177,11 @@ export default function AuthView({
             {/* 1. SECURE SIGN IN MODAL */}
             {showSignInModal && (
               <div className="fixed inset-0 bg-zinc-950/85 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-                <div className="bg-white border border-zinc-200 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-fade-in text-left">
+                <div className="bg-white border border-zinc-200/80 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-fade-in text-left">
                   <button
                     type="button"
                     onClick={() => setShowSignInModal(false)}
-                    className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 font-bold font-sans text-xs uppercase cursor-pointer"
+                    className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 font-bold font-sans text-xs uppercase cursor-pointer active:scale-[0.99]"
                   >
                     ✕ CLOSE
                   </button>
@@ -1208,7 +1208,7 @@ export default function AuthView({
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="e.g. dave@knyte.com"
-                            className="w-full pl-10 pr-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-white"
+                            className="w-full pl-10 pr-3 py-3 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:ring-2 focus:ring-emerald-400 focus:bg-white"
                           />
                         </div>
                       </div>
@@ -1223,12 +1223,12 @@ export default function AuthView({
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
-                            className="w-full pl-10 pr-10 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-white"
+                            className="w-full pl-10 pr-10 py-3 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:ring-2 focus:ring-emerald-400 focus:bg-white"
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3.5 top-3 text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                            className="absolute right-3.5 top-3 text-zinc-400 hover:text-zinc-600 cursor-pointer active:scale-[0.99]"
                           >
                             {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                           </button>
@@ -1237,13 +1237,13 @@ export default function AuthView({
 
                       <button
                         type="submit"
-                        className="w-full py-3.5 bg-[#00F5A0] hover:bg-emerald-400 text-zinc-950 rounded-xl font-sans text-xs font-black uppercase tracking-wider text-center cursor-pointer transition-all active:scale-[0.99] shadow-sm font-black"
+                        className="w-full py-3.5 bg-[#00F5A0] hover:bg-emerald-400 text-zinc-950 rounded-xl font-sans text-xs font-black uppercase tracking-wider text-center cursor-pointer active:scale-[0.99] transition-all duration-200 ease-out active:scale-[0.99] shadow-md font-black"
                       >
                         Sign In with Credentials
                       </button>
                     </form>
 
-                    <div className="bg-zinc-50 border border-zinc-200 p-3.5 rounded-xl text-xs text-zinc-500 leading-normal font-sans">
+                    <div className="bg-zinc-50 border border-zinc-200/80 p-3.5 rounded-xl text-xs text-zinc-500 leading-normal font-sans">
                       <span className="font-bold text-zinc-700">Quick Test Credentials:</span>
                       <br />• Worker: <span className="font-bold">dave@knyte.com</span> (Password: <span className="font-bold">password</span>)
                       <br />• Contractor: <span className="font-bold">apex@build.com</span> (Password: <span className="font-bold">password</span>)
@@ -1256,11 +1256,11 @@ export default function AuthView({
             {/* 2. ABOUT US MODAL */}
             {showAboutModal && (
               <div className="fixed inset-0 bg-zinc-950/85 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-                <div className="bg-white border border-zinc-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-fade-in text-left max-h-[90vh] overflow-y-auto">
+                <div className="bg-white border border-zinc-200/80 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-fade-in text-left max-h-[90vh] overflow-y-auto">
                   <button
                     type="button"
                     onClick={() => setShowAboutModal(false)}
-                    className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 font-bold font-sans text-xs uppercase cursor-pointer"
+                    className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 font-bold font-sans text-xs uppercase cursor-pointer active:scale-[0.99]"
                   >
                     ✕ CLOSE
                   </button>
@@ -1281,7 +1281,7 @@ export default function AuthView({
                     <button
                       type="button"
                       onClick={() => setShowAboutModal(false)}
-                      className="mt-2 w-full py-2.5 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-sans font-bold uppercase cursor-pointer"
+                      className="mt-2 w-full py-2.5 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-sans font-bold uppercase cursor-pointer active:scale-[0.99]"
                     >
                       Got it, thanks
                     </button>
@@ -1293,11 +1293,11 @@ export default function AuthView({
             {/* 3. HELP / FAQ MODAL */}
             {showHelpModal && (
               <div className="fixed inset-0 bg-zinc-950/85 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-                <div className="bg-white border border-zinc-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-fade-in text-left max-h-[90vh] overflow-y-auto">
+                <div className="bg-white border border-zinc-200/80 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-fade-in text-left max-h-[90vh] overflow-y-auto">
                   <button
                     type="button"
                     onClick={() => setShowHelpModal(false)}
-                    className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 font-bold font-sans text-xs uppercase cursor-pointer"
+                    className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 font-bold font-sans text-xs uppercase cursor-pointer active:scale-[0.99]"
                   >
                     ✕ CLOSE
                   </button>
@@ -1330,7 +1330,7 @@ export default function AuthView({
                     <button
                       type="button"
                       onClick={() => setShowHelpModal(false)}
-                      className="mt-2 w-full py-2.5 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-sans font-bold uppercase cursor-pointer"
+                      className="mt-2 w-full py-2.5 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-sans font-bold uppercase cursor-pointer active:scale-[0.99]"
                     >
                       Close FAQ
                     </button>
@@ -1342,11 +1342,11 @@ export default function AuthView({
             {/* 4. PRIVACY POLICY MODAL */}
             {showPrivacyModal && (
               <div className="fixed inset-0 bg-zinc-950/85 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-                <div className="bg-white border border-zinc-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-fade-in text-left max-h-[90vh] overflow-y-auto">
+                <div className="bg-white border border-zinc-200/80 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-fade-in text-left max-h-[90vh] overflow-y-auto">
                   <button
                     type="button"
                     onClick={() => setShowPrivacyModal(false)}
-                    className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 font-bold font-sans text-xs uppercase cursor-pointer"
+                    className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 font-bold font-sans text-xs uppercase cursor-pointer active:scale-[0.99]"
                   >
                     ✕ CLOSE
                   </button>
@@ -1361,7 +1361,7 @@ export default function AuthView({
                     <button
                       type="button"
                       onClick={() => setShowPrivacyModal(false)}
-                      className="mt-2 w-full py-2.5 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-sans font-bold uppercase cursor-pointer"
+                      className="mt-2 w-full py-2.5 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-sans font-bold uppercase cursor-pointer active:scale-[0.99]"
                     >
                       Close Privacy Policy
                     </button>
@@ -1373,11 +1373,11 @@ export default function AuthView({
             {/* 5. TERMS & CONDITIONS MODAL */}
             {showTermsModal && (
               <div className="fixed inset-0 bg-zinc-950/85 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-                <div className="bg-white border border-zinc-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-fade-in text-left max-h-[90vh] overflow-y-auto">
+                <div className="bg-white border border-zinc-200/80 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-fade-in text-left max-h-[90vh] overflow-y-auto">
                   <button
                     type="button"
                     onClick={() => setShowTermsModal(false)}
-                    className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 font-bold font-sans text-xs uppercase cursor-pointer"
+                    className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 font-bold font-sans text-xs uppercase cursor-pointer active:scale-[0.99]"
                   >
                     ✕ CLOSE
                   </button>
@@ -1394,7 +1394,7 @@ export default function AuthView({
                     <button
                       type="button"
                       onClick={() => setShowTermsModal(false)}
-                      className="mt-2 w-full py-2.5 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-sans font-bold uppercase cursor-pointer"
+                      className="mt-2 w-full py-2.5 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-sans font-bold uppercase cursor-pointer active:scale-[0.99]"
                     >
                       Close Terms
                     </button>
@@ -1406,11 +1406,11 @@ export default function AuthView({
             {/* 6. CONTACT US MODAL */}
             {showContactModal && (
               <div className="fixed inset-0 bg-zinc-950/85 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-                <div className="bg-white border border-zinc-200 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-fade-in text-left">
+                <div className="bg-white border border-zinc-200/80 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-fade-in text-left">
                   <button
                     type="button"
                     onClick={() => setShowContactModal(false)}
-                    className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 font-bold font-sans text-xs uppercase cursor-pointer"
+                    className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 font-bold font-sans text-xs uppercase cursor-pointer active:scale-[0.99]"
                   >
                     ✕ CLOSE
                   </button>
@@ -1427,7 +1427,7 @@ export default function AuthView({
                     <button
                       type="button"
                       onClick={() => setShowContactModal(false)}
-                      className="mt-2 w-full py-2.5 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-sans font-bold uppercase cursor-pointer"
+                      className="mt-2 w-full py-2.5 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-sans font-bold uppercase cursor-pointer active:scale-[0.99]"
                     >
                       Done
                     </button>
@@ -1443,10 +1443,10 @@ export default function AuthView({
                   &copy; {new Date().getFullYear()} HireUp UK Ltd. All rights reserved.
                 </div>
                 <div className="flex items-center gap-6">
-                  <button type="button" onClick={() => setShowAboutModal(true)} className="hover:text-zinc-950 cursor-pointer">About Us</button>
-                  <button type="button" onClick={() => setShowPrivacyModal(true)} className="hover:text-zinc-950 cursor-pointer">Privacy Policy</button>
-                  <button type="button" onClick={() => setShowTermsModal(true)} className="hover:text-zinc-950 cursor-pointer">Terms & Conditions</button>
-                  <button type="button" onClick={() => setShowContactModal(true)} className="hover:text-zinc-950 cursor-pointer">Contact Us</button>
+                  <button type="button" onClick={() => setShowAboutModal(true)} className="hover:text-zinc-950 cursor-pointer active:scale-[0.99]">About Us</button>
+                  <button type="button" onClick={() => setShowPrivacyModal(true)} className="hover:text-zinc-950 cursor-pointer active:scale-[0.99]">Privacy Policy</button>
+                  <button type="button" onClick={() => setShowTermsModal(true)} className="hover:text-zinc-950 cursor-pointer active:scale-[0.99]">Terms & Conditions</button>
+                  <button type="button" onClick={() => setShowContactModal(true)} className="hover:text-zinc-950 cursor-pointer active:scale-[0.99]">Contact Us</button>
                 </div>
               </div>
             </footer>
@@ -1456,7 +1456,7 @@ export default function AuthView({
 
         {/* WORKER SIGN UP SUB-VIEW */}
         {view === 'signup_worker' && (
-          <div className="relative overflow-hidden rounded-[32px] border border-zinc-200 bg-white shadow-xl animate-fade-in">
+          <div className="relative overflow-hidden rounded-[32px] border border-zinc-200/80 bg-white shadow-xl animate-fade-in">
             <style>{`
               @keyframes hireupStepForward {
                 from { opacity: 0; transform: translateX(24px); }
@@ -1474,7 +1474,7 @@ export default function AuthView({
             `}</style>
             <div className="absolute inset-x-0 top-0 h-1 bg-zinc-100">
               <div
-                className="h-full bg-[#34D399] transition-all duration-500 ease-out"
+                className="h-full bg-[#34D399] transition-all duration-200 ease-out duration-500 ease-out"
                 style={{
                   width: `${workerProfileProgress}%`,
                 }}
@@ -1514,7 +1514,7 @@ export default function AuthView({
                       setErrorMsg(null);
                       setView('landing');
                     }}
-                    className="shrink-0 rounded-xl border border-zinc-200 px-3 py-2 text-xs font-sans font-black uppercase text-zinc-500 hover:border-zinc-400 hover:text-zinc-900"
+                    className="shrink-0 rounded-xl border border-zinc-200/80 px-3 py-2 text-xs font-sans font-black uppercase text-zinc-500 hover:border-zinc-400 hover:text-zinc-900"
                   >
                     Exit
                   </button>
@@ -1533,7 +1533,7 @@ export default function AuthView({
                 <button
                   type="button"
                   onClick={() => setShowMobileWorkerPreview(current => !current)}
-                  className="mb-5 flex w-full items-center justify-between rounded-2xl border border-zinc-200 bg-zinc-950 px-4 py-3 text-left text-white lg:hidden"
+                  className="mb-5 flex w-full items-center justify-between rounded-2xl border border-zinc-200/80 bg-zinc-950 px-4 py-3 text-left text-white lg:hidden"
                 >
                   <span>
                     <span className="block text-[11px] font-sans font-black uppercase tracking-wider text-[#34D399]">Live profile preview</span>
@@ -1579,7 +1579,7 @@ export default function AuthView({
                             value={workerName}
                             onChange={event => setWorkerName(event.target.value)}
                             placeholder="e.g. Liam Fletcher"
-                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
+                            className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
                           />
                         </label>
 
@@ -1591,7 +1591,7 @@ export default function AuthView({
                             value={email}
                             onChange={event => setEmail(event.target.value)}
                             placeholder="you@example.co.uk"
-                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
+                            className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
                           />
                         </label>
 
@@ -1603,7 +1603,7 @@ export default function AuthView({
                             value={workerPhone}
                             onChange={event => setWorkerPhone(event.target.value)}
                             placeholder="07711 900222"
-                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
+                            className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
                           />
                         </label>
 
@@ -1617,7 +1617,7 @@ export default function AuthView({
                               value={password}
                               onChange={event => setPassword(event.target.value)}
                               placeholder="At least 8 characters"
-                              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 pr-12 text-sm font-semibold outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
+                              className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 pr-12 text-sm font-semibold outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
                             />
                             <button
                               type="button"
@@ -1642,7 +1642,7 @@ export default function AuthView({
                               setWorkerMainTrade(selectedMain);
                               setWorkerSubcategory((TRADE_SUBCATEGORIES_MAP[selectedMain] || [])[0] || '');
                             }}
-                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                            className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
                           >
                             {TRADES_CATEGORIES.map(category => (
                               <option key={category} value={category}>{category}</option>
@@ -1655,7 +1655,7 @@ export default function AuthView({
                           <select
                             value={workerSubcategory}
                             onChange={event => setWorkerSubcategory(event.target.value)}
-                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                            className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
                           >
                             {(TRADE_SUBCATEGORIES_MAP[workerMainTrade] || []).map(subcategory => (
                               <option key={subcategory} value={subcategory}>{subcategory}</option>
@@ -1668,7 +1668,7 @@ export default function AuthView({
                           <select
                             value={workerExp}
                             onChange={event => setWorkerExp(event.target.value)}
-                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                            className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
                           >
                             <option value="Less than 1 Year">Less than 1 Year</option>
                             <option value="2 Years">2 Years</option>
@@ -1705,7 +1705,7 @@ export default function AuthView({
                               value={workerRate.replace(/^£/, '')}
                               onChange={event => setWorkerRate(event.target.value.replace(/[^0-9.]/g, ''))}
                               placeholder="220"
-                              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-4 pl-9 pr-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                              className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 py-4 pl-9 pr-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
                             />
                           </div>
                         </label>
@@ -1715,7 +1715,7 @@ export default function AuthView({
                           <select
                             value={workerAvailability}
                             onChange={event => setWorkerAvailability(event.target.value)}
-                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                            className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
                           >
                             <option value="Immediate">Available immediately</option>
                             <option value="In 1 Week">Within 1 week</option>
@@ -1729,7 +1729,7 @@ export default function AuthView({
                           <select
                             value={workerType}
                             onChange={event => setWorkerType(event.target.value)}
-                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                            className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
                           >
                             <option value="CIS Subcontract">CIS subcontract</option>
                             <option value="PAYE Agency">PAYE agency</option>
@@ -1769,9 +1769,9 @@ export default function AuthView({
                                 onClick={() => setWorkerTools(current =>
                                   selected ? current.filter(item => item !== tool) : [...current, tool]
                                 )}
-                                className={`rounded-2xl border p-5 text-left transition-all ${selected
-                                  ? 'border-[#34D399] bg-emerald-50 shadow-sm'
-                                  : 'border-zinc-200 bg-white hover:border-zinc-400 hover:bg-zinc-50'
+                                className={`rounded-2xl border p-5 text-left transition-all duration-200 ease-out ${selected
+                                  ? 'border-[#34D399] bg-emerald-50 shadow-md'
+                                  : 'border-zinc-200/80 bg-white hover:border-zinc-400 hover:bg-white'
                                 }`}
                               >
                                 <div className="flex items-start justify-between gap-4">
@@ -1802,7 +1802,7 @@ export default function AuthView({
                             onChange={event => setWorkerAbout(event.target.value.slice(0, 500))}
                             rows={5}
                             placeholder="Describe your experience, reliability, strongest skills and the type of site work you do best..."
-                            className="w-full resize-none rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-medium leading-relaxed outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
+                            className="w-full resize-none rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-medium leading-relaxed outline-none transition focus:border-[#34D399] focus:bg-white focus:ring-4 focus:ring-emerald-50"
                           />
                           <div className="flex justify-between text-xs font-semibold text-zinc-400">
                             <span className={workerAbout.trim().length >= 30 ? 'text-emerald-600' : ''}>Minimum 30 characters</span>
@@ -1833,16 +1833,16 @@ export default function AuthView({
                         </div>
 
                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                          <label className="group relative min-h-[170px] cursor-pointer overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 hover:border-[#34D399] hover:bg-emerald-50/40">
+                          <label className="group relative min-h-[170px] cursor-pointer active:scale-[0.99] overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 hover:border-[#34D399] hover:bg-emerald-50/40">
                             <input
                               type="file"
                               accept="image/*"
                               onChange={event => handleSignupFileUpload(event, 'profile-pictures', 'avatar')}
-                              className="absolute inset-0 z-10 cursor-pointer opacity-0"
+                              className="absolute inset-0 z-10 cursor-pointer active:scale-[0.99] opacity-0"
                             />
                             {workerProfilePhotoUrl ? (
                               <div className="flex h-full flex-col items-center justify-center text-center">
-                                <img src={workerProfilePhotoUrl} alt="Profile preview" className="h-20 w-20 rounded-2xl object-cover shadow-sm" />
+                                <img src={workerProfilePhotoUrl} alt="Profile preview" className="h-20 w-20 rounded-2xl object-cover shadow-md" />
                                 <p className="mt-3 text-xs font-black text-zinc-900">Profile photo selected</p>
                                 <p className="text-xs text-zinc-500">Tap to replace</p>
                               </div>
@@ -1855,12 +1855,12 @@ export default function AuthView({
                             )}
                           </label>
 
-                          <label className="group relative min-h-[170px] cursor-pointer overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 hover:border-[#34D399] hover:bg-emerald-50/40">
+                          <label className="group relative min-h-[170px] cursor-pointer active:scale-[0.99] overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 hover:border-[#34D399] hover:bg-emerald-50/40">
                             <input
                               type="file"
                               accept="image/*"
                               onChange={event => handleSignupFileUpload(event, 'work-gallery', 'gallery')}
-                              className="absolute inset-0 z-10 cursor-pointer opacity-0"
+                              className="absolute inset-0 z-10 cursor-pointer active:scale-[0.99] opacity-0"
                             />
                             <div className="flex h-full flex-col items-center justify-center text-center">
                               <Layers className="h-9 w-9 text-zinc-300 group-hover:text-[#10B981]" />
@@ -1873,7 +1873,7 @@ export default function AuthView({
                         {workerGalleryImages.length > 0 && (
                           <div className="flex flex-wrap gap-3">
                             {workerGalleryImages.map((image, index) => (
-                              <div key={`${image}-${index}`} className="group relative h-20 w-20 overflow-hidden rounded-xl border border-zinc-200">
+                              <div key={`${image}-${index}`} className="group relative h-20 w-20 overflow-hidden rounded-xl border border-zinc-200/80">
                                 <img src={image} alt={`Work preview ${index + 1}`} className="h-full w-full object-cover" />
                                 <button
                                   type="button"
@@ -1915,7 +1915,7 @@ export default function AuthView({
                             ['Site equipment', workerTools.join(', ')],
                             ['Profile statement', workerAbout],
                           ].map(([label, value]) => (
-                            <div key={label} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                            <div key={label} className="rounded-2xl border border-zinc-200/80 bg-zinc-50 p-4">
                               <p className="text-[11px] font-sans font-black uppercase tracking-wider text-zinc-400">{label}</p>
                               <p className="mt-1 text-sm font-bold text-zinc-900">{value || 'Not completed'}</p>
                             </div>
@@ -1940,7 +1940,7 @@ export default function AuthView({
                         moveWorkerStep(workerSignupStep - 1);
                       }}
                       disabled={workerSignupStep === 0}
-                      className="rounded-2xl border border-zinc-200 px-5 py-3.5 text-xs font-sans font-black uppercase text-zinc-600 disabled:invisible"
+                      className="rounded-2xl border border-zinc-200/80 px-5 py-3.5 text-xs font-sans font-black uppercase text-zinc-600 disabled:invisible"
                     >
                       ← Back
                     </button>
@@ -2002,7 +2002,7 @@ export default function AuthView({
                 </form>
               </div>
 
-              <aside className="hidden border-l border-zinc-200 bg-zinc-950 p-7 text-white lg:block">
+              <aside className="hidden border-l border-zinc-200/80 bg-zinc-950 p-7 text-white lg:block">
                 <div className="sticky top-7">
                   <p className="text-[11px] font-sans font-black uppercase tracking-[0.22em] text-[#34D399]">Live profile preview</p>
 
@@ -2082,7 +2082,7 @@ export default function AuthView({
 
         {/* CONTRACTOR SIGN UP SUB-VIEW */}
         {view === 'signup_contractor' && (
-          <div className="relative overflow-hidden rounded-[32px] border border-zinc-200 bg-white shadow-xl animate-fade-in">
+          <div className="relative overflow-hidden rounded-[32px] border border-zinc-200/80 bg-white shadow-xl animate-fade-in">
             <style>{`
               @keyframes contractorStepForward {
                 from { opacity: 0; transform: translateX(24px); }
@@ -2096,7 +2096,7 @@ export default function AuthView({
 
             <div className="absolute inset-x-0 top-0 h-1 bg-zinc-100">
               <div
-                className="h-full bg-[#34D399] transition-all duration-500 ease-out"
+                className="h-full bg-[#34D399] transition-all duration-200 ease-out duration-500 ease-out"
                 style={{ width: `${contractorProfileProgress}%` }}
               />
             </div>
@@ -2131,7 +2131,7 @@ export default function AuthView({
                       setErrorMsg(null);
                       setView('landing');
                     }}
-                    className="shrink-0 rounded-xl border border-zinc-200 px-3 py-2 text-xs font-sans font-black uppercase text-zinc-500 hover:border-zinc-400 hover:text-zinc-900"
+                    className="shrink-0 rounded-xl border border-zinc-200/80 px-3 py-2 text-xs font-sans font-black uppercase text-zinc-500 hover:border-zinc-400 hover:text-zinc-900"
                   >
                     Exit
                   </button>
@@ -2148,23 +2148,23 @@ export default function AuthView({
                       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <label className="space-y-2 sm:col-span-2">
                           <span className="text-xs font-sans font-black uppercase tracking-wider text-zinc-500">Company name *</span>
-                          <input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="e.g. Oakridge Joinery Ltd" className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                          <input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="e.g. Oakridge Joinery Ltd" className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
                         </label>
                         <label className="space-y-2">
                           <span className="text-xs font-sans font-black uppercase tracking-wider text-zinc-500">Main contact *</span>
-                          <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="e.g. Richard Vance" className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                          <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="e.g. Richard Vance" className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
                         </label>
                         <label className="space-y-2">
                           <span className="text-xs font-sans font-black uppercase tracking-wider text-zinc-500">Phone number *</span>
-                          <input value={contractorPhone} onChange={e => setContractorPhone(e.target.value)} placeholder="01273 900300" className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                          <input value={contractorPhone} onChange={e => setContractorPhone(e.target.value)} placeholder="01273 900300" className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
                         </label>
                         <label className="space-y-2">
                           <span className="text-xs font-sans font-black uppercase tracking-wider text-zinc-500">Email address *</span>
-                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="hiring@company.co.uk" className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="hiring@company.co.uk" className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
                         </label>
                         <label className="space-y-2">
                           <span className="text-xs font-sans font-black uppercase tracking-wider text-zinc-500">Password *</span>
-                          <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                          <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
                         </label>
                       </div>
                     )}
@@ -2174,7 +2174,7 @@ export default function AuthView({
                         <SearchableDropdown id="contractor-hq" label="Headquarters location *" options={HOMETOWNS} selected={companyHQ} onChange={setCompanyHQ} multiple={false} placeholder="Search location..." />
                         <label className="space-y-2">
                           <span className="text-xs font-sans font-black uppercase tracking-wider text-zinc-500">Company size *</span>
-                          <select value={companySize} onChange={e => setCompanySize(e.target.value)} className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white">
+                          <select value={companySize} onChange={e => setCompanySize(e.target.value)} className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white">
                             <option>1 - 10 Employees</option><option>11 - 49 Employees</option><option>50 - 99 Employees</option><option>100 - 250 Employees</option><option>250+ Employees</option>
                           </select>
                         </label>
@@ -2183,7 +2183,7 @@ export default function AuthView({
                           <select
                             value={companyIndustry}
                             onChange={e => setCompanyIndustry(e.target.value)}
-                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
+                            className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white"
                           >
                             <option value="">Select your company industry...</option>
                             {COMPANY_INDUSTRIES.map(industry => (
@@ -2193,14 +2193,14 @@ export default function AuthView({
                         </label>
                         <label className="space-y-2">
                           <span className="text-xs font-sans font-black uppercase tracking-wider text-zinc-500">Public liability cover *</span>
-                          <select value={companyInsurance} onChange={e => setCompanyInsurance(e.target.value)} className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white">
+                          <select value={companyInsurance} onChange={e => setCompanyInsurance(e.target.value)} className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white">
                             <option value="No insurance">No insurance</option>
                             {Array.from({ length: 10 }, (_, index) => index + 1).map(amount => <option key={amount} value={`£${amount}M Public Liability`}>£{amount}M Public Liability</option>)}
                           </select>
                         </label>
                         <label className="space-y-2">
                           <span className="text-xs font-sans font-black uppercase tracking-wider text-zinc-500">Website (optional)</span>
-                          <input value={companyWebsite} onChange={e => setCompanyWebsite(e.target.value)} placeholder="www.company.co.uk" className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
+                          <input value={companyWebsite} onChange={e => setCompanyWebsite(e.target.value)} placeholder="www.company.co.uk" className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white" />
                         </label>
                       </div>
                     )}
@@ -2209,13 +2209,13 @@ export default function AuthView({
                       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                         <label className="space-y-2">
                           <span className="text-xs font-sans font-black uppercase tracking-wider text-zinc-500">Trade category *</span>
-                          <select value={tradesHiring} onChange={e => { const value = e.target.value; setTradesHiring(value); setTradesHiringSubcategory((TRADE_SUBCATEGORIES_MAP[value] || [])[0] || ''); }} className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white">
+                          <select value={tradesHiring} onChange={e => { const value = e.target.value; setTradesHiring(value); setTradesHiringSubcategory((TRADE_SUBCATEGORIES_MAP[value] || [])[0] || ''); }} className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white">
                             {TRADES_CATEGORIES.map(category => <option key={category}>{category}</option>)}
                           </select>
                         </label>
                         <label className="space-y-2">
                           <span className="text-xs font-sans font-black uppercase tracking-wider text-zinc-500">Specific trade *</span>
-                          <select value={tradesHiringSubcategory} onChange={e => setTradesHiringSubcategory(e.target.value)} className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white">
+                          <select value={tradesHiringSubcategory} onChange={e => setTradesHiringSubcategory(e.target.value)} className="w-full rounded-2xl border border-zinc-200/80 bg-zinc-50 px-4 py-4 text-sm font-semibold outline-none focus:border-[#34D399] focus:bg-white">
                             {(TRADE_SUBCATEGORIES_MAP[tradesHiring] || []).map(sub => <option key={sub}>{sub}</option>)}
                           </select>
                         </label>
@@ -2234,16 +2234,16 @@ export default function AuthView({
                           <SearchableDropdown id="contractor-required-licences" label="Required licences (optional)" options={LICENCES} selected={requiredLics} onChange={setRequiredLics} multiple={true} placeholder="Search licences..." />
                         </div>
                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                          <label className="group relative min-h-[180px] cursor-pointer overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 hover:border-[#34D399] hover:bg-emerald-50/40">
-                            <input type="file" accept="image/*" onChange={e => handleSignupFileUpload(e, 'company-logos', 'logo')} className="absolute inset-0 z-10 cursor-pointer opacity-0" />
+                          <label className="group relative min-h-[180px] cursor-pointer active:scale-[0.99] overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 hover:border-[#34D399] hover:bg-emerald-50/40">
+                            <input type="file" accept="image/*" onChange={e => handleSignupFileUpload(e, 'company-logos', 'logo')} className="absolute inset-0 z-10 cursor-pointer active:scale-[0.99] opacity-0" />
                             <div className="flex h-full flex-col items-center justify-center text-center">
-                              {contractorCompanyLogoUrl ? <img src={contractorCompanyLogoUrl} alt="Company logo preview" className="h-24 w-24 rounded-2xl object-cover shadow-sm" /> : <Building className="h-10 w-10 text-zinc-300" />}
+                              {contractorCompanyLogoUrl ? <img src={contractorCompanyLogoUrl} alt="Company logo preview" className="h-24 w-24 rounded-2xl object-cover shadow-md" /> : <Building className="h-10 w-10 text-zinc-300" />}
                               <p className="mt-3 text-xs font-black text-zinc-900">{contractorCompanyLogoUrl ? 'Company logo selected' : 'Add company logo'}</p>
                               <p className="text-xs text-zinc-500">Optional, but recommended</p>
                             </div>
                           </label>
-                          <label className="group relative min-h-[180px] cursor-pointer overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 hover:border-[#34D399] hover:bg-emerald-50/40">
-                            <input type="file" accept="image/*" onChange={e => handleSignupFileUpload(e, 'company-gallery', 'company_gallery')} className="absolute inset-0 z-10 cursor-pointer opacity-0" />
+                          <label className="group relative min-h-[180px] cursor-pointer active:scale-[0.99] overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 hover:border-[#34D399] hover:bg-emerald-50/40">
+                            <input type="file" accept="image/*" onChange={e => handleSignupFileUpload(e, 'company-gallery', 'company_gallery')} className="absolute inset-0 z-10 cursor-pointer active:scale-[0.99] opacity-0" />
                             <div className="flex h-full flex-col items-center justify-center text-center">
                               <Layers className="h-10 w-10 text-zinc-300" />
                               <p className="mt-3 text-xs font-black text-zinc-900">Add project photos</p>
@@ -2251,7 +2251,7 @@ export default function AuthView({
                             </div>
                           </label>
                         </div>
-                        {contractorCompanyGalleryImages.length > 0 && <div className="flex flex-wrap gap-3">{contractorCompanyGalleryImages.map((image, index) => <div key={`${image}-${index}`} className="relative h-20 w-20 overflow-hidden rounded-xl border border-zinc-200"><img src={image} alt={`Project ${index + 1}`} className="h-full w-full object-cover" /><button type="button" onClick={() => handleRemoveSignupFile(image, 'company_gallery')} className="absolute inset-0 bg-zinc-950/70 text-[11px] font-black uppercase text-white opacity-0 hover:opacity-100">Remove</button></div>)}</div>}
+                        {contractorCompanyGalleryImages.length > 0 && <div className="flex flex-wrap gap-3">{contractorCompanyGalleryImages.map((image, index) => <div key={`${image}-${index}`} className="relative h-20 w-20 overflow-hidden rounded-xl border border-zinc-200/80"><img src={image} alt={`Project ${index + 1}`} className="h-full w-full object-cover" /><button type="button" onClick={() => handleRemoveSignupFile(image, 'company_gallery')} className="absolute inset-0 bg-zinc-950/70 text-[11px] font-black uppercase text-white opacity-0 hover:opacity-100">Remove</button></div>)}</div>}
                       </div>
                     )}
 
@@ -2261,7 +2261,7 @@ export default function AuthView({
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                           {[
                             ['Company', companyName], ['Contact', contactName], ['Location', companyHQ], ['Industry', companyIndustry], ['Hiring', `${tradesHiring} • ${tradesHiringSubcategory}`], ['Job location', jobLocation], ['Contracts', hiringPositionLengths.join(', ')], ['Requirements', companyRequirements.join(', ')],
-                          ].map(([label, value]) => <div key={label} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-[11px] font-sans font-black uppercase tracking-wider text-zinc-400">{label}</p><p className="mt-1 text-sm font-bold text-zinc-900">{value || 'Not completed'}</p></div>)}
+                          ].map(([label, value]) => <div key={label} className="rounded-2xl border border-zinc-200/80 bg-zinc-50 p-4"><p className="text-[11px] font-sans font-black uppercase tracking-wider text-zinc-400">{label}</p><p className="mt-1 text-sm font-bold text-zinc-900">{value || 'Not completed'}</p></div>)}
                         </div>
                       </div>
                     )}
@@ -2270,7 +2270,7 @@ export default function AuthView({
                   {errorMsg && view === 'signup_contractor' && <div className="mt-6 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{errorMsg}</div>}
 
                   <div className="mt-8 flex items-center justify-between gap-3 border-t border-zinc-100 pt-6">
-                    <button type="button" onClick={() => { setErrorMsg(null); moveContractorStep(contractorSignupStep - 1); }} disabled={contractorSignupStep === 0} className="rounded-2xl border border-zinc-200 px-5 py-3.5 text-xs font-sans font-black uppercase text-zinc-600 disabled:invisible">← Back</button>
+                    <button type="button" onClick={() => { setErrorMsg(null); moveContractorStep(contractorSignupStep - 1); }} disabled={contractorSignupStep === 0} className="rounded-2xl border border-zinc-200/80 px-5 py-3.5 text-xs font-sans font-black uppercase text-zinc-600 disabled:invisible">← Back</button>
                     {contractorSignupStep < contractorSignupTotalSteps - 1 ? (
                       <button type="button" onClick={() => {
                         setErrorMsg(null);
@@ -2285,7 +2285,7 @@ export default function AuthView({
                 </form>
               </div>
 
-              <aside className="hidden border-l border-zinc-200 bg-zinc-950 p-7 text-white lg:block">
+              <aside className="hidden border-l border-zinc-200/80 bg-zinc-950 p-7 text-white lg:block">
                 <div className="sticky top-7">
                   <p className="text-[11px] font-sans font-black uppercase tracking-[0.22em] text-[#34D399]">Live company preview</p>
                   <div className="mt-6 overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl">

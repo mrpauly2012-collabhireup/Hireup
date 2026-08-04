@@ -342,12 +342,12 @@ function ToggleRow({
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-all flex-shrink-0 ${
+        className={`relative w-11 h-6 rounded-full transition-all duration-200 ease-out flex-shrink-0 ${
           checked ? 'bg-[#34D399]' : 'bg-zinc-300'
         }`}
       >
         <span
-          className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all ${
+          className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-200 ease-out ${
             checked ? 'left-[22px]' : 'left-0.5'
           }`}
         />
@@ -377,7 +377,7 @@ function FormField({
         {label}
       </span>
 
-      <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border bg-white border-zinc-200 focus-within:border-[#34D399] focus-within:ring-1 focus-within:ring-[#34D399]">
+      <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border bg-white border-zinc-200/80 focus-within:border-[#34D399] focus-within:ring-1 focus-within:ring-[#34D399]">
         <span className="text-zinc-600 flex-shrink-0">{icon}</span>
         <input
           type={type}
@@ -410,7 +410,7 @@ function SelectField({
         {label}
       </span>
 
-      <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border bg-white border-zinc-200 focus-within:border-[#34D399]">
+      <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border bg-white border-zinc-200/80 focus-within:border-[#34D399]">
         <span className="text-zinc-600 flex-shrink-0">{icon}</span>
         <select
           value={value}
@@ -471,7 +471,7 @@ function DateOfBirthField({
           onChange={event =>
             updateDate(year, month, event.target.value)
           }
-          className="w-full px-3 py-3 rounded-xl border bg-white border-zinc-200 outline-none text-sm text-zinc-950 focus:border-[#34D399]"
+          className="w-full px-3 py-3 rounded-xl border bg-white border-zinc-200/80 outline-none text-sm text-zinc-950 focus:border-[#34D399]"
           aria-label="Birth day"
         >
           <option value="">Day</option>
@@ -497,7 +497,7 @@ function DateOfBirthField({
 
             updateDate(year, nextMonth, nextDay);
           }}
-          className="w-full px-3 py-3 rounded-xl border bg-white border-zinc-200 outline-none text-sm text-zinc-950 focus:border-[#34D399]"
+          className="w-full px-3 py-3 rounded-xl border bg-white border-zinc-200/80 outline-none text-sm text-zinc-950 focus:border-[#34D399]"
           aria-label="Birth month"
         >
           <option value="">Month</option>
@@ -513,7 +513,7 @@ function DateOfBirthField({
           onChange={event =>
             updateDate(event.target.value, month, day)
           }
-          className="w-full px-3 py-3 rounded-xl border bg-white border-zinc-200 outline-none text-sm text-zinc-950 focus:border-[#34D399]"
+          className="w-full px-3 py-3 rounded-xl border bg-white border-zinc-200/80 outline-none text-sm text-zinc-950 focus:border-[#34D399]"
           aria-label="Birth year"
         >
           <option value="">Year</option>
@@ -598,7 +598,7 @@ function FileUploadRow({
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="px-3 py-2 border border-zinc-200 rounded-lg text-[10px] font-mono font-black uppercase text-zinc-700"
+            className="px-3 py-2 border border-zinc-200/80 rounded-xl text-[10px] font-mono font-black uppercase text-zinc-700"
           >
             Remove
           </button>
@@ -607,7 +607,7 @@ function FileUploadRow({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="px-3 py-2 bg-zinc-950 text-white rounded-lg text-[10px] font-mono font-black uppercase flex items-center gap-1.5"
+          className="px-3 py-2 bg-zinc-950 text-white rounded-xl text-[10px] font-mono font-black uppercase flex items-center gap-1.5"
         >
           <Upload className="w-3.5 h-3.5" />
           {file ? 'Replace' : 'Upload'}
@@ -1330,7 +1330,7 @@ export default function SettingsView({
           type="button"
           onClick={handleSave}
           disabled={saving || settingsLoading}
-          className="px-5 py-3 bg-[#34D399] hover:bg-[#10B981] disabled:opacity-60 disabled:cursor-not-allowed text-black rounded-xl text-xs font-mono font-black uppercase transition-all shadow-sm flex items-center justify-center gap-2"
+          className="px-5 py-3 bg-[#34D399] hover:bg-[#10B981] disabled:opacity-60 disabled:cursor-not-allowed text-black rounded-xl text-xs font-mono font-black uppercase transition-all duration-200 ease-out shadow-md flex items-center justify-center gap-2"
         >
           {saving ? (
             'Saving...'
@@ -1360,9 +1360,9 @@ export default function SettingsView({
         </div>
       )}
 
-      <section className="bg-white text-zinc-950 border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+      <section className="bg-white text-zinc-950 border border-zinc-200/80 rounded-2xl overflow-hidden shadow-md">
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
-          <div className="p-6 xl:p-7 border-b xl:border-b-0 xl:border-r border-zinc-200">
+          <div className="p-6 xl:p-7 border-b xl:border-b-0 xl:border-r border-zinc-200/80">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-mono font-black uppercase tracking-wider text-[#10B981]">
@@ -1395,14 +1395,14 @@ export default function SettingsView({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
-              <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4">
+              <div className="bg-zinc-50 border border-zinc-200/80 rounded-xl p-4">
                 <p className="text-[9px] font-mono uppercase text-zinc-700">
                   HireUp ID
                 </p>
                 <p className="text-sm font-black text-zinc-950 mt-1">{accountId}</p>
               </div>
 
-              <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4">
+              <div className="bg-zinc-50 border border-zinc-200/80 rounded-xl p-4">
                 <p className="text-[9px] font-mono uppercase text-zinc-700">
                   Member since
                 </p>
@@ -1411,7 +1411,7 @@ export default function SettingsView({
                 </p>
               </div>
 
-              <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4">
+              <div className="bg-zinc-50 border border-zinc-200/80 rounded-xl p-4">
                 <p className="text-[9px] font-mono uppercase text-zinc-700">
                   Profile visibility
                 </p>
@@ -1421,7 +1421,7 @@ export default function SettingsView({
               </div>
             </div>
 
-            <div className="mt-6 bg-zinc-50 border border-zinc-200 rounded-2xl p-4">
+            <div className="mt-6 bg-zinc-50 border border-zinc-200/80 rounded-2xl p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-black text-zinc-950">
@@ -1474,7 +1474,7 @@ export default function SettingsView({
               {stats.map(stat => (
                 <div
                   key={stat.label}
-                  className="bg-zinc-50 border border-zinc-200 rounded-xl p-4"
+                  className="bg-zinc-50 border border-zinc-200/80 rounded-xl p-4"
                 >
                   <div className="text-zinc-700">{stat.icon}</div>
                   <p className="text-2xl font-black text-zinc-950 mt-3">
@@ -1500,7 +1500,7 @@ export default function SettingsView({
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] gap-6">
         <div className="space-y-6">
-          <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+          <section className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden shadow-md">
             <div className="p-5 border-b border-zinc-100">
               <p className="text-xs font-mono font-black uppercase tracking-wider text-zinc-800">
                 Account information
@@ -1754,14 +1754,14 @@ export default function SettingsView({
                     }
                     rows={4}
                     placeholder="Write a short profile description..."
-                    className="w-full px-3.5 py-3 rounded-xl border border-zinc-200 outline-none text-sm text-zinc-950 placeholder:text-zinc-500 focus:border-[#34D399] focus:ring-1 focus:ring-[#34D399]"
+                    className="w-full px-3.5 py-3 rounded-xl border border-zinc-200/80 outline-none text-sm text-zinc-950 placeholder:text-zinc-500 focus:border-[#34D399] focus:ring-1 focus:ring-[#34D399]"
                   />
                 </label>
               </div>
             </div>
           </section>
 
-          <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+          <section className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden shadow-md">
             <div className="p-5 border-b border-zinc-100 flex items-center gap-3">
               <Bell className="w-5 h-5 text-[#10B981]" />
               <div>
@@ -1838,7 +1838,7 @@ export default function SettingsView({
             </div>
           </section>
 
-          <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+          <section className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden shadow-md">
             <div className="p-5 border-b border-zinc-100">
               <p className="text-xs font-mono font-black uppercase tracking-wider text-zinc-800">
                 Verification documents
@@ -1914,7 +1914,7 @@ export default function SettingsView({
         </div>
 
         <div className="space-y-6">
-          <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+          <section className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden shadow-md">
             <div className="p-5 border-b border-zinc-100 flex items-center gap-3">
               <Lock className="w-5 h-5 text-[#10B981]" />
               <div>
@@ -1958,7 +1958,7 @@ export default function SettingsView({
               />
 
               {passwordMessage && (
-                <p className="text-xs text-zinc-800 bg-zinc-50 border border-zinc-200 rounded-lg p-3">
+                <p className="text-xs text-zinc-800 bg-zinc-50 border border-zinc-200/80 rounded-xl p-3">
                   {passwordMessage}
                 </p>
               )}
@@ -1986,7 +1986,7 @@ export default function SettingsView({
             </div>
           </section>
 
-          <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+          <section className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden shadow-md">
             <div className="p-5 border-b border-zinc-100 flex items-center gap-3">
               <Eye className="w-5 h-5 text-[#10B981]" />
               <div>
@@ -2048,7 +2048,7 @@ export default function SettingsView({
             </div>
           </section>
 
-          <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+          <section className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden shadow-md">
             <div className="p-5 border-b border-zinc-100 flex items-center gap-3">
               <SlidersHorizontal className="w-5 h-5 text-[#10B981]" />
               <div>
@@ -2142,7 +2142,7 @@ export default function SettingsView({
             </div>
           </section>
 
-          <section className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm">
+          <section className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-md">
             <p className="text-xs font-mono font-black uppercase tracking-wider text-zinc-800">
               Account data
             </p>
@@ -2164,7 +2164,7 @@ export default function SettingsView({
             </button>
           </section>
 
-          <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+          <section className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden shadow-md">
             <div className="p-5 border-b border-zinc-100 flex items-center gap-3">
               <LifeBuoy className="w-5 h-5 text-[#10B981]" />
               <div>
@@ -2222,7 +2222,7 @@ export default function SettingsView({
       </div>
 
 
-      <section className="bg-white border border-emerald-200 rounded-2xl overflow-hidden shadow-sm">
+      <section className="bg-white border border-emerald-200 rounded-2xl overflow-hidden shadow-md">
         <div className="p-5 border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-white">
           <div className="flex items-center gap-2">
             <Smartphone className="w-5 h-5 text-[#10B981]" />
@@ -2242,9 +2242,9 @@ export default function SettingsView({
         </div>
 
         <div className="p-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+          <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50 p-4">
             <div className="flex items-start gap-3">
-              <span className="w-10 h-10 rounded-xl bg-white border border-zinc-200 text-[#10B981] flex items-center justify-center flex-shrink-0">
+              <span className="w-10 h-10 rounded-xl bg-white border border-zinc-200/80 text-[#10B981] flex items-center justify-center flex-shrink-0">
                 <Download className="w-5 h-5" />
               </span>
 
@@ -2284,9 +2284,9 @@ export default function SettingsView({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+          <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50 p-4">
             <div className="flex items-start gap-3">
-              <span className="w-10 h-10 rounded-xl bg-white border border-zinc-200 text-[#10B981] flex items-center justify-center flex-shrink-0">
+              <span className="w-10 h-10 rounded-xl bg-white border border-zinc-200/80 text-[#10B981] flex items-center justify-center flex-shrink-0">
                 <Bell className="w-5 h-5" />
               </span>
 
@@ -2334,7 +2334,7 @@ export default function SettingsView({
         )}
       </section>
 
-      <section className="bg-white border border-red-200 rounded-2xl overflow-hidden shadow-sm">
+      <section className="bg-white border border-red-200 rounded-2xl overflow-hidden shadow-md">
         <div className="p-5 border-b border-red-100">
           <p className="text-xs font-mono font-black uppercase tracking-wider text-red-600">
             Danger zone
@@ -2411,7 +2411,7 @@ export default function SettingsView({
         </div>
       </section>
 
-      <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+      <section className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden shadow-md">
         <div className="p-5 border-b border-zinc-100">
           <div className="flex items-center gap-2">
             <Scale className="w-5 h-5 text-[#10B981]" />
@@ -2433,7 +2433,7 @@ export default function SettingsView({
         <button
           type="button"
           onClick={onOpenInformationCentre}
-          className="w-full p-5 flex items-center justify-between gap-4 text-left hover:bg-zinc-50 transition-all"
+          className="w-full p-5 flex items-center justify-between gap-4 text-left hover:bg-zinc-50 transition-all duration-200 ease-out"
         >
           <span className="flex items-center gap-4 min-w-0">
             <span className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-200 text-[#10B981] flex items-center justify-center flex-shrink-0">

@@ -214,7 +214,7 @@ export default function MessagingView({
   });
 
   return (
-    <div id="messaging_view" className="bg-zinc-100 -mx-4 -mt-4 h-[calc(100vh-125px)] flex rounded-2xl overflow-hidden border border-zinc-200 relative">
+    <div id="messaging_view" className="bg-zinc-100 -mx-4 -mt-4 h-[calc(100vh-125px)] flex rounded-2xl overflow-hidden border border-zinc-200/80 relative">
       
       {/* Dynamic In-App Push Toasts Container */}
       <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4">
@@ -230,22 +230,22 @@ export default function MessagingView({
       </div>
 
       {/* Sidebar - Chats List and Filter Navigation */}
-      <div className={`w-full md:w-85 bg-white border-r border-zinc-200 flex flex-col ${activeMatchId ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`w-full md:w-85 bg-white border-r border-zinc-200/80 flex flex-col ${activeMatchId ? 'hidden md:flex' : 'flex'}`}>
         
         {/* Chats Header with Tabs */}
-        <div className="p-4 border-b border-zinc-200 bg-zinc-50 space-y-3">
+        <div className="p-4 border-b border-zinc-200/80 bg-zinc-50 space-y-3">
           <div className="flex justify-between items-center">
             <h3 className="text-xs font-mono font-black text-zinc-700 uppercase tracking-wider">Site Messaging</h3>
             <div className="flex gap-1.5">
               <button 
                 onClick={() => setCurrentTab('all')}
-                className={`px-2.5 py-1 rounded text-[10px] font-mono font-black uppercase transition-all ${currentTab === 'all' ? 'bg-[#34D399] text-zinc-950 shadow-xs' : 'text-zinc-400 hover:text-zinc-900'}`}
+                className={`px-2.5 py-1 rounded text-[10px] font-mono font-black uppercase transition-all duration-200 ease-out ${currentTab === 'all' ? 'bg-[#34D399] text-zinc-950 shadow-md' : 'text-zinc-400 hover:text-zinc-900'}`}
               >
                 Inbox
               </button>
               <button 
                 onClick={() => setCurrentTab('archived')}
-                className={`px-2.5 py-1 rounded text-[10px] font-mono font-black uppercase transition-all relative ${currentTab === 'archived' ? 'bg-[#34D399] text-zinc-950 shadow-xs' : 'text-zinc-400 hover:text-zinc-900'}`}
+                className={`px-2.5 py-1 rounded text-[10px] font-mono font-black uppercase transition-all duration-200 ease-out relative ${currentTab === 'archived' ? 'bg-[#34D399] text-zinc-950 shadow-md' : 'text-zinc-400 hover:text-zinc-900'}`}
               >
                 Archive
                 {archivedMatchIds.length > 0 && (
@@ -263,7 +263,7 @@ export default function MessagingView({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search chats by name or trade..."
-              className="w-full pl-9 pr-4 py-1.5 bg-white border border-zinc-200 rounded-xl text-xs font-medium focus:outline-none focus:border-[#34D399] focus:ring-1 focus:ring-[#34D399]"
+              className="w-full pl-9 pr-4 py-1.5 bg-white border border-zinc-200/80 rounded-xl text-xs font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:border-[#34D399] focus:ring-1 focus:ring-[#34D399]"
             />
           </div>
         </div>
@@ -288,15 +288,15 @@ export default function MessagingView({
                 <button
                   key={m.id}
                   onClick={() => setActiveMatchId(m.id)}
-                  className={`w-full p-4 flex gap-3 text-left transition-all cursor-pointer border-b border-zinc-100 ${isSelected ? 'bg-zinc-100 border-l-4 border-[#34D399]' : 'hover:bg-zinc-50 bg-white'}`}
+                  className={`w-full p-4 flex gap-3 text-left transition-all duration-200 ease-out cursor-pointer active:scale-[0.99] border-b border-zinc-100 ${isSelected ? 'bg-zinc-100 border-l-4 border-[#34D399]' : 'hover:bg-white bg-white'}`}
                 >
                   {/* Status Indicator */}
                   <div className="relative flex-shrink-0">
-                    <div className="w-11 h-11 rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100 flex items-center justify-center p-0.5">
+                    <div className="w-11 h-11 rounded-xl overflow-hidden border border-zinc-200/80 bg-zinc-100 flex items-center justify-center p-0.5">
                       <img 
                         src={details.avatar} 
                         alt="avatar" 
-                        className="w-full h-full object-cover rounded-lg"
+                        className="w-full h-full object-cover rounded-xl"
                         referrerPolicy="no-referrer"
                       />
                     </div>
@@ -340,7 +340,7 @@ export default function MessagingView({
         {activeMatch && activeWorker && (activeJob || activeCompany) ? (
           <>
             {/* Chat Room Active Header */}
-            <div className="p-4 bg-white border-b border-zinc-200 flex items-center justify-between shadow-sm relative">
+            <div className="p-4 bg-white border-b border-zinc-200/80 flex items-center justify-between shadow-md relative">
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => {
@@ -353,7 +353,7 @@ export default function MessagingView({
                 </button>
 
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-xl overflow-hidden border border-zinc-200 flex items-center justify-center p-0.5">
+                  <div className="w-10 h-10 rounded-xl overflow-hidden border border-zinc-200/80 flex items-center justify-center p-0.5">
                     <img 
                       src={
                          userType === 'employer'
@@ -361,7 +361,7 @@ export default function MessagingView({
                            : (activeCompany?.companyLogoUrl || activeCompany?.logo || activeJob?.companyLogo || '')
                        } 
                       alt="avatar" 
-                      className="w-full h-full object-cover rounded-lg"
+                      className="w-full h-full object-cover rounded-xl"
                       referrerPolicy="no-referrer"
                     />
                   </div>
@@ -390,7 +390,7 @@ export default function MessagingView({
                 {/* Instant Call Now / Video Interview Button */}
                 <button 
                   onClick={() => onStartVideoCall && onStartVideoCall(activeMatch.id)}
-                  className="p-2 text-zinc-500 hover:text-emerald-500 hover:bg-zinc-100 rounded-lg transition-all flex items-center gap-1 border border-zinc-200 cursor-pointer text-xs font-mono font-bold uppercase tracking-wider"
+                  className="p-2 text-zinc-500 hover:text-emerald-500 hover:bg-zinc-100 rounded-xl transition-all duration-200 ease-out flex items-center gap-1 border border-zinc-200/80 cursor-pointer active:scale-[0.99] text-xs font-mono font-bold uppercase tracking-wider"
                   title="Launch Instant Video Interview Call"
                 >
                   <Video className="w-4 h-4 text-[#10B981]" /> Call Now
@@ -399,7 +399,7 @@ export default function MessagingView({
                 {/* Archive Button */}
                 <button 
                   onClick={() => handleArchiveToggle(activeMatch.id)}
-                  className="p-2 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-lg transition-all cursor-pointer"
+                  className="p-2 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-xl transition-all duration-200 ease-out cursor-pointer active:scale-[0.99]"
                   title="Archive/Unarchive Chat"
                 >
                   <Archive className="w-4.5 h-4.5" />
@@ -409,7 +409,7 @@ export default function MessagingView({
                 <div className="relative">
                   <button 
                     onClick={() => setShowBlockMenu(!showBlockMenu)}
-                    className="p-2 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-lg transition-all cursor-pointer"
+                    className="p-2 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-xl transition-all duration-200 ease-out cursor-pointer active:scale-[0.99]"
                     title="Abuse reporting or blocks"
                   >
                     <MoreVertical className="w-4.5 h-4.5" />
@@ -417,10 +417,10 @@ export default function MessagingView({
 
                   {/* Block / Report Dropdown menu overlay */}
                   {showBlockMenu && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white border border-zinc-200 rounded-xl shadow-lg py-1.5 z-30 font-sans text-xs">
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-zinc-200/80 rounded-xl shadow-lg py-1.5 z-30 font-sans text-xs">
                       <button 
                         onClick={() => handleBlockToggle(activeMatch.id)}
-                        className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer font-bold"
+                        className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer active:scale-[0.99] font-bold"
                       >
                         <Ban className="w-4 h-4" /> 
                         {blockedMatchIds.includes(activeMatch.id) ? 'Unblock Partner' : 'Block Tradesman'}
@@ -428,13 +428,13 @@ export default function MessagingView({
                       <hr className="border-zinc-100 my-1" />
                       <button 
                         onClick={() => handleReportUser(activeMatch.id, "No-show / Breach of site safety")}
-                        className="w-full px-4 py-2 text-left text-zinc-700 hover:bg-zinc-50 flex items-center gap-2 cursor-pointer"
+                        className="w-full px-4 py-2 text-left text-zinc-700 hover:bg-white flex items-center gap-2 cursor-pointer active:scale-[0.99]"
                       >
                         <ShieldAlert className="w-4 h-4 text-amber-500" /> Report No-Show
                       </button>
                       <button 
                         onClick={() => handleReportUser(activeMatch.id, "Abusive language / Fraudulent profile")}
-                        className="w-full px-4 py-2 text-left text-zinc-700 hover:bg-zinc-50 flex items-center gap-2 cursor-pointer"
+                        className="w-full px-4 py-2 text-left text-zinc-700 hover:bg-white flex items-center gap-2 cursor-pointer active:scale-[0.99]"
                       >
                         <AlertCircle className="w-4 h-4 text-amber-500" /> Report Fraudulent Profile
                       </button>
@@ -476,18 +476,18 @@ export default function MessagingView({
                     key={msg.id}
                     className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-fade-in`}
                   >
-                    <div className={`max-w-xs md:max-w-md rounded-2xl px-4 py-3 shadow-xs space-y-1.5 ${isMe ? 'bg-[#34D399] text-zinc-950 rounded-br-none font-medium' : 'bg-white text-zinc-900 rounded-bl-none border border-zinc-200'}`}>
+                    <div className={`max-w-xs md:max-w-md rounded-2xl px-4 py-3 shadow-md space-y-1.5 ${isMe ? 'bg-[#34D399] text-zinc-950 rounded-br-none font-medium' : 'bg-white text-zinc-900 rounded-bl-none border border-zinc-200/80'}`}>
                       
                       {/* Custom Attachment Visual Cards */}
                       {msg.attachmentType === 'image' && (
-                        <div className="rounded-lg overflow-hidden border border-zinc-200 mb-1.5 aspect-video bg-zinc-950 flex items-center justify-center relative">
+                        <div className="rounded-xl overflow-hidden border border-zinc-200/80 mb-1.5 aspect-video bg-zinc-950 flex items-center justify-center relative">
                           <img 
                             src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=400&auto=format&fit=crop&q=80" 
                             alt="attachment" 
                             className="w-full h-full object-cover opacity-90"
                             referrerPolicy="no-referrer"
                           />
-                          <div className="absolute top-2 left-2 bg-zinc-950/80 backdrop-blur-xs border border-zinc-800 rounded px-2 py-0.5 text-[8px] font-mono text-white uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                          <div className="absolute top-2 left-2 bg-zinc-950/80 backdrop-blur-xs border border-zinc-800 rounded px-2 py-0.5 text-[8px] font-mono text-white uppercase tracking-wider flex items-center gap-1 shadow-md">
                             <Image className="w-2.5 h-2.5 text-[#34D399]" /> SITE_UPDATE_PHOTO.JPEG
                           </div>
                         </div>
@@ -495,14 +495,14 @@ export default function MessagingView({
 
                       {msg.attachmentType === 'document' && (
                         <div className="rounded-xl bg-zinc-900 text-white p-3 flex items-center gap-2 border border-zinc-800 mb-1.5">
-                          <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0 text-[#34D399]">
+                          <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center flex-shrink-0 text-[#34D399]">
                             <FileText className="w-6 h-6" />
                           </div>
                           <div className="overflow-hidden flex-grow">
                             <p className="text-xs font-mono font-bold truncate text-white">{msg.attachmentName || 'CSCS_CARD_COPY.PDF'}</p>
                             <span className="text-[9px] text-[#34D399] font-mono uppercase tracking-wider font-bold">Secure Verified Attachment</span>
                           </div>
-                          <button className="p-1.5 hover:bg-zinc-800 rounded-lg text-[#34D399]" title="Download document file">
+                          <button className="p-1.5 hover:bg-zinc-800 rounded-xl text-[#34D399]" title="Download document file">
                             <FolderOpen className="w-4 h-4" />
                           </button>
                         </div>
@@ -546,7 +546,7 @@ export default function MessagingView({
                   <button
                     key={idx}
                     onClick={() => handleSend(reply)}
-                    className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 hover:border-[#34D399] hover:bg-emerald-50 text-zinc-700 text-xs font-mono font-bold rounded-full transition-all flex-shrink-0 cursor-pointer"
+                    className="px-3 py-1.5 bg-zinc-50 border border-zinc-200/80 hover:border-[#34D399] hover:bg-emerald-50 text-zinc-700 text-xs font-mono font-bold rounded-full transition-all duration-200 ease-out flex-shrink-0 cursor-pointer active:scale-[0.99]"
                   >
                     {reply}
                   </button>
@@ -555,11 +555,11 @@ export default function MessagingView({
             )}
 
             {/* Inputs bar with Rich file uploads */}
-            <div className="p-4 bg-white border-t border-zinc-200 flex flex-col gap-2 relative">
+            <div className="p-4 bg-white border-t border-zinc-200/80 flex flex-col gap-2 relative">
               
               {/* Upload menus for shareable files */}
               {showAttachmentMenu && (
-                <div className="absolute bottom-18 left-4 w-72 bg-white border border-zinc-200 rounded-2xl shadow-xl p-3 z-30 font-sans text-xs space-y-2">
+                <div className="absolute bottom-18 left-4 w-72 bg-white border border-zinc-200/80 rounded-2xl shadow-xl p-3 z-30 font-sans text-xs space-y-2">
                   <div className="flex justify-between items-center pb-2 border-b border-zinc-100">
                     <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase">SHARE VERIFIED DOCUMENT</span>
                     <button onClick={() => setShowAttachmentMenu(false)} className="text-zinc-400 hover:text-zinc-600">
@@ -577,7 +577,7 @@ export default function MessagingView({
                             file.name
                           );
                         }}
-                        className="w-full p-2 hover:bg-zinc-50 rounded-lg text-left flex items-start gap-2 border border-zinc-100 hover:border-zinc-200 transition-all cursor-pointer"
+                        className="w-full p-2 hover:bg-white rounded-xl text-left flex items-start gap-2 border border-zinc-100 hover:border-zinc-200/80 transition-all duration-200 ease-out cursor-pointer active:scale-[0.99]"
                       >
                         <FileText className="w-5 h-5 text-[#34D399] flex-shrink-0 mt-0.5" />
                         <div className="overflow-hidden">
@@ -595,7 +595,7 @@ export default function MessagingView({
                 <button 
                   onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
                   disabled={blockedMatchIds.includes(activeMatch.id)}
-                  className="p-2.5 text-zinc-400 hover:text-[#34D399] hover:bg-zinc-50 rounded-lg transition-all flex-shrink-0 cursor-pointer disabled:opacity-50"
+                  className="p-2.5 text-zinc-400 hover:text-[#34D399] hover:bg-white rounded-xl transition-all duration-200 ease-out flex-shrink-0 cursor-pointer active:scale-[0.99] disabled:opacity-50"
                   title="Share qualifying documents, insurance forms, or blueprints"
                 >
                   <Paperclip className="w-5 h-5" />
@@ -608,13 +608,13 @@ export default function MessagingView({
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSend(inputText)}
                   placeholder={blockedMatchIds.includes(activeMatch.id) ? "Conversation is blocked" : "Discuss rate expectations, site card checks, or travel..."}
-                  className="flex-grow px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:border-[#34D399] focus:ring-1 focus:ring-[#34D399] text-xs md:text-sm font-medium disabled:opacity-50"
+                  className="flex-grow px-4 py-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:border-[#34D399] focus:ring-1 focus:ring-[#34D399] text-xs md:text-sm font-medium disabled:opacity-50"
                 />
 
                 <button 
                   onClick={() => handleSend(inputText)}
                   disabled={blockedMatchIds.includes(activeMatch.id) || !inputText.trim()}
-                  className="p-2.5 bg-[#34D399] hover:bg-[#10B981] text-zinc-950 hover:text-white rounded-xl transition-all shadow-sm flex-shrink-0 cursor-pointer disabled:opacity-50"
+                  className="p-2.5 bg-[#34D399] hover:bg-[#10B981] text-zinc-950 hover:text-white rounded-xl transition-all duration-200 ease-out shadow-md flex-shrink-0 cursor-pointer active:scale-[0.99] disabled:opacity-50"
                   title="Send message"
                 >
                   <Send className="w-4 h-4 stroke-[2.5]" />

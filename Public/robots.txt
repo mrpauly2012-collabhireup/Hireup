@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /settings
+Disallow: /messages
+Disallow: /matches
+Disallow: /applications
 
 Sitemap: https://hireupapp.netlify.app/sitemap.xml

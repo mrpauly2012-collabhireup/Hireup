@@ -397,14 +397,14 @@ export default function DashboardView({
       
       {/* Interactive Micro Notification */}
       {showNotification && (
-        <div className="fixed bottom-5 right-5 z-50 bg-zinc-950 text-white text-xs font-mono font-bold tracking-wider uppercase px-4 py-3 rounded-lg shadow-lg border border-emerald-500/30 flex items-center gap-2 animate-fade-in animate-pulse">
+        <div className="fixed bottom-5 right-5 z-50 bg-zinc-950 text-white text-xs font-mono font-bold tracking-wider uppercase px-4 py-3 rounded-xl shadow-lg border border-emerald-500/30 flex items-center gap-2 animate-fade-in animate-pulse">
           <span className="w-2 h-2 rounded-full bg-[#34D399]"></span>
           {showNotification}
         </div>
       )}
 
       {/* 1. Welcome Message */}
-      <div className="bg-white border border-zinc-200 rounded-2xl p-8 md:p-10 shadow-xs relative overflow-hidden">
+      <div className="bg-white border border-zinc-200/80 rounded-2xl p-8 md:p-10 shadow-sm relative overflow-hidden">
         <div className="max-w-2xl space-y-4">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full text-[10px] font-mono font-bold text-[#10B981] uppercase tracking-wider">
             <Activity className="w-3 h-3 text-[#34D399]" />
@@ -421,7 +421,7 @@ export default function DashboardView({
           <div className="pt-2 flex flex-wrap gap-3">
             <button 
               onClick={() => onNavigate('swipe')}
-              className="px-5 py-2.5 text-xs bg-[#34D399] hover:bg-[#10B981] text-zinc-950 hover:text-white font-mono font-bold uppercase rounded-lg transition-all flex items-center gap-1.5 shadow-sm hover:shadow-md cursor-pointer"
+              className="px-5 py-2.5 text-xs bg-[#34D399] hover:bg-[#10B981] text-zinc-950 hover:text-white font-mono font-bold uppercase rounded-xl transition-all duration-200 ease-out flex items-center gap-1.5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             >
               <Sparkles className="w-4 h-4 text-zinc-950 group-hover:text-white" />
               {userType === 'employer' ? 'Match With Tradesmen' : 'Match With Contractors'}
@@ -429,7 +429,7 @@ export default function DashboardView({
             {userType === 'employer' && (
               <button
                 onClick={() => setShowPostJobModal(true)}
-                className="px-5 py-2.5 text-xs bg-zinc-950 hover:bg-zinc-800 text-white font-mono font-bold uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-5 py-2.5 text-xs bg-zinc-950 hover:bg-zinc-800 text-white font-mono font-bold uppercase rounded-xl transition-all duration-200 ease-out flex items-center gap-1.5 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
               >
                 <Plus className="w-4 h-4 text-[#34D399]" />
                 Post a Job
@@ -437,7 +437,7 @@ export default function DashboardView({
             )}
             <button 
               onClick={() => onNavigate('profile')}
-              className="px-5 py-2.5 text-xs bg-white hover:bg-zinc-50 text-zinc-950 border border-zinc-200 font-mono font-bold uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-2.5 text-xs bg-white hover:bg-zinc-50 text-zinc-950 border border-zinc-200/80 font-mono font-bold uppercase rounded-xl transition-all duration-200 ease-out flex items-center gap-1.5 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             >
               <User className="w-4 h-4 text-[#10B981]" />
               Manage Profile
@@ -487,13 +487,13 @@ export default function DashboardView({
             <button
               type="button"
               onClick={() => onNavigate('matches')}
-              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+              className="bg-white border border-zinc-200/80 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all duration-200 ease-out hover:shadow-sm cursor-pointer active:scale-[0.98] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             >
               <div className="flex items-center justify-between">
-                <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                <span className="w-9 h-9 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
                   <Heart className="w-4 h-4" />
                 </span>
-                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors duration-200 ease-out" />
               </div>
               <p className="text-2xl font-black text-zinc-950 mt-4">{workerMatches.length}</p>
               <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
@@ -504,13 +504,13 @@ export default function DashboardView({
             <button
               type="button"
               onClick={() => onNavigate('messages')}
-              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+              className="bg-white border border-zinc-200/80 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all duration-200 ease-out hover:shadow-sm cursor-pointer active:scale-[0.98] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             >
               <div className="flex items-center justify-between">
-                <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                <span className="w-9 h-9 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
                   <MessageSquare className="w-4 h-4" />
                 </span>
-                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors duration-200 ease-out" />
               </div>
               <p className="text-2xl font-black text-zinc-950 mt-4">{workerMessageCount}</p>
               <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
@@ -521,13 +521,13 @@ export default function DashboardView({
             <button
               type="button"
               onClick={() => onNavigate('interviews')}
-              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+              className="bg-white border border-zinc-200/80 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all duration-200 ease-out hover:shadow-sm cursor-pointer active:scale-[0.98] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             >
               <div className="flex items-center justify-between">
-                <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                <span className="w-9 h-9 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
                   <Calendar className="w-4 h-4" />
                 </span>
-                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors duration-200 ease-out" />
               </div>
               <p className="text-2xl font-black text-zinc-950 mt-4">{workerInterviewCount}</p>
               <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
@@ -538,13 +538,13 @@ export default function DashboardView({
             <button
               type="button"
               onClick={() => onNavigate('profile')}
-              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+              className="bg-white border border-zinc-200/80 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all duration-200 ease-out hover:shadow-sm cursor-pointer active:scale-[0.98] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             >
               <div className="flex items-center justify-between">
-                <span className="w-9 h-9 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center">
+                <span className="w-9 h-9 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
                   <Star className="w-4 h-4 fill-current" />
                 </span>
-                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors duration-200 ease-out" />
               </div>
               <p className="text-2xl font-black text-zinc-950 mt-4">{workerRating}</p>
               <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
@@ -557,13 +557,13 @@ export default function DashboardView({
             <button
               type="button"
               onClick={() => setShowPostJobModal(true)}
-              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+              className="bg-white border border-zinc-200/80 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all duration-200 ease-out hover:shadow-sm cursor-pointer active:scale-[0.98] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             >
               <div className="flex items-center justify-between">
-                <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                <span className="w-9 h-9 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
                   <Briefcase className="w-4 h-4" />
                 </span>
-                <Plus className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+                <Plus className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors duration-200 ease-out" />
               </div>
               <p className="text-2xl font-black text-zinc-950 mt-4">{activeVacancies.length}</p>
               <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
@@ -574,13 +574,13 @@ export default function DashboardView({
             <button
               type="button"
               onClick={() => onNavigate('matches')}
-              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+              className="bg-white border border-zinc-200/80 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all duration-200 ease-out hover:shadow-sm cursor-pointer active:scale-[0.98] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             >
               <div className="flex items-center justify-between">
-                <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                <span className="w-9 h-9 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
                   <Users className="w-4 h-4" />
                 </span>
-                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors duration-200 ease-out" />
               </div>
               <p className="text-2xl font-black text-zinc-950 mt-4">{contractorMatches.length}</p>
               <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
@@ -591,13 +591,13 @@ export default function DashboardView({
             <button
               type="button"
               onClick={() => onNavigate('interviews')}
-              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+              className="bg-white border border-zinc-200/80 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all duration-200 ease-out hover:shadow-sm cursor-pointer active:scale-[0.98] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             >
               <div className="flex items-center justify-between">
-                <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                <span className="w-9 h-9 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
                   <Calendar className="w-4 h-4" />
                 </span>
-                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors duration-200 ease-out" />
               </div>
               <p className="text-2xl font-black text-zinc-950 mt-4">{contractorInterviewCount}</p>
               <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
@@ -608,13 +608,13 @@ export default function DashboardView({
             <button
               type="button"
               onClick={() => onNavigate('profile')}
-              className="bg-white border border-zinc-200 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all hover:shadow-sm cursor-pointer group"
+              className="bg-white border border-zinc-200/80 hover:border-[#34D399] rounded-xl p-4 md:p-5 text-left transition-all duration-200 ease-out hover:shadow-sm cursor-pointer active:scale-[0.98] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
             >
               <div className="flex items-center justify-between">
-                <span className="w-9 h-9 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center">
+                <span className="w-9 h-9 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
                   <Star className="w-4 h-4 fill-current" />
                 </span>
-                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors" />
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#10B981] transition-colors duration-200 ease-out" />
               </div>
               <p className="text-2xl font-black text-zinc-950 mt-4">{contractorRating}</p>
               <p className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mt-1">
@@ -637,7 +637,7 @@ export default function DashboardView({
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-3 border-b border-zinc-200">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center">
+                    <span className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center">
                       <Star className="w-4 h-4 text-amber-500 fill-current" />
                     </span>
                     <div>
@@ -654,14 +654,14 @@ export default function DashboardView({
                 <button
                   type="button"
                   onClick={() => onNavigate('swipe')}
-                  className="text-xs font-mono font-black text-black hover:text-[#10B981] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer"
+                  className="text-xs font-mono font-black text-black hover:text-[#10B981] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                 >
                   View All Jobs <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               {featuredJobs.length === 0 ? (
-                <div className="bg-white border border-zinc-200 border-dashed rounded-2xl p-8 text-center">
+                <div className="bg-white border border-zinc-200/80 border-dashed rounded-2xl p-8 text-center">
                   <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto">
                     <Star className="w-5 h-5 text-amber-500" />
                   </div>
@@ -687,14 +687,14 @@ export default function DashboardView({
                     return (
                       <article
                         key={job.id}
-                        className="bg-white border border-zinc-200 rounded-2xl overflow-hidden hover:border-[#34D399] hover:shadow-md transition-all"
+                        className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden hover:border-[#34D399] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       >
                         <div className="h-1.5 bg-[#34D399]" />
 
                         <div className="p-5">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-start gap-3 min-w-0">
-                              <div className="w-12 h-12 rounded-xl bg-zinc-50 border border-zinc-200 p-1.5 flex-shrink-0 flex items-center justify-center">
+                              <div className="w-12 h-12 rounded-xl bg-zinc-50 border border-zinc-200/80 p-1.5 flex-shrink-0 flex items-center justify-center">
                                 {job.companyLogo ? (
                                   <img
                                     src={job.companyLogo}
@@ -731,7 +731,7 @@ export default function DashboardView({
                               </div>
                             </div>
 
-                            <div className="bg-zinc-100 border border-zinc-200 rounded-xl px-2.5 py-2 text-center flex-shrink-0">
+                            <div className="bg-zinc-100 border border-zinc-200/80 rounded-xl px-2.5 py-2 text-center flex-shrink-0">
                               <p className="text-[7px] font-mono font-black text-black uppercase">
                                 AI match
                               </p>
@@ -742,7 +742,7 @@ export default function DashboardView({
                           </div>
 
                           <div className="grid grid-cols-2 gap-2 mt-5">
-                            <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                            <div className="bg-zinc-50 border border-zinc-200/80 rounded-xl p-3">
                               <p className="text-[8px] font-mono font-black text-black uppercase">
                                 Pay
                               </p>
@@ -751,7 +751,7 @@ export default function DashboardView({
                               </p>
                             </div>
 
-                            <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                            <div className="bg-zinc-50 border border-zinc-200/80 rounded-xl p-3">
                               <p className="text-[8px] font-mono font-black text-black uppercase">
                                 Start date
                               </p>
@@ -823,23 +823,23 @@ export default function DashboardView({
                 </div>
                 <button 
                   onClick={() => onNavigate('matches')}
-                  className="text-xs font-mono font-black text-[#10B981] hover:text-[#34D399] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer"
+                  className="text-xs font-mono font-black text-[#10B981] hover:text-[#34D399] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                 >
                   View All <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               {workerMatchedJobs.length === 0 ? (
-                <div className="bg-white border border-zinc-200 border-dashed rounded-xl p-8 text-center text-zinc-500 text-xs">
+                <div className="bg-white border border-zinc-200/80 border-dashed rounded-xl p-8 text-center text-zinc-500 text-xs">
                   No matches found yet. Head to the matching swipe screen to find commercial trades positions.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {workerMatchedJobs.map(({ match, job }) => job && (
-                    <div key={match.id} className="bg-white border border-zinc-200 rounded-xl p-4 flex flex-col justify-between hover:border-[#34D399] transition-all">
+                    <div key={match.id} className="bg-white border border-zinc-200/80 rounded-xl p-4 flex flex-col justify-between hover:border-[#34D399] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2">
                       <div className="space-y-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-10 h-10 rounded-lg bg-zinc-50 p-1 border border-zinc-100 flex-shrink-0 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-xl bg-zinc-50 p-1 border border-zinc-100 flex-shrink-0 flex items-center justify-center">
                             <img src={job.companyLogo} alt={job.companyName} className="max-w-full max-h-full object-contain" referrerPolicy="no-referrer" />
                           </div>
                           <div className="overflow-hidden">
@@ -856,13 +856,13 @@ export default function DashboardView({
                       <div className="pt-3 border-t border-zinc-100 mt-3 flex justify-between items-center">
                         <button 
                           onClick={() => onNavigate('messages')}
-                          className="text-[10px] font-mono font-bold text-zinc-500 hover:text-[#10B981] uppercase flex items-center gap-1 cursor-pointer"
+                          className="text-[10px] font-mono font-bold text-zinc-500 hover:text-[#10B981] uppercase flex items-center gap-1 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                         >
                           <MessageSquare className="w-3 h-3 text-[#34D399]" /> Send Message
                         </button>
                         <button 
                           onClick={() => onSelectJob(job)}
-                          className="p-1 text-zinc-400 hover:text-zinc-950 rounded cursor-pointer"
+                          className="p-1 text-zinc-400 hover:text-zinc-950 rounded cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -882,27 +882,27 @@ export default function DashboardView({
                 </div>
                 <button 
                   onClick={() => onNavigate('messages')}
-                  className="text-xs font-mono font-black text-[#10B981] hover:text-[#34D399] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer"
+                  className="text-xs font-mono font-black text-[#10B981] hover:text-[#34D399] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                 >
                   Open Inbox <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               {workerChatMessages.length === 0 ? (
-                <div className="bg-white border border-zinc-200 border-dashed rounded-xl p-6 text-center text-zinc-500 text-xs">
+                <div className="bg-white border border-zinc-200/80 border-dashed rounded-xl p-6 text-center text-zinc-500 text-xs">
                   No messages. Keep matching with sites to unlock chats.
                 </div>
               ) : (
-                <div className="bg-white border border-zinc-200 rounded-xl divide-y divide-zinc-100 overflow-hidden">
+                <div className="bg-white border border-zinc-200/80 rounded-xl divide-y divide-zinc-100 overflow-hidden">
                   {workerChatMessages.map((msg) => {
                     const matchedItem = workerMatchedJobs.find(item => item.match.id === msg.matchId);
                     return (
                       <div 
                         key={msg.id} 
                         onClick={() => onNavigate('messages')}
-                        className="p-4 hover:bg-zinc-50/50 transition-all cursor-pointer flex gap-4 items-start"
+                        className="p-4 hover:bg-zinc-50/50 transition-all duration-200 ease-out cursor-pointer active:scale-[0.98] flex gap-4 items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       >
-                        <div className="w-10 h-10 rounded-lg bg-zinc-100 p-1 flex-shrink-0 flex items-center justify-center border border-zinc-200">
+                        <div className="w-10 h-10 rounded-xl bg-zinc-100 p-1 flex-shrink-0 flex items-center justify-center border border-zinc-200/80">
                           <img 
                             src={matchedItem?.job?.companyLogo || loggedInCompany.logo} 
                             alt="avatar" 
@@ -935,7 +935,7 @@ export default function DashboardView({
           <div className="lg:col-span-4 space-y-8">
             
             {/* 5. Profile Completion Percentage */}
-            <div className="bg-white border border-zinc-200 rounded-xl p-6 space-y-5">
+            <div className="bg-white border border-zinc-200/80 rounded-xl p-6 space-y-5">
               <div className="space-y-1">
                 <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">Verification Level</span>
                 <h3 className="text-sm font-black text-zinc-950 uppercase tracking-tight">Profile Strength</h3>
@@ -968,13 +968,13 @@ export default function DashboardView({
             </div>
 
             {/* 6. Availability Status Toggle */}
-            <div className="bg-white border border-zinc-200 rounded-xl p-6 space-y-4">
+            <div className="bg-white border border-zinc-200/80 rounded-xl p-6 space-y-4">
               <div>
                 <h3 className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider">Site Availability</h3>
                 <p className="text-xs text-zinc-700 font-medium mt-1">Recruiters filtered search results by active availability states.</p>
               </div>
 
-              <div className="bg-emerald-50/50 p-4 rounded-lg border border-emerald-100 space-y-1">
+              <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 space-y-1">
                 <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider">Current Status</span>
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#34D399] animate-pulse"></span>
@@ -989,9 +989,9 @@ export default function DashboardView({
                     <button
                       key={opt}
                       onClick={() => handleUpdateAvailability(opt)}
-                      className={`py-2 px-3 text-[11px] font-mono font-black uppercase rounded-lg border tracking-wider transition-all cursor-pointer text-center ${
+                      className={`py-2 px-3 text-[11px] font-mono font-black uppercase rounded-xl border tracking-wider transition-all duration-200 ease-out cursor-pointer active:scale-[0.98] text-center ${
                         loggedInWorker.availability === opt
-                          ? 'bg-[#34D399] text-zinc-950 border-[#34D399] font-bold shadow-xs'
+                          ? 'bg-[#34D399] text-zinc-950 border-[#34D399] font-bold shadow-sm'
                           : 'bg-white hover:bg-zinc-50 text-zinc-500 border-zinc-200 hover:text-zinc-950'
                       }`}
                     >
@@ -1003,7 +1003,7 @@ export default function DashboardView({
             </div>
 
             {/* 7. Upcoming Interviews */}
-            <div className="bg-white border border-zinc-200 rounded-xl p-6 space-y-4">
+            <div className="bg-white border border-zinc-200/80 rounded-xl p-6 space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-black text-zinc-950 uppercase tracking-tight">Upcoming Meets</h3>
                 <span className="text-[10px] font-mono font-bold bg-[#E6FBF3] text-[#10B981] px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -1012,7 +1012,7 @@ export default function DashboardView({
               </div>
 
               {workerInterviews.length === 0 ? (
-                <div className="text-xs text-zinc-500 text-center py-4 border border-zinc-100 border-dashed rounded-lg">
+                <div className="text-xs text-zinc-500 text-center py-4 border border-zinc-100 border-dashed rounded-xl">
                   No site interviews scheduled. Mutual matches can propose and schedule interviews.
                 </div>
               ) : (
@@ -1020,7 +1020,7 @@ export default function DashboardView({
                   {workerInterviews.map((int) => {
                     const job = jobs.find(j => j.id === int.jobId);
                     return (
-                      <div key={int.id} className="p-3 bg-zinc-50 border border-zinc-100 rounded-lg space-y-2">
+                      <div key={int.id} className="p-3 bg-zinc-50 border border-zinc-100 rounded-xl space-y-2">
                         <div className="flex justify-between items-start">
                           <p className="text-xs font-black text-zinc-950">{job?.title || 'Site Walkthrough'}</p>
                           <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded ${
@@ -1077,14 +1077,14 @@ export default function DashboardView({
                 </div>
                 <button 
                   onClick={() => setShowPostJobModal(true)}
-                  className="text-xs font-mono font-black text-[#10B981] hover:text-[#34D399] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer"
+                  className="text-xs font-mono font-black text-[#10B981] hover:text-[#34D399] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                 >
                   Post a Job <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               {activeVacancies.length === 0 ? (
-                <div className="bg-white border border-zinc-200 border-dashed rounded-xl p-8 text-center text-zinc-500 text-xs">
+                <div className="bg-white border border-zinc-200/80 border-dashed rounded-xl p-8 text-center text-zinc-500 text-xs">
                   No active vacancies yet. Click Post a Job to publish your first live position.
                 </div>
               ) : (
@@ -1092,7 +1092,7 @@ export default function DashboardView({
                   {activeVacancies.slice(0, 4).map((job) => {
                     const matchCount = matches.filter(m => m.jobId === job.id).length;
                     return (
-                      <div key={job.id} className="bg-white border border-zinc-200 rounded-xl p-5 hover:border-[#34D399] transition-all flex flex-col justify-between">
+                      <div key={job.id} className="bg-white border border-zinc-200/80 rounded-xl p-5 hover:border-[#34D399] transition-all duration-200 ease-out flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2">
                         <div className="space-y-2">
                           <div className="flex justify-between items-start">
                             <span className="text-[9px] font-mono font-black bg-zinc-100 text-zinc-700 px-2 py-0.5 rounded uppercase">{job.employmentType}</span>
@@ -1122,7 +1122,7 @@ export default function DashboardView({
                 <button
                   type="button"
                   onClick={() => setShowAllWorkerTrades(value => !value)}
-                  className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-mono font-black uppercase text-emerald-700 hover:bg-emerald-100"
+                  className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-mono font-black uppercase text-emerald-700 hover:bg-emerald-100"
                 >
                   {showAllWorkerTrades ? 'Show Vacancy Trades' : 'Show All Trades'}
                 </button>
@@ -1136,7 +1136,7 @@ export default function DashboardView({
                 </div>
                 <button 
                   onClick={() => onNavigate('swipe')}
-                  className="text-xs font-mono font-black text-[#10B981] hover:text-[#34D399] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer"
+                  className="text-xs font-mono font-black text-[#10B981] hover:text-[#34D399] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                 >
                   View All <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -1146,7 +1146,7 @@ export default function DashboardView({
                 {recommendedWorkers.map((worker) => (
                   <div 
                     key={worker.id} 
-                    className="bg-white border border-zinc-200 p-5 rounded-xl hover:border-[#34D399] transition-all flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center"
+                    className="bg-white border border-zinc-200/80 p-5 rounded-xl hover:border-[#34D399] transition-all duration-200 ease-out flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                   >
                     <div className="w-full sm:w-auto">
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[9px] font-mono font-black uppercase">
@@ -1158,7 +1158,7 @@ export default function DashboardView({
                       </p>
                     </div>
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="w-12 h-12 rounded-lg bg-zinc-100 p-0.5 border border-zinc-200 flex-shrink-0">
+                      <div className="w-12 h-12 rounded-xl bg-zinc-100 p-0.5 border border-zinc-200/80 flex-shrink-0">
                         <img 
                           src={worker.avatar} 
                           alt={worker.name} 
@@ -1178,7 +1178,7 @@ export default function DashboardView({
                           <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-zinc-400" /> Available {worker.availability}</span>
                           <div className="flex gap-1">
                             {worker.qualifications.slice(0, 2).map((q, idx) => (
-                              <span key={idx} className="px-1 py-0.2 bg-zinc-100 text-[9px] font-mono font-black text-zinc-600 rounded uppercase border border-zinc-200">{q}</span>
+                              <span key={idx} className="px-1 py-0.2 bg-zinc-100 text-[9px] font-mono font-black text-zinc-600 rounded uppercase border border-zinc-200/80">{q}</span>
                             ))}
                           </div>
                         </div>
@@ -1189,7 +1189,7 @@ export default function DashboardView({
                       <span className="text-sm font-mono font-black text-[#10B981] bg-[#E6FBF3] px-2.5 py-1 rounded">{worker.payRate}</span>
                       <button 
                         onClick={() => onSelectWorker(worker)}
-                        className="px-3 py-1.5 text-[10px] bg-zinc-100 hover:bg-[#34D399] text-zinc-700 hover:text-zinc-950 font-mono font-bold uppercase rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 text-[10px] bg-zinc-100 hover:bg-[#34D399] text-zinc-700 hover:text-zinc-950 font-mono font-bold uppercase rounded-xl transition-all duration-200 ease-out flex items-center gap-1 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       >
                         <Eye className="w-3.5 h-3.5" /> View Profile
                       </button>
@@ -1208,27 +1208,27 @@ export default function DashboardView({
                 </div>
                 <button 
                   onClick={() => onNavigate('messages')}
-                  className="text-xs font-mono font-black text-[#10B981] hover:text-[#34D399] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer"
+                  className="text-xs font-mono font-black text-[#10B981] hover:text-[#34D399] tracking-wider uppercase flex items-center gap-0.5 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                 >
                   Open Inbox <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               {contractorChatMessages.length === 0 ? (
-                <div className="bg-white border border-zinc-200 border-dashed rounded-xl p-6 text-center text-zinc-500 text-xs">
+                <div className="bg-white border border-zinc-200/80 border-dashed rounded-xl p-6 text-center text-zinc-500 text-xs">
                   No active chats yet. Connect with verified candidates to begin messages.
                 </div>
               ) : (
-                <div className="bg-white border border-zinc-200 rounded-xl divide-y divide-zinc-100 overflow-hidden">
+                <div className="bg-white border border-zinc-200/80 rounded-xl divide-y divide-zinc-100 overflow-hidden">
                   {contractorChatMessages.map((msg) => {
                     const matchedItem = recentApplicants.find(item => item.match.id === msg.matchId);
                     return (
                       <div 
                         key={msg.id} 
                         onClick={() => onNavigate('messages')}
-                        className="p-4 hover:bg-zinc-50/50 transition-all cursor-pointer flex gap-4 items-start"
+                        className="p-4 hover:bg-zinc-50/50 transition-all duration-200 ease-out cursor-pointer active:scale-[0.98] flex gap-4 items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       >
-                        <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-zinc-200">
+                        <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 border border-zinc-200/80">
                           <img 
                             src={matchedItem?.worker?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80'} 
                             alt="avatar" 
@@ -1261,7 +1261,7 @@ export default function DashboardView({
           <div className="lg:col-span-4 space-y-8">
             
             {/* 5. Recent Applicants (Matched Candidates) */}
-            <div className="bg-white border border-zinc-200 rounded-xl p-6 space-y-4">
+            <div className="bg-white border border-zinc-200/80 rounded-xl p-6 space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-black text-zinc-950 uppercase tracking-tight">Recent Applicants</h3>
                 <span className="text-[10px] font-mono font-bold bg-[#E6FBF3] text-[#10B981] px-2 py-0.5 rounded-full uppercase">
@@ -1270,15 +1270,15 @@ export default function DashboardView({
               </div>
 
               {recentApplicants.length === 0 ? (
-                <div className="text-xs text-zinc-500 text-center py-4 border border-zinc-100 border-dashed rounded-lg">
+                <div className="text-xs text-zinc-500 text-center py-4 border border-zinc-100 border-dashed rounded-xl">
                   No matches or applications yet. Head to the match feed to get mutual right swipes.
                 </div>
               ) : (
                 <div className="space-y-3">
                   {recentApplicants.map(({ match, worker, job }) => worker && job && (
-                    <div key={match.id} className="p-3 bg-zinc-50 border border-zinc-100 rounded-lg space-y-2 flex gap-3 items-start justify-between">
+                    <div key={match.id} className="p-3 bg-zinc-50 border border-zinc-100 rounded-xl space-y-2 flex gap-3 items-start justify-between">
                       <div className="flex gap-2.5 items-start">
-                        <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0 border border-zinc-200">
+                        <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0 border border-zinc-200/80">
                           <img src={worker.avatar} alt={worker.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                         </div>
                         <div className="space-y-0.5">
@@ -1289,7 +1289,7 @@ export default function DashboardView({
                       </div>
                       <button 
                         onClick={() => onSelectWorker(worker)}
-                        className="p-1 bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-950 rounded cursor-pointer transition-all"
+                        className="p-1 bg-white border border-zinc-200/80 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-950 rounded cursor-pointer active:scale-[0.98] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
@@ -1306,7 +1306,7 @@ export default function DashboardView({
             </div>
 
             {/* 6. Upcoming Interviews */}
-            <div className="bg-white border border-zinc-200 rounded-xl p-6 space-y-4">
+            <div className="bg-white border border-zinc-200/80 rounded-xl p-6 space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-black text-zinc-950 uppercase tracking-tight">Interviews & Visits</h3>
                 <span className="text-[10px] font-mono font-bold bg-[#E6FBF3] text-[#10B981] px-2 py-0.5 rounded-full uppercase">
@@ -1315,7 +1315,7 @@ export default function DashboardView({
               </div>
 
               {contractorInterviews.length === 0 ? (
-                <div className="text-xs text-zinc-500 text-center py-4 border border-zinc-100 border-dashed rounded-lg">
+                <div className="text-xs text-zinc-500 text-center py-4 border border-zinc-100 border-dashed rounded-xl">
                   No site visit walks scheduled yet. Proposed schedules appear here.
                 </div>
               ) : (
@@ -1324,7 +1324,7 @@ export default function DashboardView({
                     const worker = workers.find(w => w.id === int.workerId);
                     const job = jobs.find(j => j.id === int.jobId);
                     return (
-                      <div key={int.id} className="p-3 bg-zinc-50 border border-zinc-100 rounded-lg space-y-2">
+                      <div key={int.id} className="p-3 bg-zinc-50 border border-zinc-100 rounded-xl space-y-2">
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="text-xs font-black text-zinc-950">{worker?.name || 'Walkthrough meet'}</p>
@@ -1359,10 +1359,10 @@ export default function DashboardView({
       )}
 
       {showPostJobModal && userType === 'employer' && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-zinc-950/55 backdrop-blur-sm backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <form
             onSubmit={handlePostJob}
-            className="bg-white border border-zinc-200 rounded-2xl p-6 max-w-2xl w-full space-y-5 shadow-2xl my-8"
+            className="bg-white border border-zinc-200/80 rounded-2xl p-6 max-w-2xl w-full space-y-5 shadow-2xl my-8"
           >
             <div className="flex justify-between items-start pb-3 border-b border-zinc-200">
               <div>
@@ -1379,7 +1379,7 @@ export default function DashboardView({
                   resetJobForm();
                   setShowPostJobModal(false);
                 }}
-                className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-lg hover:bg-zinc-100"
+                className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-xl hover:bg-zinc-100"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1399,7 +1399,7 @@ export default function DashboardView({
                   onChange={event => setJobTitle(event.target.value)}
                   placeholder="Commercial Electrician"
                   required
-                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-sm focus:outline-none focus:border-[#34D399]"
                 />
               </label>
 
@@ -1410,7 +1410,7 @@ export default function DashboardView({
                   onChange={event => setJobTrade(event.target.value)}
                   placeholder="Electrician"
                   required
-                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-sm focus:outline-none focus:border-[#34D399]"
                 />
               </label>
 
@@ -1420,7 +1420,7 @@ export default function DashboardView({
                   value={jobSubcategory}
                   onChange={event => setJobSubcategory(event.target.value)}
                   placeholder="Commercial Installation"
-                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-sm focus:outline-none focus:border-[#34D399]"
                 />
               </label>
 
@@ -1431,7 +1431,7 @@ export default function DashboardView({
                   onChange={event => setJobPayRate(event.target.value)}
                   placeholder="£250/day"
                   required
-                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-sm focus:outline-none focus:border-[#34D399]"
                 />
               </label>
 
@@ -1442,7 +1442,7 @@ export default function DashboardView({
                   onChange={event => setJobLocation(event.target.value)}
                   placeholder="Brighton, East Sussex"
                   required
-                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-sm focus:outline-none focus:border-[#34D399]"
                 />
               </label>
 
@@ -1452,7 +1452,7 @@ export default function DashboardView({
                   type="date"
                   value={jobStartDate}
                   onChange={event => setJobStartDate(event.target.value)}
-                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-sm focus:outline-none focus:border-[#34D399]"
                 />
               </label>
 
@@ -1462,7 +1462,7 @@ export default function DashboardView({
                   value={jobDuration}
                   onChange={event => setJobDuration(event.target.value)}
                   placeholder="3 Months or Ongoing"
-                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-sm focus:outline-none focus:border-[#34D399]"
                 />
               </label>
 
@@ -1471,7 +1471,7 @@ export default function DashboardView({
                 <select
                   value={jobEmploymentType}
                   onChange={event => setJobEmploymentType(event.target.value)}
-                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399]"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-sm focus:outline-none focus:border-[#34D399]"
                 >
                   <option>CIS Contract</option>
                   <option>Subcontractor</option>
@@ -1490,7 +1490,7 @@ export default function DashboardView({
                 onChange={event => setJobDescription(event.target.value)}
                 rows={4}
                 placeholder="Describe the site, duties, shift pattern, and expected experience."
-                className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-[#34D399] resize-none"
+                className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-sm focus:outline-none focus:border-[#34D399] resize-none"
               />
             </label>
 
@@ -1501,7 +1501,7 @@ export default function DashboardView({
                   value={jobQualifications}
                   onChange={event => setJobQualifications(event.target.value)}
                   placeholder="CSCS Gold, NVQ Level 3"
-                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-[#34D399]"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs focus:outline-none focus:border-[#34D399]"
                 />
                 <span className="text-[9px] text-zinc-400">Separate with commas</span>
               </label>
@@ -1512,7 +1512,7 @@ export default function DashboardView({
                   value={jobRequirements}
                   onChange={event => setJobRequirements(event.target.value)}
                   placeholder="Own tools, Driving licence"
-                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-[#34D399]"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs focus:outline-none focus:border-[#34D399]"
                 />
                 <span className="text-[9px] text-zinc-400">Separate with commas</span>
               </label>
@@ -1523,7 +1523,7 @@ export default function DashboardView({
                   value={jobBenefits}
                   onChange={event => setJobBenefits(event.target.value)}
                   placeholder="Weekly pay, Parking"
-                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-[#34D399]"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs focus:outline-none focus:border-[#34D399]"
                 />
                 <span className="text-[9px] text-zinc-400">Separate with commas</span>
               </label>
@@ -1537,7 +1537,7 @@ export default function DashboardView({
                   setShowPostJobModal(false);
                 }}
                 disabled={postingJob}
-                className="flex-1 py-2.5 border border-zinc-200 text-zinc-600 font-mono font-bold text-xs rounded-lg hover:bg-zinc-50 disabled:opacity-50"
+                className="flex-1 py-2.5 border border-zinc-200/80 text-zinc-600 font-mono font-bold text-xs rounded-xl hover:bg-zinc-50 disabled:opacity-50"
               >
                 CANCEL
               </button>
@@ -1545,7 +1545,7 @@ export default function DashboardView({
               <button
                 type="submit"
                 disabled={postingJob}
-                className="flex-1 py-2.5 bg-[#34D399] hover:bg-[#10B981] text-white font-mono font-bold text-xs rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 bg-[#34D399] hover:bg-[#10B981] text-white font-mono font-bold text-xs rounded-xl transition-all duration-200 ease-out disabled:opacity-50 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
               >
                 <Briefcase className="w-4 h-4" />
                 {postingJob ? 'POSTING...' : 'PUBLISH VACANCY'}
