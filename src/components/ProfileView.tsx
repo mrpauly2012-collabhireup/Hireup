@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Award, ShieldCheck, MapPin, Star, Calendar, Users, Briefcase, 
   Wrench, Hammer, Phone, Mail, Clock, Plus, Check, Edit2, X, Image as ImageIcon,

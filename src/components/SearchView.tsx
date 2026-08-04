@@ -451,42 +451,49 @@ export default function SearchView({
           </button>
         </div>
 
-        {/* Trade Chips */}
+        {/* Primary Trade Dropdown */}
         <div className="space-y-2">
-          <label className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider">Select Primary Trade Category</label>
-          <div className="flex flex-wrap gap-2">
+          <label className="text-xs font-mono font-bold text-zinc-700 uppercase tracking-wider">
+            Select Primary Trade Category
+          </label>
+
+          <select
+            value={selectedTrade || ''}
+            onChange={(event) => {
+              setSelectedTrade(event.target.value || null);
+              setSelectedSubcategory(null);
+            }}
+            className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-mono font-bold text-zinc-950 uppercase focus:outline-none focus:ring-2 focus:ring-[#34D399] cursor-pointer"
+          >
+            <option value="">-- ALL PRIMARY TRADES --</option>
             {trades.map((trade) => (
-              <button
-                key={trade}
-                onClick={() => {
-                  if (selectedTrade === trade) {
-                    setSelectedTrade(null);
-                    setSelectedSubcategory(null);
-                  } else {
-                    setSelectedTrade(trade);
-                    setSelectedSubcategory(null);
-                  }
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold border transition-all cursor-pointer ${selectedTrade === trade ? 'bg-[#34D399] border-[#34D399] text-white shadow-xs' : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-100'}`}
-              >
+              <option key={trade} value={trade}>
                 {trade.toUpperCase()}
-              </button>
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
         {/* Dynamic Trade Subcategory Dropdown */}
-        {selectedTrade && (
+        {selectedTrade && availableSubcategories.length > 0 && (
           <div className="space-y-2 animate-fade-in pt-1">
-            <label className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider block">Filter by Specific Subcategory</label>
+            <label className="text-xs font-mono font-bold text-zinc-700 uppercase tracking-wider block">
+              Filter by Specific Subcategory
+            </label>
             <select
               value={selectedSubcategory || ''}
-              onChange={(e) => setSelectedSubcategory(e.target.value || null)}
-              className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl text-xs font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-[#34D399] cursor-pointer"
+              onChange={(event) =>
+                setSelectedSubcategory(event.target.value || null)
+              }
+              className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-mono font-bold text-zinc-950 uppercase focus:outline-none focus:ring-2 focus:ring-[#34D399] cursor-pointer"
             >
-              <option value="">-- ALL {selectedTrade.toUpperCase()} SUBCATEGORIES --</option>
+              <option value="">
+                -- ALL {selectedTrade.toUpperCase()} SUBCATEGORIES --
+              </option>
               {availableSubcategories.map((sub) => (
-                <option key={sub} value={sub}>{sub.toUpperCase()}</option>
+                <option key={sub} value={sub}>
+                  {sub.toUpperCase()}
+                </option>
               ))}
             </select>
           </div>

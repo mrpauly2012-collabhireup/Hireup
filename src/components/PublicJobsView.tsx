@@ -125,9 +125,9 @@ function JobCard({
   onOpen: (job: JobProfile) => void;
 }) {
   return (
-    <article className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all">
+    <article className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out">
       <div className="flex items-start gap-4">
-        <div className="w-14 h-14 rounded-xl border border-zinc-200 bg-white p-2 flex items-center justify-center flex-shrink-0">
+        <div className="w-14 h-14 rounded-xl border border-zinc-200/80 bg-white p-2 flex items-center justify-center flex-shrink-0">
           <img
             src={job.companyLogo || HIREUP_LOGO}
             alt={`${job.companyName} logo`}
@@ -184,7 +184,7 @@ function JobCard({
       <button
         type="button"
         onClick={() => onOpen(job)}
-        className="mt-5 w-full px-4 py-3 rounded-xl bg-zinc-950 text-white font-black text-sm flex items-center justify-center gap-2 hover:bg-zinc-800 transition-all"
+        className="mt-5 w-full px-4 py-3 rounded-xl bg-zinc-950 text-white font-black text-sm flex items-center justify-center gap-2 hover:bg-zinc-800 transition-all duration-200 ease-out"
       >
         View job details
         <ArrowRight className="w-4 h-4" />
@@ -195,7 +195,7 @@ function JobCard({
 
 function Header({ onOpenApp }: { onOpenApp: () => void }) {
   return (
-    <header className="bg-white border-b border-zinc-200">
+    <header className="bg-white border-b border-zinc-200/80">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
         <button
           type="button"
@@ -212,7 +212,7 @@ function Header({ onOpenApp }: { onOpenApp: () => void }) {
         <button
           type="button"
           onClick={onOpenApp}
-          className="px-4 py-2.5 rounded-xl bg-[#34D399] text-zinc-950 text-sm font-black hover:bg-emerald-400 transition-all"
+          className="px-4 py-2.5 rounded-xl bg-[#34D399] text-zinc-950 text-sm font-black hover:bg-emerald-400 transition-all duration-200 ease-out"
         >
           Sign in or join HireUp
         </button>
@@ -225,7 +225,7 @@ function LandingLinks() {
   return (
     <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-12">
       <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-zinc-200 rounded-2xl p-6">
+        <div className="bg-white border border-zinc-200/80 rounded-2xl p-6">
           <h2 className="text-xl font-black text-zinc-950">Jobs by location</h2>
           <div className="flex flex-wrap gap-2 mt-4">
             {SUSSEX_LOCATIONS.map(location => (
@@ -233,7 +233,7 @@ function LandingLinks() {
                 key={location}
                 type="button"
                 onClick={() => navigate(`/jobs/location/${createSeoSlug(location)}`)}
-                className="px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-bold hover:border-emerald-300"
+                className="px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200/80 text-xs font-bold hover:border-emerald-300"
               >
                 Jobs in {location}
               </button>
@@ -241,7 +241,7 @@ function LandingLinks() {
           </div>
         </div>
 
-        <div className="bg-white border border-zinc-200 rounded-2xl p-6">
+        <div className="bg-white border border-zinc-200/80 rounded-2xl p-6">
           <h2 className="text-xl font-black text-zinc-950">Jobs by trade</h2>
           <div className="flex flex-wrap gap-2 mt-4">
             {CORE_TRADES.map(trade => (
@@ -249,7 +249,7 @@ function LandingLinks() {
                 key={trade}
                 type="button"
                 onClick={() => navigate(`/jobs/trade/${createSeoSlug(trade)}`)}
-                className="px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-bold hover:border-emerald-300"
+                className="px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200/80 text-xs font-bold hover:border-emerald-300"
               >
                 {trade} jobs
               </button>
@@ -365,7 +365,7 @@ function JobsDirectory({
                 value={searchTerm}
                 onChange={event => setSearchTerm(event.target.value)}
                 placeholder="Search by trade, job title, company or location"
-                className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white text-zinc-950 border border-white focus:outline-none focus:ring-4 focus:ring-emerald-400/20"
+                className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white text-zinc-950 border border-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:ring-4 focus:ring-emerald-400/20"
               />
             </div>
           </div>
@@ -390,11 +390,11 @@ function JobsDirectory({
           </div>
 
           {loading ? (
-            <div className="bg-white border border-zinc-200 rounded-2xl p-10 text-center">
+            <div className="bg-white border border-zinc-200/80 rounded-2xl p-10 text-center">
               <p className="font-bold text-zinc-700">Loading live jobs…</p>
             </div>
           ) : filteredJobs.length === 0 ? (
-            <div className="bg-white border border-zinc-200 rounded-2xl p-10 text-center">
+            <div className="bg-white border border-zinc-200/80 rounded-2xl p-10 text-center">
               <Briefcase className="w-10 h-10 text-zinc-300 mx-auto" />
               <h2 className="font-black text-zinc-950 mt-4">No matching jobs found</h2>
               <p className="text-sm text-zinc-600 mt-2">
@@ -417,7 +417,7 @@ function JobsDirectory({
         {!tradeSlug && !locationSlug && <LandingLinks />}
       </main>
 
-      <footer className="bg-white border-t border-zinc-200">
+      <footer className="bg-white border-t border-zinc-200/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 text-sm text-zinc-600">
           © 2026 HireUp. Construction recruitment across East Sussex and West Sussex.
         </div>
@@ -534,7 +534,7 @@ function JobDetails({
 
     return (
       <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">
-        <div className="max-w-lg w-full bg-white border border-zinc-200 rounded-2xl p-8 text-center shadow-sm">
+        <div className="max-w-lg w-full bg-white border border-zinc-200/80 rounded-2xl p-8 text-center shadow-md">
           <Briefcase className="w-12 h-12 text-zinc-300 mx-auto" />
           <h1 className="text-2xl font-black text-zinc-950 mt-4">
             This job is no longer available
@@ -568,10 +568,10 @@ function JobDetails({
         </button>
 
         <div className="grid lg:grid-cols-[1fr_340px] gap-7 mt-6">
-          <article className="bg-white border border-zinc-200 rounded-3xl overflow-hidden shadow-sm">
-            <div className="p-6 sm:p-8 border-b border-zinc-200">
+          <article className="bg-white border border-zinc-200/80 rounded-3xl overflow-hidden shadow-md">
+            <div className="p-6 sm:p-8 border-b border-zinc-200/80">
               <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-2xl border border-zinc-200 bg-white p-2 flex items-center justify-center flex-shrink-0">
+                <div className="w-16 h-16 rounded-2xl border border-zinc-200/80 bg-white p-2 flex items-center justify-center flex-shrink-0">
                   <img
                     src={job.companyLogo || HIREUP_LOGO}
                     alt={`${job.companyName} logo`}
@@ -614,7 +614,7 @@ function JobDetails({
                 ].map(([label, value, icon]) => (
                   <div
                     key={String(label)}
-                    className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200 flex items-center gap-3"
+                    className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80 flex items-center gap-3"
                   >
                     {icon}
                     <div>
@@ -821,7 +821,7 @@ function CompanyPage({
     <div className="min-h-screen bg-zinc-50">
       <Header onOpenApp={onOpenApp} />
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-        <section className="bg-white border border-zinc-200 rounded-3xl overflow-hidden">
+        <section className="bg-white border border-zinc-200/80 rounded-3xl overflow-hidden">
           <div className="h-52 bg-zinc-100">
             <img
               src={company.coverImage}
@@ -832,7 +832,7 @@ function CompanyPage({
 
           <div className="p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row gap-5">
-              <div className="w-24 h-24 rounded-2xl border border-zinc-200 bg-white p-3">
+              <div className="w-24 h-24 rounded-2xl border border-zinc-200/80 bg-white p-3">
                 <img
                   src={company.logo || HIREUP_LOGO}
                   alt={`${company.name} logo`}
@@ -911,7 +911,7 @@ function WorkerPage({
     <div className="min-h-screen bg-zinc-50">
       <Header onOpenApp={onOpenApp} />
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
-        <article className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8">
+        <article className="bg-white border border-zinc-200/80 rounded-3xl p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row gap-6">
             <img
               src={worker.profilePhotoUrl || worker.avatar}

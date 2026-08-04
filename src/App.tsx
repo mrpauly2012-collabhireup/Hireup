@@ -23,6 +23,7 @@ import {
   fetchInterviews, 
   fetchMessages,
   fetchMessagesForMatches,
+  markMessagesAsReadForMatch,
   fetchNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
@@ -754,6 +755,41 @@ export default function App() {
       await markAllNotificationsAsRead(currentUser.id);
     } catch (error: any) {
       console.error('Could not mark all notifications as read:', error.message);
+    }
+  };
+
+  const handleMessagesRead = async (matchId: string) => {
+    if (!currentUser) return;
+
+    setMessages(previous =>
+      previous.map(message =>
+        message.matchId === matchId &&
+        message.sender !== currentUser.userType &&
+        !message.isRead
+          ? { ...message, isRead: true }
+          : message
+      )
+    );
+
+    try {
+      await markMessagesAsReadForMatch(matchId, currentUser.id);
+    } catch (error: any) {
+      console.error('Could not mark messages as read:', error.message);
+
+      try {
+        const refreshedMessages = await fetchMessages(matchId);
+        setMessages(previous => {
+          const otherMessages = previous.filter(
+            message => message.matchId !== matchId
+          );
+          return [...otherMessages, ...refreshedMessages];
+        });
+      } catch (refreshError: any) {
+        console.error(
+          'Could not refresh conversation after read failure:',
+          refreshError.message
+        );
+      }
     }
   };
 
@@ -1948,6 +1984,7 @@ export default function App() {
                     jobs={jobs}
                     companies={companies}
                     onSendMessage={handleSendMessage}
+                    onMessagesRead={handleMessagesRead}
                     onNavigateBack={() => {
                       setCurrentView('matches');
                       setSelectedMatchId(null);
