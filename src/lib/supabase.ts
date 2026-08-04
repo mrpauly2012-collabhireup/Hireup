@@ -1113,6 +1113,21 @@ export async function createMatchInDb(
     throw new Error('Could not resolve contractor for this match.');
   }
 
+  const {
+    data: { user: authenticatedUser },
+  } = await supabase.auth.getUser();
+
+  if (!authenticatedUser) {
+    throw new Error('You must be signed in to create a match.');
+  }
+
+  if (
+    authenticatedUser.id !== workerId &&
+    authenticatedUser.id !== contractorId
+  ) {
+    throw new Error('The signed-in account is not a participant in this match.');
+  }
+
   let duplicateQuery = supabase
     .from('matches')
     .select('*')
@@ -1157,11 +1172,14 @@ export async function createMatchInDb(
   const introText =
     'Match unlocked! Discuss trade availability, qualifications, and possible site walkthroughs.';
 
+  const contractorStartedConversation =
+    authenticatedUser.id === contractorId;
+
   const { error: messageError } = await supabase.from('messages').insert({
     match_id: data.id,
-    sender: 'employer',
-    sender_id: contractorId,
-    recipient_id: workerId,
+    sender: contractorStartedConversation ? 'employer' : 'worker',
+    sender_id: authenticatedUser.id,
+    recipient_id: contractorStartedConversation ? workerId : contractorId,
     text: introText,
     message: introText,
     is_read: false,
@@ -1613,22 +1631,48 @@ const createInterviewRoomName = (interview: Omit<Interview, 'id'>) => {
 };
 
 export async function createInterviewInDb(
-  interview: Omit<Interview, 'id'>
+  interview: Omit<Interview, 'id'>,
+  explicitContractorId?: string
 ): Promise<Interview> {
-  let contractorId: string | null = null;
+  let contractorId: string | null = explicitContractorId || null;
 
-  try {
-    const { data: jobData } = await supabase
+  if (!contractorId && interview.jobId) {
+    try {
+      const { data: jobData, error: jobError } = await supabase
+        .from('jobs')
+        .select('contractor_id, company_id')
+        .eq('id', interview.jobId)
+        .maybeSingle();
+
+      if (jobError) throw jobError;
+
+      if (jobData) {
+        contractorId = jobData.contractor_id || jobData.company_id;
+      }
+    } catch (err) {
+      console.warn('Could not find job contractor id:', err);
+    }
+  }
+
+  if (!contractorId) {
+    throw new Error('Could not resolve the signed-in contractor for this interview.');
+  }
+
+  if (explicitContractorId && interview.jobId) {
+    const { data: ownedJob, error: ownershipError } = await supabase
       .from('jobs')
-      .select('contractor_id, company_id')
+      .select('id')
       .eq('id', interview.jobId)
+      .or(
+        `contractor_id.eq.${explicitContractorId},company_id.eq.${explicitContractorId}`
+      )
       .maybeSingle();
 
-    if (jobData) {
-      contractorId = jobData.contractor_id || jobData.company_id;
+    if (ownershipError) throw ownershipError;
+
+    if (!ownedJob) {
+      throw new Error('You can only schedule interviews for your own vacancies.');
     }
-  } catch (err) {
-    console.warn('Could not find job contractor id:', err);
   }
 
   const meetingLink =

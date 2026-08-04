@@ -793,37 +793,63 @@ export default function App() {
     }
   };
 
-  // Action: Swipe connection liked and match generated
-  const handleMatchCreated = async (workerId: string, jobId: string) => {
+  // Action: Create a swipe match or a direct contractor-to-worker conversation.
+  const handleMatchCreated = async (
+    workerId: string,
+    jobId: string | null,
+    explicitContractorId?: string
+  ) => {
     try {
-      const match = await createMatchInDb(workerId, jobId);
-      setMatches(prev => [match, ...prev]);
+      const contractorId =
+        explicitContractorId ||
+        (userType === 'employer' ? currentUser?.id : undefined);
 
-      // Fetch fresh messages
-      const msgs = await fetchMessages(match.id);
-      setMessages(prev => [...prev, ...msgs]);
+      const match = await createMatchInDb(workerId, jobId, contractorId);
 
-      // Auto-select match so users can discussion immediately
+      setMatches(previous => {
+        if (previous.some(existing => existing.id === match.id)) return previous;
+        return [match, ...previous];
+      });
+
+      const freshMessages = await fetchMessages(match.id);
+      setMessages(previous => {
+        const withoutCurrentMatch = previous.filter(
+          message => message.matchId !== match.id
+        );
+        return [...withoutCurrentMatch, ...freshMessages];
+      });
+
       setSelectedMatchId(match.id);
 
-      // Create live notification record in the notifications table
-      const job = jobs.find(j => j.id === jobId);
-      const contractorId = job ? job.companyId : null;
-      const recipientId = userType === 'worker' ? contractorId : workerId;
-      const senderName = userType === 'worker' 
-        ? (workers.find(w => w.id === currentUser?.id)?.name || 'Tradesman') 
-        : (companies.find(c => c.id === currentUser?.id)?.name || 'Contractor');
+      const job = jobId ? jobs.find(candidate => candidate.id === jobId) : undefined;
+      const resolvedContractorId =
+        match.contractorId || contractorId || job?.companyId || null;
 
-      if (recipientId) {
+      const recipientId =
+        userType === 'worker' ? resolvedContractorId : workerId;
+
+      const senderName =
+        userType === 'worker'
+          ? (workers.find(worker => worker.id === currentUser?.id)?.name || 'Worker')
+          : (companies.find(company => company.id === currentUser?.id)?.name || 'Contractor');
+
+      if (recipientId && recipientId !== currentUser?.id) {
         await createNotificationInDb(
-          recipientId, 
-          `New Swipe Match with ${senderName}`, 
-          `Discussion unlocked! Tap here to contact and arrange site walkthroughs.`
+          recipientId,
+          jobId
+            ? `New HireUp Match with ${senderName}`
+            : `New Message Request from ${senderName}`,
+          jobId
+            ? 'Discussion unlocked. Open HireUp to discuss the vacancy.'
+            : 'A contractor would like to discuss work opportunities with you.'
         );
       }
+
+      return match;
     } catch (err: any) {
-      console.error("Match insertion error:", err.message);
+      console.error('Match insertion error:', err.message);
       alert(`Could not create the match: ${err.message || err}`);
+      return null;
     }
   };
 
@@ -1068,7 +1094,14 @@ export default function App() {
   // Action: Propose new site walkthrough
   const handleScheduleInterview = async (newInterview: Omit<Interview, 'id'>) => {
     try {
-      const created = await createInterviewInDb(newInterview);
+      if (!currentUser) {
+        throw new Error('You must be signed in to schedule an interview.');
+      }
+
+      const created = await createInterviewInDb(
+        newInterview,
+        userType === 'employer' ? currentUser.id : undefined
+      );
       setInterviews(prev => [created, ...prev]);
 
       // Create live notification record in the notifications table
@@ -2009,6 +2042,7 @@ export default function App() {
                 return (
                   <InterviewsView 
                     userType={userType}
+                    currentUserId={currentUser.id}
                     interviews={interviews}
                     workers={workers}
                     jobs={jobs}
@@ -2472,13 +2506,22 @@ export default function App() {
               </button>
               
               <button
-                onClick={() => {
-                  const relatedJob = jobs.find(j => j.trade === selectedWorker.trade) || jobs[0];
-                  setSelectedWorker(null);
-                  if (relatedJob) {
-                    handleMatchCreated(selectedWorker.id, relatedJob.id);
+                onClick={async () => {
+                  if (!currentUser || userType !== 'employer') {
+                    alert('You must be signed in as a contractor to message this worker.');
+                    return;
                   }
-                  setCurrentView('messages');
+
+                  const match = await handleMatchCreated(
+                    selectedWorker.id,
+                    null,
+                    currentUser.id
+                  );
+
+                  if (match) {
+                    setSelectedWorker(null);
+                    setCurrentView('messages');
+                  }
                 }}
                 className="flex-1 py-2.5 bg-[#34D399] hover:bg-[#10B981] text-zinc-950 font-mono text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
               >

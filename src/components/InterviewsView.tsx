@@ -12,6 +12,7 @@ import { Interview, WorkerProfile, JobProfile, UserType } from '../types';
 
 interface InterviewsViewProps {
   userType: UserType;
+  currentUserId: string;
   interviews: Interview[];
   workers: WorkerProfile[];
   jobs: JobProfile[];
@@ -25,6 +26,7 @@ interface InterviewsViewProps {
 
 export default function InterviewsView({
   userType,
+  currentUserId,
   interviews,
   workers,
   jobs,
@@ -44,6 +46,11 @@ export default function InterviewsView({
   const [interviewNotes, setInterviewNotes] = useState('');
   const [interviewMode, setInterviewMode] = useState<'video' | 'onsite'>('video');
   const [ppeList, setPpeList] = useState<string[]>(['Hard Hat', 'Steel Toe Boots', 'Hi-Vis Vest']);
+
+  const availableJobs =
+    userType === 'employer'
+      ? jobs.filter(job => job.companyId === currentUserId)
+      : jobs;
 
   // State hooks for review submissions
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -155,7 +162,7 @@ export default function InterviewsView({
         {userType === 'employer' && (
           <button
             onClick={() => setShowScheduleModal(true)}
-            className="px-3.5 py-2 bg-[#34D399] hover:bg-[#10B981] text-white font-mono font-bold text-xs rounded-xl transition-all duration-200 ease-out flex items-center gap-1 shadow-md cursor-pointer active:scale-[0.99]"
+            className="px-3.5 py-2 bg-[#34D399] hover:bg-[#10B981] text-white font-mono font-bold text-xs rounded-lg transition-all flex items-center gap-1 shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" /> SCHEDULE INDUCTION
           </button>
@@ -173,7 +180,7 @@ export default function InterviewsView({
             return (
               <div 
                 key={interview.id}
-                className="bg-white border border-zinc-200/80 rounded-xl overflow-hidden shadow-md hover:border-[#34D399]/30 transition-all duration-200 ease-out grid grid-cols-1 md:grid-cols-3"
+                className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm hover:border-[#34D399]/30 transition-all grid grid-cols-1 md:grid-cols-3"
               >
                 {/* Left Panel - Person and Vacancy */}
                 <div className="p-5 border-b md:border-b-0 md:border-r border-zinc-100 space-y-3">
@@ -182,7 +189,7 @@ export default function InterviewsView({
                   </span>
                   
                   <div className="flex gap-3 items-center">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-zinc-100 border border-zinc-200/80">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-zinc-100 border border-zinc-200">
                       <img 
                         src={userType === 'employer' ? worker.avatar : job.companyLogo} 
                         alt="logo" 
@@ -208,7 +215,7 @@ export default function InterviewsView({
                         <Clock className="w-3 h-3 animate-pulse" /> PROPOSED / AWAITING
                       </span>
                     ) : (
-                      <span className="px-2.5 py-0.5 bg-zinc-100 text-zinc-500 border border-zinc-200/80 rounded-full text-[9px] font-mono font-black uppercase">
+                      <span className="px-2.5 py-0.5 bg-zinc-100 text-zinc-500 border border-zinc-200 rounded-full text-[9px] font-mono font-black uppercase">
                         COMPLETED
                       </span>
                     )}
@@ -235,7 +242,7 @@ export default function InterviewsView({
                   </div>
                   
                   {/* Notes */}
-                  <div className="p-2.5 bg-zinc-50 rounded-xl border border-zinc-100 text-[11px] text-zinc-600 leading-relaxed font-sans">
+                  <div className="p-2.5 bg-zinc-50 rounded-lg border border-zinc-100 text-[11px] text-zinc-600 leading-relaxed font-sans">
                     <b>Induction details:</b> "{interview.notes}"
                   </div>
                 </div>
@@ -262,13 +269,13 @@ export default function InterviewsView({
                       <div className="flex gap-2 w-full">
                         <button
                           onClick={() => onDeclineInterview(interview.id)}
-                          className="flex-1 py-1.5 border border-zinc-200/80 text-zinc-500 hover:text-red-500 hover:border-red-200 text-xs font-mono font-bold rounded-xl transition-all duration-200 ease-out cursor-pointer active:scale-[0.99]"
+                          className="flex-1 py-1.5 border border-zinc-200 text-zinc-500 hover:text-red-500 hover:border-red-200 text-xs font-mono font-bold rounded-lg transition-all cursor-pointer"
                         >
                           DECLINE
                         </button>
                         <button
                           onClick={() => onConfirmInterview(interview.id)}
-                          className="flex-1 py-1.5 bg-[#34D399] hover:bg-[#10B981] text-white text-xs font-mono font-bold rounded-xl transition-all duration-200 ease-out flex items-center justify-center gap-0.5 cursor-pointer active:scale-[0.99]"
+                          className="flex-1 py-1.5 bg-[#34D399] hover:bg-[#10B981] text-white text-xs font-mono font-bold rounded-lg transition-all flex items-center justify-center gap-0.5 cursor-pointer"
                         >
                           ACCEPT DATE
                         </button>
@@ -282,14 +289,14 @@ export default function InterviewsView({
                             href={interview.meetingLink}
                             target="_blank"
                             rel="noreferrer"
-                            className="w-full py-2 bg-[#34D399] hover:bg-[#10B981] text-zinc-950 text-xs font-mono font-black rounded-xl transition-all duration-200 ease-out flex items-center justify-center gap-1.5 shadow-md"
+                            className="w-full py-2 bg-[#34D399] hover:bg-[#10B981] text-zinc-950 text-xs font-mono font-black rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-sm"
                           >
                             <Video className="w-4 h-4" /> JOIN VIDEO INTERVIEW
                           </a>
                         )}
                         <button
                           onClick={() => onCompleteInterview(interview.id)}
-                          className="w-full py-1.5 bg-zinc-900 hover:bg-[#10B981] text-white text-xs font-mono font-black rounded-xl transition-all duration-200 ease-out flex items-center justify-center gap-1 shadow-md cursor-pointer active:scale-[0.99]"
+                          className="w-full py-1.5 bg-zinc-900 hover:bg-[#10B981] text-white text-xs font-mono font-black rounded-lg transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
                         >
                           ✓ MARK INTERVIEW COMPLETED
                         </button>
@@ -297,7 +304,7 @@ export default function InterviewsView({
                           href="https://maps.google.com" 
                           target="_blank" 
                           rel="noreferrer" 
-                          className="w-full py-1.5 border border-zinc-200/80 text-zinc-700 bg-white hover:bg-zinc-50 text-xs font-mono font-bold rounded-xl transition-all duration-200 ease-out flex items-center justify-center gap-1 shadow-md"
+                          className="w-full py-1.5 border border-zinc-200 text-zinc-700 bg-white hover:bg-zinc-100 text-xs font-mono font-bold rounded-lg transition-all flex items-center justify-center gap-1 shadow-sm"
                         >
                           DIRECTIONS TO SITE <ExternalLink className="w-3.5 h-3.5" />
                         </a>
@@ -312,7 +319,7 @@ export default function InterviewsView({
 
                       if (hasReviewed) {
                         return (
-                          <div className="w-full py-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 text-center text-xs font-mono font-bold rounded-xl flex items-center justify-center gap-1">
+                          <div className="w-full py-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 text-center text-xs font-mono font-bold rounded-lg flex items-center justify-center gap-1">
                             ⭐ REVIEWED & SUBMITTED
                           </div>
                         );
@@ -341,7 +348,7 @@ export default function InterviewsView({
                             setReviewError('');
                             setShowReviewModal(true);
                           }}
-                          className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-mono font-black rounded-xl transition-all duration-200 ease-out flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/10 cursor-pointer active:scale-[0.99]"
+                          className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-mono font-black rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/10 cursor-pointer"
                         >
                           ⭐ LEAVE REVIEW & RATING
                         </button>
@@ -360,7 +367,7 @@ export default function InterviewsView({
           })}
         </div>
       ) : (
-        <div className="text-center py-16 bg-white border border-zinc-200/80 rounded-xl space-y-3 max-w-sm mx-auto">
+        <div className="text-center py-16 bg-white border border-zinc-200 rounded-xl space-y-3 max-w-sm mx-auto">
           <Calendar className="w-10 h-10 text-zinc-300 mx-auto" />
           <div>
             <h3 className="text-sm font-bold text-zinc-900">No Inductions Scheduled</h3>
@@ -376,9 +383,9 @@ export default function InterviewsView({
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form 
             onSubmit={handleScheduleSubmit}
-            className="bg-white border border-zinc-200/80 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl font-sans"
+            className="bg-white border border-zinc-200 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl font-sans"
           >
-            <div className="flex justify-between items-center pb-3 border-b border-zinc-200/80">
+            <div className="flex justify-between items-center pb-3 border-b border-zinc-200">
               <h3 className="text-base font-bold text-zinc-900 uppercase font-mono tracking-wider">Schedule Site Walkthrough</h3>
               <button 
                 type="button" 
@@ -396,7 +403,7 @@ export default function InterviewsView({
                 value={selectedWorkerId}
                 onChange={(e) => setSelectedWorkerId(e.target.value)}
                 required
-                className="w-full p-2 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:border-[#34D399]"
+                className="w-full p-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-mono font-bold focus:outline-none focus:border-[#34D399]"
               >
                 <option value="">-- Choose Candidate --</option>
                 {workers.map(w => (
@@ -412,11 +419,13 @@ export default function InterviewsView({
                 value={selectedJobId}
                 onChange={(e) => setSelectedJobId(e.target.value)}
                 required
-                className="w-full p-2 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:border-[#34D399]"
+                className="w-full p-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-mono font-bold focus:outline-none focus:border-[#34D399]"
               >
                 <option value="">-- Choose Position --</option>
-                {jobs.map(j => (
-                  <option key={j.id} value={j.id}>{j.title} (£{j.payRate})</option>
+                {availableJobs.map(job => (
+                  <option key={job.id} value={job.id}>
+                    {job.title} ({job.payRate})
+                  </option>
                 ))}
               </select>
             </div>
@@ -430,7 +439,7 @@ export default function InterviewsView({
                   value={interviewDate}
                   onChange={(e) => setInterviewDate(e.target.value)}
                   required
-                  className="w-full p-2 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
+                  className="w-full p-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-mono font-bold focus:outline-none"
                 />
               </div>
               <div className="space-y-1">
@@ -440,7 +449,7 @@ export default function InterviewsView({
                   value={interviewTime}
                   onChange={(e) => setInterviewTime(e.target.value)}
                   required
-                  className="w-full p-2 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2"
+                  className="w-full p-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-mono font-bold focus:outline-none"
                 />
               </div>
             </div>
@@ -453,10 +462,10 @@ export default function InterviewsView({
                 <button
                   type="button"
                   onClick={() => setInterviewMode('video')}
-                  className={`rounded-xl border px-3 py-2 text-xs font-mono font-black ${
+                  className={`rounded-lg border px-3 py-2 text-xs font-mono font-black ${
                     interviewMode === 'video'
                       ? 'border-[#34D399] bg-emerald-50 text-emerald-700'
-                      : 'border-zinc-200/80 bg-white text-zinc-600'
+                      : 'border-zinc-200 bg-white text-zinc-600'
                   }`}
                 >
                   VIDEO INTERVIEW
@@ -464,10 +473,10 @@ export default function InterviewsView({
                 <button
                   type="button"
                   onClick={() => setInterviewMode('onsite')}
-                  className={`rounded-xl border px-3 py-2 text-xs font-mono font-black ${
+                  className={`rounded-lg border px-3 py-2 text-xs font-mono font-black ${
                     interviewMode === 'onsite'
                       ? 'border-[#34D399] bg-emerald-50 text-emerald-700'
-                      : 'border-zinc-200/80 bg-white text-zinc-600'
+                      : 'border-zinc-200 bg-white text-zinc-600'
                   }`}
                 >
                   ON-SITE
@@ -486,7 +495,7 @@ export default function InterviewsView({
                     value={interviewLocation}
                     onChange={(e) => setInterviewLocation(e.target.value)}
                     placeholder="Site address or postcode"
-                    className="w-full p-2 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 font-sans"
+                    className="w-full p-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs focus:outline-none font-sans"
                   />
                 </div>
 
@@ -502,7 +511,7 @@ export default function InterviewsView({
                           type="button"
                           key={item}
                           onClick={() => togglePpe(item)}
-                          className={`px-3 py-1 rounded-full text-[10px] font-mono font-bold border transition-all duration-200 ease-out ${active ? 'bg-[#34D399] border-[#34D399] text-white shadow-md' : 'bg-zinc-50 border-zinc-200/80 text-zinc-600 hover:border-zinc-300'}`}
+                          className={`px-3 py-1 rounded-full text-[10px] font-mono font-bold border transition-all ${active ? 'bg-[#34D399] border-[#34D399] text-white shadow-sm' : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:border-zinc-300'}`}
                         >
                           {item.toUpperCase()}
                         </button>
@@ -521,7 +530,7 @@ export default function InterviewsView({
                 onChange={(e) => setInterviewNotes(e.target.value)}
                 rows={2}
                 placeholder="Site induction begins at main gate. Bring original CSCS card copy."
-                className="w-full p-2 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 font-sans resize-none"
+                className="w-full p-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs focus:outline-none font-sans resize-none"
               />
             </div>
 
@@ -529,13 +538,13 @@ export default function InterviewsView({
               <button
                 type="button"
                 onClick={() => setShowScheduleModal(false)}
-                className="flex-1 py-2 border border-zinc-200/80 text-zinc-600 font-mono font-bold text-xs rounded-xl transition-all duration-200 ease-out"
+                className="flex-1 py-2 border border-zinc-200 text-zinc-600 font-mono font-bold text-xs rounded-lg transition-all"
               >
                 CANCEL
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2 bg-[#34D399] hover:bg-[#10B981] text-white font-mono font-bold text-xs rounded-xl transition-all duration-200 ease-out cursor-pointer active:scale-[0.99]"
+                className="flex-1 py-2 bg-[#34D399] hover:bg-[#10B981] text-white font-mono font-bold text-xs rounded-lg transition-all cursor-pointer"
               >
                 SEND INTERVIEW INVITE
               </button>
@@ -549,9 +558,9 @@ export default function InterviewsView({
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <form 
             onSubmit={handleReviewSubmit}
-            className="bg-white border border-zinc-200/80 rounded-2xl p-6 max-w-md w-full space-y-5 shadow-2xl font-sans my-8 text-left"
+            className="bg-white border border-zinc-200 rounded-2xl p-6 max-w-md w-full space-y-5 shadow-2xl font-sans my-8 text-left"
           >
-            <div className="flex justify-between items-center pb-3 border-b border-zinc-200/80">
+            <div className="flex justify-between items-center pb-3 border-b border-zinc-200">
               <div className="text-left">
                 <h3 className="text-base font-bold text-zinc-900 uppercase font-mono tracking-wider">Leave Partner Review</h3>
                 <p className="text-[10px] text-zinc-500 font-mono mt-0.5">FOR JOB COMPLETED WITH {reviewTarget.reviewedName.toUpperCase()}</p>
@@ -584,7 +593,7 @@ export default function InterviewsView({
                     type="button"
                     key={star}
                     onClick={() => setOverallRating(star)}
-                    className="p-1 hover:scale-110 transition-transform cursor-pointer active:scale-[0.99]"
+                    className="p-1 hover:scale-110 transition-transform cursor-pointer"
                   >
                     <Star 
                       className={`w-8 h-8 ${star <= overallRating ? 'text-amber-400 fill-amber-400' : 'text-zinc-300'}`} 
@@ -622,10 +631,10 @@ export default function InterviewsView({
                             type="button"
                             key={val}
                             onClick={() => setCategoryRatings(prev => ({ ...prev, [cat.key]: val }))}
-                            className={`w-6 h-6 rounded flex items-center justify-center font-mono text-[10px] font-bold border transition-all duration-200 ease-out ${
+                            className={`w-6 h-6 rounded flex items-center justify-center font-mono text-[10px] font-bold border transition-all ${
                               (categoryRatings[cat.key] || 5) === val 
                                 ? 'bg-amber-400 border-amber-400 text-white font-black' 
-                                : 'bg-zinc-50 border-zinc-200/80 text-zinc-500 hover:border-zinc-300'
+                                : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-zinc-300'
                             }`}
                           >
                             {val}
@@ -653,10 +662,10 @@ export default function InterviewsView({
                             type="button"
                             key={val}
                             onClick={() => setCategoryRatings(prev => ({ ...prev, [cat.key]: val }))}
-                            className={`w-6 h-6 rounded flex items-center justify-center font-mono text-[10px] font-bold border transition-all duration-200 ease-out ${
+                            className={`w-6 h-6 rounded flex items-center justify-center font-mono text-[10px] font-bold border transition-all ${
                               (categoryRatings[cat.key] || 5) === val 
                                 ? 'bg-amber-400 border-amber-400 text-white font-black' 
-                                : 'bg-zinc-50 border-zinc-200/80 text-zinc-500 hover:border-zinc-300'
+                                : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-zinc-300'
                             }`}
                           >
                             {val}
@@ -678,7 +687,7 @@ export default function InterviewsView({
                 required
                 rows={3}
                 placeholder="Describe your working experience with this member..."
-                className="w-full p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 font-sans resize-none"
+                className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 font-sans resize-none"
               />
             </div>
 
@@ -690,14 +699,14 @@ export default function InterviewsView({
                   setShowReviewModal(false);
                   setReviewTarget(null);
                 }}
-                className="flex-1 py-2 border border-zinc-200/80 text-zinc-600 font-mono font-bold text-xs rounded-xl transition-all duration-200 ease-out"
+                className="flex-1 py-2 border border-zinc-200 text-zinc-600 font-mono font-bold text-xs rounded-lg transition-all"
                 disabled={submittingReview}
               >
                 DISCARD
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white font-mono font-bold text-xs rounded-xl transition-all duration-200 ease-out cursor-pointer active:scale-[0.99] flex items-center justify-center gap-1 shadow-md shadow-amber-500/20"
+                className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white font-mono font-bold text-xs rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1 shadow-md shadow-amber-500/20"
                 disabled={submittingReview}
               >
                 {submittingReview ? "SUBMITTING..." : "SUBMIT FEEDBACK"}
